@@ -10,6 +10,14 @@ export function isSupabaseConfigured() {
   return Boolean(supabaseUrl && supabaseAnonKey)
 }
 
+export function getSupabaseConfig() {
+  return {
+    url: supabaseUrl,
+    anonKey: supabaseAnonKey,
+    isConfigured: isSupabaseConfigured(),
+  }
+}
+
 export async function insertSupabaseRow(
   tableName: string,
   row: Record<string, unknown>,

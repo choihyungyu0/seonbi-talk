@@ -25,13 +25,11 @@ export function validateSignup(values: SignupFormValues) {
   const emailError = validateEmail(values.email)
   if (emailError) errors.email = emailError
   if (!values.password) errors.password = '비밀번호를 입력하세요.'
+  if (values.password && values.password.length < 6) {
+    errors.password = '비밀번호는 6자 이상이어야 합니다.'
+  }
   if (values.password !== values.confirmPassword) {
     errors.confirmPassword = '비밀번호가 일치하지 않습니다.'
-  }
-  if (!values.nickname.trim()) errors.nickname = '닉네임을 입력하세요.'
-  if (!values.agreeTerms) errors.agreeTerms = '이용약관 동의가 필요합니다.'
-  if (!values.agreePrivacy) {
-    errors.agreePrivacy = '개인정보처리방침 동의가 필요합니다.'
   }
   return errors
 }

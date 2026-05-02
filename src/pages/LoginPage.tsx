@@ -1,11 +1,12 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { AuthButton } from '../components/auth/AuthButton'
 import { PasswordField } from '../components/auth/PasswordField'
 import { TextField } from '../components/auth/TextField'
 import { CommonButton } from '../components/common/CommonButton'
 import { StatusBadge } from '../components/common/StatusBadge'
 import { AppLayout } from '../components/layout/AppLayout'
+import { signIn } from '../features/auth/authApi'
 import type { LoginFormValues } from '../features/auth/authTypes'
 import { validateLogin } from '../features/auth/authValidation'
 
@@ -16,17 +17,35 @@ const initialValues: LoginFormValues = {
 }
 
 export function LoginPage() {
+  const navigate = useNavigate()
+  const location = useLocation()
   const [values, setValues] = useState(initialValues)
   const [errors, setErrors] = useState<Partial<Record<keyof LoginFormValues, string>>>({})
+  const [statusMessage, setStatusMessage] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const nextErrors = validateLogin(values)
     setErrors(nextErrors)
     if (Object.keys(nextErrors).length > 0) return
+
     setIsSubmitting(true)
-    window.setTimeout(() => setIsSubmitting(false), 500)
+    setStatusMessage('')
+
+    try {
+      await signIn(values.email.trim(), values.password)
+      const redirectTo = getRedirectPath(location.state)
+      navigate(redirectTo, { replace: true })
+    } catch (error) {
+      setStatusMessage(
+        error instanceof Error
+          ? error.message
+          : '로그인 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요.',
+      )
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -74,17 +93,39 @@ export function LoginPage() {
             />
             로그인 상태 유지
           </label>
+          {statusMessage && (
+            <p className="form-error" role="status">
+              {statusMessage}
+            </p>
+          )}
           <AuthButton isLoading={isSubmitting}>로그인</AuthButton>
           <div className="auth-links">
             <Link to="/forgot-password">비밀번호 찾기</Link>
             <Link to="/signup">회원가입</Link>
           </div>
-          <CommonButton type="button" variant="secondary" fullWidth>
+          <CommonButton
+            type="button"
+            variant="secondary"
+            fullWidth
+            onClick={() => navigate('/')}
+          >
             로그인 없이 둘러보기
           </CommonButton>
-          <p className="disabled-notice">간편 로그인은 준비 중입니다</p>
         </form>
       </section>
     </AppLayout>
   )
+}
+
+function getRedirectPath(state: unknown) {
+  if (
+    state &&
+    typeof state === 'object' &&
+    'from' in state &&
+    typeof state.from === 'string'
+  ) {
+    return state.from
+  }
+
+  return '/'
 }

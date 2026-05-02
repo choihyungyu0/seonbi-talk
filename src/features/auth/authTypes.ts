@@ -9,11 +9,6 @@ export interface SignupFormValues {
   password: string
   confirmPassword: string
   nickname: string
-  ageGroup: string
-  travelPurpose: string
-  agreeTerms: boolean
-  agreePrivacy: boolean
-  agreeOptionalAnalytics: boolean
 }
 
 export interface ForgotPasswordFormValues {

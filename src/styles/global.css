@@ -191,6 +191,23 @@ a {
   text-align: right;
 }
 
+.nav-user-label {
+  max-width: 220px;
+  overflow: hidden;
+  color: var(--ink-soft);
+  font-size: 14px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nav-button-link {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
 .bottom-nav {
   position: fixed;
   right: 16px;

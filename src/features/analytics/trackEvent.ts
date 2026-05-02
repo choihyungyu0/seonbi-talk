@@ -1,4 +1,5 @@
 import type { SeonbiType } from '../seonbi-test/types'
+import { getStoredAuthUser } from '../auth/authApi'
 import { insertSupabaseRow } from '../../lib/supabase'
 
 type AnalyticsEventType =
@@ -19,6 +20,7 @@ interface AnalyticsPayload {
 interface AnalyticsEvent extends AnalyticsPayload {
   eventType: AnalyticsEventType
   sessionId: string
+  userId?: string
   createdAt: string
 }
 
@@ -55,6 +57,7 @@ function createAnalyticsEvent(
   return {
     eventType,
     sessionId: getAnonymousSessionId(),
+    userId: getStoredAuthUser()?.id,
     createdAt: new Date().toISOString(),
     seonbiType: payload.seonbiType,
     contentId: payload.contentId,
@@ -68,6 +71,7 @@ function toSupabaseRow(event: AnalyticsEvent) {
   return {
     event_type: event.eventType,
     session_id: event.sessionId,
+    user_id: event.userId,
     created_at: event.createdAt,
     seonbi_type: event.seonbiType,
     content_id: event.contentId,

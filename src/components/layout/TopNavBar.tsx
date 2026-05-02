@@ -1,5 +1,12 @@
-import { useState } from 'react'
-import { Link, NavLink } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link, NavLink, useNavigate } from 'react-router-dom'
+import {
+  getCurrentUser,
+  getStoredAuthUser,
+  onAuthStateChange,
+  signOut,
+  type AuthUser,
+} from '../../features/auth/authApi'
 import { loadTestResult } from '../../lib/storage'
 
 const navItems = [
@@ -10,11 +17,25 @@ const navItems = [
 ]
 
 export function TopNavBar() {
+  const navigate = useNavigate()
   const [notice, setNotice] = useState('')
+  const [authUser, setAuthUser] = useState<AuthUser | null>(() => getStoredAuthUser())
   const hasTestResult = Boolean(loadTestResult())
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChange(setAuthUser)
+    void getCurrentUser().then(setAuthUser)
+    return unsubscribe
+  }, [])
 
   function showProtectedNotice() {
     setNotice('선비유형 테스트 완료 후 이용 가능')
+  }
+
+  async function handleSignOut() {
+    await signOut()
+    setAuthUser(null)
+    navigate('/')
   }
 
   return (
@@ -65,9 +86,29 @@ export function TopNavBar() {
             {notice}
           </span>
         )}
-        <Link className="nav-login-link" to="/login">
-          로그인
-        </Link>
+        {authUser ? (
+          <>
+            <span className="nav-user-label">
+              {authUser.nickname || authUser.email || '로그인 사용자'}
+            </span>
+            <button
+              type="button"
+              className="nav-login-link nav-button-link"
+              onClick={handleSignOut}
+            >
+              로그아웃
+            </button>
+          </>
+        ) : (
+          <>
+            <Link className="nav-login-link" to="/login">
+              로그인
+            </Link>
+            <Link className="nav-login-link" to="/signup">
+              회원가입
+            </Link>
+          </>
+        )}
       </div>
     </header>
   )
