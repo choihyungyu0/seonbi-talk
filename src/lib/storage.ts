@@ -1,9 +1,16 @@
 import type { TestResult } from '../features/seonbi-test/types'
+import { trackEvent } from '../features/analytics/trackEvent'
 
 const testResultKey = 'yeongju-seonbi-test-result'
 
 export function saveTestResult(result: TestResult) {
   window.localStorage.setItem(testResultKey, JSON.stringify(result))
+  void trackEvent('test_completed', {
+    seonbiType: result.type,
+    metadata: {
+      completedAt: result.completedAt,
+    },
+  })
 }
 
 export function loadTestResult(): TestResult | null {

@@ -19,6 +19,7 @@ import type {
   TourismDataStatus,
   TourismEmptyStateReason,
 } from '../features/tourism/tourismTypes'
+import { trackEvent } from '../features/analytics/trackEvent'
 import { loadTestResult } from '../lib/storage'
 
 const yeongjuKeywords = ['소수서원', '선비세상', '무섬마을', '부석사', '풍기인삼']
@@ -85,6 +86,12 @@ export function CoursePage() {
 
   function selectTourismItem(item: TourismContent) {
     setSelectedContentId(getTourismItemKey(item))
+    void trackEvent('tourism_card_clicked', {
+      seonbiType: testResult?.type,
+      contentId: item.contentId,
+      contentTitle: item.title,
+      contentTypeId: item.contentTypeId,
+    })
   }
 
   return (

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { CommonButton } from '../common/CommonButton'
 import type { SeonbiTypeInfo } from '../../features/seonbi-test/types'
 import { shareResult } from '../../features/result/shareResult'
+import { trackEvent } from '../../features/analytics/trackEvent'
 
 interface ShareResultButtonProps {
   typeInfo: SeonbiTypeInfo
@@ -19,6 +20,9 @@ export function ShareResultButton({
   async function handleShare() {
     setIsSharing(true)
     onStatusChange('')
+    void trackEvent('result_share_clicked', {
+      seonbiType: typeInfo.id,
+    })
 
     try {
       const status = await shareResult(typeInfo)

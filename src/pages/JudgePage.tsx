@@ -4,6 +4,7 @@ import { CommonButton } from '../components/common/CommonButton'
 import { StatusBadge } from '../components/common/StatusBadge'
 import { AppLayout } from '../components/layout/AppLayout'
 import { seonbiTypeInfo } from '../data/seonbiTypes'
+import { trackEvent } from '../features/analytics/trackEvent'
 import { requestSeonbiAdvice } from '../features/judge/judgeApi'
 import type { JudgeResult } from '../features/judge/judgeTypes'
 import { loadTestResult } from '../lib/storage'
@@ -49,11 +50,24 @@ export function JudgePage() {
     }
 
     setResult(response.result)
+    void trackEvent('judge_used', {
+      seonbiType: testResult?.type,
+      metadata: {
+        hasSeonbiType: Boolean(testResult),
+      },
+    })
     setIsLoading(false)
   }
 
   async function handleCopyShareText() {
     if (!result) return
+
+    void trackEvent('judge_share_clicked', {
+      seonbiType: testResult?.type,
+      metadata: {
+        method: 'copy',
+      },
+    })
 
     try {
       await navigator.clipboard.writeText(result.shareText)
@@ -65,6 +79,13 @@ export function JudgePage() {
 
   async function handleShareResult() {
     if (!result || !canUseWebShare) return
+
+    void trackEvent('judge_share_clicked', {
+      seonbiType: testResult?.type,
+      metadata: {
+        method: 'web_share',
+      },
+    })
 
     try {
       await navigator.share({
