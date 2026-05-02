@@ -1,9 +1,66 @@
-export type TourismDataStatus = 'empty' | 'loading' | 'ready' | 'error'
+import type { SeonbiType } from '../seonbi-test/types'
 
-export interface TourismCardModel {
-  label: string
-  title: string
+export type TourismDataStatus =
+  | 'empty'
+  | 'loading'
+  | 'ready'
+  | 'missing-api-key'
+  | 'error'
+
+export type TourismContentType =
+  | 'tourist-attraction'
+  | 'culture'
+  | 'festival'
+  | 'course'
+  | 'leisure'
+  | 'accommodation'
+  | 'shopping'
+  | 'restaurant'
+  | 'unknown'
+
+export type TourismEmptyStateReason =
+  | 'missing-api-key'
+  | 'empty-data'
+  | 'no-test-result'
+  | 'error'
+
+export interface TourismContent {
+  contentId?: string
+  contentTypeId?: string
+  title?: string
+  address?: string
+  mapX?: number
+  mapY?: number
+  firstImage?: string
+  firstImage2?: string
+  tel?: string
+  overview?: string
+  areaCode?: string
+  sigunguCode?: string
+  category?: string
+  source?: 'TourAPI'
+}
+
+export interface TourismApiResponse {
+  contents: TourismContent[]
   status: TourismDataStatus
+  reason?: TourismEmptyStateReason
+  message?: string
+}
+
+export interface TourismQueryParams {
+  keyword?: string
+  areaCode?: string
+  sigunguCode?: string
+  contentTypeId?: string
+  pageNo?: number
+  numOfRows?: number
+}
+
+export interface RecommendedCourse {
+  seonbiType: SeonbiType
+  items: TourismContent[]
+  reason?: TourismEmptyStateReason
 }
 
 export interface TourismCoordinateState {
