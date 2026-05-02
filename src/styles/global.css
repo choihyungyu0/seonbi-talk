@@ -914,13 +914,20 @@ a {
 .judge-form textarea {
   width: 100%;
   min-height: 180px;
-  margin-bottom: 18px;
+  margin-bottom: 12px;
   resize: vertical;
   border: 1px solid var(--line-strong);
   border-radius: 14px;
   padding: 16px;
   color: var(--ink);
   background: var(--paper);
+}
+
+.judge-help {
+  margin: 0 0 16px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.5;
 }
 
 .judge-result {
