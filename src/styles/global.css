@@ -750,6 +750,16 @@ a {
   border: 1px solid var(--line);
   border-radius: 18px;
   background: var(--surface);
+  text-align: left;
+}
+
+.tourism-card[tabindex='0'] {
+  cursor: pointer;
+}
+
+.tourism-card.selected {
+  border-color: var(--forest);
+  box-shadow: 0 0 0 3px rgba(45, 75, 62, 0.12), var(--shadow);
 }
 
 .tourism-card .image-placeholder {
@@ -853,6 +863,23 @@ a {
 
 .map-empty span {
   font-size: 56px;
+}
+
+.course-map-shell {
+  position: relative;
+  min-height: 430px;
+  overflow: hidden;
+}
+
+.course-map-canvas {
+  position: absolute;
+  inset: 0;
+  min-height: 430px;
+  visibility: hidden;
+}
+
+.course-map-canvas.ready {
+  visibility: visible;
 }
 
 .judge-grid {

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
 import { StatusBadge } from '../components/common/StatusBadge'
 import { TourismCard } from '../components/tourism/TourismCard'
+import { CourseMap } from '../components/tourism/CourseMap'
 import { seonbiTypeInfo } from '../data/seonbiTypes'
 import {
   getYeongjuAccommodations,
@@ -41,6 +42,7 @@ interface TourismPageState {
 export function CoursePage() {
   const testResult = useMemo(() => loadTestResult(), [])
   const [activeFilter, setActiveFilter] = useState<TourismFilterId>('all')
+  const [selectedContentId, setSelectedContentId] = useState<string | undefined>()
   const [tourismState, setTourismState] = useState<TourismPageState>({
     status: testResult ? 'loading' : 'empty',
     contents: [],
@@ -54,6 +56,7 @@ export function CoursePage() {
 
     async function loadTourismContents() {
       setTourismState({ status: 'loading', contents: [] })
+      setSelectedContentId(undefined)
       const response: TourismApiResponse = await getTourismResponse(activeFilter)
       if (ignore) return
 
@@ -79,6 +82,10 @@ export function CoursePage() {
   const recommendedItems = recommendedCourse?.items ?? []
   const shouldShowCards = tourismState.status === 'ready' && recommendedItems.length > 0
   const shouldShowAllCards = tourismState.status === 'ready' && tourismState.contents.length > 0
+
+  function selectTourismItem(item: TourismContent) {
+    setSelectedContentId(getTourismItemKey(item))
+  }
 
   return (
     <AppLayout>
@@ -138,7 +145,12 @@ export function CoursePage() {
                   <h2>내 선비유형에 맞는 영주 추천 코스</h2>
                 </div>
                 {recommendedItems.map((item) => (
-                  <TourismCard key={getTourismItemKey(item)} item={item} />
+                  <TourismCard
+                    key={getTourismItemKey(item)}
+                    item={item}
+                    selected={selectedContentId === getTourismItemKey(item)}
+                    onSelect={selectTourismItem}
+                  />
                 ))}
               </section>
             )}
@@ -161,21 +173,20 @@ export function CoursePage() {
                   ))}
                 </div>
                 {tourismState.contents.map((item) => (
-                  <TourismCard key={getTourismItemKey(item)} item={item} />
+                  <TourismCard
+                    key={getTourismItemKey(item)}
+                    item={item}
+                    selected={selectedContentId === getTourismItemKey(item)}
+                    onSelect={selectTourismItem}
+                  />
                 ))}
               </section>
             )}
           </div>
-          <aside className="surface-card map-panel">
-            <div className="map-panel-header">
-              <h2>지도</h2>
-              <span>좌표 데이터 연동 후 지도 표시</span>
-            </div>
-            <div className="map-empty">
-              <span aria-hidden="true">◇</span>
-              <p>좌표 데이터 연동 후 지도 표시</p>
-            </div>
-          </aside>
+          <CourseMap
+            items={tourismState.contents}
+            selectedContentId={selectedContentId}
+          />
         </div>
       </section>
     </AppLayout>

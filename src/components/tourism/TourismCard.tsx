@@ -4,11 +4,24 @@ import { StatusBadge } from '../common/StatusBadge'
 
 interface TourismCardProps {
   item: TourismContent
+  selected?: boolean
+  onSelect?: (item: TourismContent) => void
 }
 
-export function TourismCard({ item }: TourismCardProps) {
+export function TourismCard({ item, selected = false, onSelect }: TourismCardProps) {
   return (
-    <article className="tourism-card">
+    <article
+      className={selected ? 'tourism-card selected' : 'tourism-card'}
+      tabIndex={onSelect ? 0 : undefined}
+      onClick={() => onSelect?.(item)}
+      onKeyDown={(event) => {
+        if (!onSelect) return
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault()
+          onSelect(item)
+        }
+      }}
+    >
       {item.firstImage ? (
         <img className="tourism-image" src={item.firstImage} alt="" />
       ) : (

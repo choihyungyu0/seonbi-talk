@@ -5,8 +5,11 @@ Use this guide for Kakao Map SDK loading, Expo WebView map rendering, and fallba
 ## Key and origin rules
 
 - The Kakao JavaScript key should come from `EXPO_PUBLIC_KAKAO_MAP_JS_KEY`.
+- The current Vite web app can use `VITE_KAKAO_MAP_JS_KEY` for browser map rendering.
 - Do not hardcode the key in source, HTML, logs, or docs.
 - The runtime WebView origin must be registered in Kakao Developers JavaScript SDK domains.
+- For local Vercel development, register `http://localhost:3000` in Kakao Developers JavaScript domains.
+- After deployment, register the production Vercel HTTPS domain as well.
 - Never test the Kakao JavaScript SDK from `file://`.
 - If using `public/kakao-map.html`, serve it through HTTP or HTTPS.
 
@@ -70,7 +73,9 @@ Example payload:
 
 When map loading fails:
 
-- The fallback facility list should remain visible.
+- The TourAPI tourism list should remain visible.
+- Map markers must use only TourAPI `mapX` and `mapY` values.
+- Tourism items without coordinates stay in the list but are not shown as map markers.
 - The user-facing error should explain that map loading failed and nearby support information is still available.
 - Do not silently fall back without recording the reason in gated or documented logs.
 
