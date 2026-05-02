@@ -1,8 +1,11 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
 import { CommonButton } from '../components/common/CommonButton'
 import { ImagePlaceholder } from '../components/common/ImagePlaceholder'
 import { StatusBadge } from '../components/common/StatusBadge'
+import { searchYeongjuTourismByKeyword } from '../features/tourism/tourismApi'
+import type { TourismContent } from '../features/tourism/tourismTypes'
 
 const featureCards = [
   {
@@ -20,8 +23,37 @@ const featureCards = [
 ]
 
 const yeongjuKeywords = ['소수서원', '선비세상', '무섬마을', '부석사', '풍기인삼']
+const heroImageKeywords = ['소수서원', '부석사', '무섬마을', '선비세상']
+
+interface HomeHeroImage {
+  src: string
+  title: string
+}
 
 export function HomePage() {
+  const [heroImage, setHeroImage] = useState<HomeHeroImage | null>(null)
+  const [isHeroImageLoading, setIsHeroImageLoading] = useState(true)
+
+  useEffect(() => {
+    let ignore = false
+
+    async function loadHeroImage() {
+      setIsHeroImageLoading(true)
+
+      const image = await findHeroTourismImage()
+      if (ignore) return
+
+      setHeroImage(image)
+      setIsHeroImageLoading(false)
+    }
+
+    void loadHeroImage()
+
+    return () => {
+      ignore = true
+    }
+  }, [])
+
   return (
     <AppLayout>
       <section className="home-hero">
@@ -71,8 +103,47 @@ export function HomePage() {
             </CommonButton>
           </div>
         </div>
-        <ImagePlaceholder className="hero-image-placeholder" />
+        {heroImage ? (
+          <figure className="hero-tourism-image">
+            <img src={heroImage.src} alt={heroImage.title} />
+            <figcaption>{heroImage.title}</figcaption>
+          </figure>
+        ) : (
+          <ImagePlaceholder
+            className="hero-image-placeholder"
+            label={
+              isHeroImageLoading
+                ? '공공데이터 이미지를 불러오고 있습니다.'
+                : '공공데이터 이미지 연동 예정'
+            }
+          />
+        )}
       </section>
     </AppLayout>
   )
+}
+
+async function findHeroTourismImage(): Promise<HomeHeroImage | null> {
+  for (const keyword of heroImageKeywords) {
+    const response = await searchYeongjuTourismByKeyword(keyword)
+    if (response.status !== 'ready') continue
+
+    const imageItem = response.contents.find((item) => getTourismImageUrl(item))
+    if (imageItem) {
+      return {
+        src: toHttpsUrl(getTourismImageUrl(imageItem)),
+        title: imageItem.title ?? keyword,
+      }
+    }
+  }
+
+  return null
+}
+
+function getTourismImageUrl(item: TourismContent) {
+  return item.firstImage || item.firstImage2 || ''
+}
+
+function toHttpsUrl(url: string) {
+  return url.replace(/^http:\/\//, 'https://')
 }

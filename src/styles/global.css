@@ -506,6 +506,29 @@ a {
   min-height: 380px;
 }
 
+.hero-tourism-image {
+  overflow: hidden;
+  min-height: 380px;
+  margin: 0;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+}
+
+.hero-tourism-image img {
+  display: block;
+  width: 100%;
+  height: 340px;
+  object-fit: cover;
+}
+
+.hero-tourism-image figcaption {
+  padding: 14px 16px;
+  color: var(--ink-soft);
+  font-weight: 700;
+}
+
 .test-page {
   max-width: 780px;
 }
