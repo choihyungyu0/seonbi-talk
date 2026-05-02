@@ -4,6 +4,7 @@ interface CommonButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   children: ReactNode
   variant?: 'primary' | 'secondary' | 'ghost'
   isLoading?: boolean
+  loadingLabel?: string
   fullWidth?: boolean
 }
 
@@ -11,6 +12,7 @@ export function CommonButton({
   children,
   variant = 'primary',
   isLoading = false,
+  loadingLabel = '처리 중...',
   fullWidth = false,
   disabled,
   className = '',
@@ -29,7 +31,7 @@ export function CommonButton({
       disabled={disabled || isLoading}
       {...props}
     >
-      {isLoading ? '처리 중...' : children}
+      {isLoading ? loadingLabel : children}
     </button>
   )
 }

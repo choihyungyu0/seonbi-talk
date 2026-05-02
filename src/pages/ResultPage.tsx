@@ -1,11 +1,17 @@
+import { useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { CommonButton } from '../components/common/CommonButton'
 import { AppLayout } from '../components/layout/AppLayout'
 import { ResultCard } from '../components/result/ResultCard'
+import { ShareResultButton } from '../components/result/ShareResultButton'
 import { seonbiTypeInfo } from '../data/seonbiTypes'
+import { saveResultImage } from '../features/result/saveResultImage'
 import { loadTestResult } from '../lib/storage'
 
 export function ResultPage() {
+  const cardRef = useRef<HTMLDivElement>(null)
+  const [isSavingImage, setIsSavingImage] = useState(false)
+  const [statusMessage, setStatusMessage] = useState('')
   const result = loadTestResult()
 
   if (!result) {
@@ -26,6 +32,22 @@ export function ResultPage() {
 
   const typeInfo = seonbiTypeInfo[result.type]
 
+  async function handleSaveImage() {
+    if (!cardRef.current) return
+
+    setIsSavingImage(true)
+    setStatusMessage('')
+
+    try {
+      await saveResultImage(cardRef.current)
+      setStatusMessage('결과 이미지를 저장했습니다.')
+    } catch {
+      setStatusMessage('이미지 저장에 실패했습니다. 다시 시도해주세요.')
+    } finally {
+      setIsSavingImage(false)
+    }
+  }
+
   return (
     <AppLayout>
       <section className="page-section page-container result-page">
@@ -33,21 +55,34 @@ export function ResultPage() {
           <p className="section-kicker">선비유형 결과</p>
           <h1>당신의 선비 기질은...</h1>
         </div>
-        <ResultCard typeInfo={typeInfo} result={result} />
+        <div className="result-card-capture" ref={cardRef}>
+          <ResultCard typeInfo={typeInfo} result={result} />
+        </div>
         <div className="page-actions center">
           <Link className="common-button common-button--primary" to="/course">
             영주 추천 코스 보기
           </Link>
-          <CommonButton type="button" variant="secondary" disabled>
+          <CommonButton
+            type="button"
+            variant="secondary"
+            disabled={isSavingImage}
+            isLoading={isSavingImage}
+            loadingLabel="이미지 저장 중..."
+            onClick={handleSaveImage}
+          >
             결과 이미지 저장
           </CommonButton>
-          <CommonButton type="button" variant="secondary" disabled>
-            친구에게 공유하기
-          </CommonButton>
+          <ShareResultButton
+            typeInfo={typeInfo}
+            disabled={isSavingImage}
+            onStatusChange={setStatusMessage}
+          />
         </div>
-        <p className="disabled-notice result-notice">
-          결과 이미지 저장과 공유 기능은 준비 중입니다.
-        </p>
+        {statusMessage && (
+          <p className="disabled-notice result-notice" role="status">
+            {statusMessage}
+          </p>
+        )}
       </section>
     </AppLayout>
   )

@@ -533,30 +533,74 @@ a {
   max-width: 860px;
 }
 
-.result-card {
-  max-width: 520px;
+.result-card-capture {
+  width: min(520px, 100%);
   margin: 0 auto 28px;
-  padding: 42px;
+}
+
+.result-card {
+  display: grid;
+  min-height: 650px;
+  align-content: center;
+  gap: 18px;
+  aspect-ratio: 4 / 5;
+  margin: 0;
+  overflow: hidden;
+  padding: 44px;
+  border: 1px solid rgba(201, 194, 184, 0.9);
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at 16% 12%, rgba(200, 234, 216, 0.5), transparent 24%),
+    radial-gradient(circle at 86% 88%, rgba(185, 154, 87, 0.22), transparent 26%),
+    linear-gradient(180deg, #fffdf9, #f9f6ef);
+  box-shadow: 0 24px 70px rgba(47, 49, 49, 0.12);
   text-align: center;
 }
 
+.result-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 8px;
+}
+
+.result-card-header strong {
+  color: var(--ink);
+  font-family: var(--serif);
+  font-size: 18px;
+}
+
+.result-card-kicker {
+  margin: 0;
+  color: var(--forest);
+  font-size: 14px;
+  font-weight: 800;
+}
+
 .result-card h2 {
+  margin: 0;
   font-size: clamp(38px, 6vw, 64px);
 }
 
 .result-summary {
+  margin: 0;
   color: var(--forest);
   font-size: 20px;
   font-weight: 800;
 }
 
+.result-description {
+  margin: 0;
+  color: var(--ink-soft);
+}
+
 .result-meta {
   display: grid;
   gap: 8px;
-  margin-top: 30px;
   padding: 18px;
   border-radius: 14px;
-  background: var(--surface-muted);
+  background: rgba(246, 243, 242, 0.82);
 }
 
 .result-meta span {
@@ -569,7 +613,7 @@ a {
   flex-wrap: wrap;
   justify-content: center;
   gap: 8px;
-  margin-top: 22px;
+  margin-top: 2px;
 }
 
 .tag-list span {
@@ -595,6 +639,14 @@ a {
   background: var(--surface-muted);
   font-size: 13px;
   font-weight: 800;
+}
+
+.result-card-footer {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 12px;
 }
 
 .empty-result-card {
@@ -1036,10 +1088,14 @@ a {
 
   .auth-form,
   .question-card,
-  .result-card,
   .judge-form,
   .judge-result {
     padding: 24px;
+  }
+
+  .result-card {
+    min-height: auto;
+    padding: 28px;
   }
 
   .admin-header {
