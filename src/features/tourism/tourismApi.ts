@@ -58,44 +58,47 @@ export async function searchYeongjuTourismByKeyword(
 }
 
 export async function getTourismDetail(
-  contentId: string,
-  contentTypeId: string,
+  selectedItem: TourismContent,
 ): Promise<TourismDetailResponse> {
+  const contentId = selectedItem.contentId
+  const contentTypeId = selectedItem.contentTypeId
+
+  if (!contentId || !contentTypeId) {
+    return createFallbackDetailResponse(selectedItem)
+  }
+
   const [commonResponse, introResponse, imageResponse] = await Promise.all([
     requestTourismProxy({ type: 'detailCommon', contentId }),
     requestTourismProxy({ type: 'detailIntro', contentId, contentTypeId }),
     requestTourismProxy({ type: 'detailImage', contentId }),
   ])
 
-  if (commonResponse.status === 'error' || introResponse.status === 'error') {
-    return {
-      status: 'error',
-      reason: 'api_error',
-      message: '상세 정보를 불러오는 중 문제가 발생했습니다.',
-    }
-  }
+  warnFailedDetailResponse('detailCommon', commonResponse, contentId, contentTypeId)
+  warnFailedDetailResponse('detailIntro', introResponse, contentId, contentTypeId)
+  warnFailedDetailResponse('detailImage', imageResponse, contentId, contentTypeId)
 
   const commonItem = commonResponse.contents[0]
   const introItem = introResponse.contents[0]
-
-  if (!commonItem && !introItem) {
-    return {
-      status: 'empty',
-      reason: 'no_data',
-      message: '상세 정보가 없습니다.',
-    }
+  const mergedItem = {
+    ...selectedItem,
+    ...commonItem,
+    ...introItem,
   }
+  const images = imageResponse.status === 'ready' ? imageResponse.contents : []
 
-  return {
-    status: 'ready',
-    detail: {
-      item: {
-        ...commonItem,
-        ...introItem,
-      },
-      images: imageResponse.status === 'ready' ? imageResponse.contents : [],
-    },
-  }
+  return hasDisplayableTourismInfo(mergedItem) || images.length > 0
+    ? {
+        status: 'ready',
+        detail: {
+          item: mergedItem,
+          images,
+        },
+      }
+    : {
+        status: 'error',
+        reason: 'api_error',
+        message: '상세 정보를 불러오지 못했습니다.',
+      }
 }
 
 export function normalizeTourismItem(raw: TourismContent): TourismContent {
@@ -132,6 +135,54 @@ function createYeongjuAreaBasedParams(contentTypeId?: string) {
     sigunguCode: yeongjuSigunguCode,
     contentTypeId,
   }
+}
+
+function createFallbackDetailResponse(
+  selectedItem: TourismContent,
+): TourismDetailResponse {
+  return hasDisplayableTourismInfo(selectedItem)
+    ? {
+        status: 'ready',
+        detail: {
+          item: selectedItem,
+          images: [],
+        },
+      }
+    : {
+        status: 'error',
+        reason: 'api_error',
+        message: '상세 조회에 필요한 공공데이터 식별자가 없습니다.',
+      }
+}
+
+function hasDisplayableTourismInfo(item: TourismContent) {
+  return Boolean(
+    item.title ||
+      item.address ||
+      item.firstImage ||
+      item.firstImage2 ||
+      item.tel ||
+      item.overview ||
+      item.mapX ||
+      item.mapY,
+  )
+}
+
+function warnFailedDetailResponse(
+  detailType: 'detailCommon' | 'detailIntro' | 'detailImage',
+  response: TourismApiResponse,
+  contentId: string,
+  contentTypeId: string,
+) {
+  if (response.status === 'ready') return
+
+  console.warn('[tourism] detail request unavailable', {
+    detailType,
+    status: response.status,
+    message: response.message ?? response.reason ?? 'no detail data',
+    contentId,
+    contentTypeId,
+  })
 }
 
 async function requestTourismProxy(

@@ -123,18 +123,9 @@ export function CoursePage() {
   }
 
   async function openTourismDetail(item: TourismContent) {
-    if (!item.contentId || !item.contentTypeId) {
-      setDetailState({
-        status: 'error',
-        item,
-        message: '상세 조회에 필요한 공공데이터 식별자가 없습니다.',
-      })
-      return
-    }
-
     setDetailState({ status: 'loading', item })
 
-    const response = await getTourismDetail(item.contentId, item.contentTypeId)
+    const response = await getTourismDetail(item)
     if (response.status !== 'ready' || !response.detail) {
       setDetailState({
         status: 'error',
