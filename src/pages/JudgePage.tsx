@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { CommonButton } from '../components/common/CommonButton'
+import { ProtectedFeaturePrompt } from '../components/common/ProtectedFeaturePrompt'
 import { StatusBadge } from '../components/common/StatusBadge'
 import { AppLayout } from '../components/layout/AppLayout'
 import { seonbiTypeInfo } from '../data/seonbiTypes'
@@ -23,6 +24,17 @@ export function JudgePage() {
   const canShareResult = Boolean(result)
   const canUseWebShare = typeof navigator.share === 'function'
 
+  if (!testResult || !typeInfo) {
+    return (
+      <AppLayout>
+        <section className="page-section page-container judge-page">
+          <ProtectedFeaturePrompt />
+        </section>
+      </AppLayout>
+    )
+  }
+  const activeTestResult = testResult
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
@@ -37,7 +49,7 @@ export function JudgePage() {
     setMessage('')
     setShareMessage('')
 
-    const response = await requestSeonbiAdvice(trimmedText, testResult?.type)
+    const response = await requestSeonbiAdvice(trimmedText, activeTestResult.type)
 
     if (!response.ok || !response.result) {
       setResult(null)
@@ -51,9 +63,9 @@ export function JudgePage() {
 
     setResult(response.result)
     void trackEvent('judge_used', {
-      seonbiType: testResult?.type,
+      seonbiType: activeTestResult.type,
       metadata: {
-        hasSeonbiType: Boolean(testResult),
+        hasSeonbiType: true,
       },
     })
     setIsLoading(false)
@@ -63,7 +75,7 @@ export function JudgePage() {
     if (!result) return
 
     void trackEvent('judge_share_clicked', {
-      seonbiType: testResult?.type,
+      seonbiType: activeTestResult.type,
       metadata: {
         method: 'copy',
       },
@@ -81,7 +93,7 @@ export function JudgePage() {
     if (!result || !canUseWebShare) return
 
     void trackEvent('judge_share_clicked', {
-      seonbiType: testResult?.type,
+      seonbiType: activeTestResult.type,
       metadata: {
         method: 'web_share',
       },
@@ -106,11 +118,6 @@ export function JudgePage() {
           <StatusBadge>선비의 한마디</StatusBadge>
           <h1>{pageTitle}</h1>
           <p>오늘의 문장을 선비 말투의 유쾌한 조언으로 바꿔드립니다.</p>
-          {!typeInfo && (
-            <p className="disabled-notice" role="status">
-              선비유형 테스트 후 더 어울리는 한마디를 받을 수 있습니다.
-            </p>
-          )}
         </div>
         <div className="judge-grid">
           <div className="wisdom-visual" aria-hidden="true">

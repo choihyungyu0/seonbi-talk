@@ -142,6 +142,7 @@ a {
 }
 
 .desktop-nav a,
+.desktop-nav button,
 .nav-login-link,
 .text-link {
   color: var(--muted);
@@ -150,6 +151,7 @@ a {
 
 .desktop-nav a.active,
 .desktop-nav a:hover,
+.desktop-nav button:hover:not(.nav-disabled-link),
 .nav-login-link:hover,
 .text-link:hover {
   color: var(--forest);
@@ -163,7 +165,30 @@ a {
 
 .top-nav-actions {
   display: flex;
+  align-items: center;
   justify-content: flex-end;
+  gap: 12px;
+}
+
+.nav-disabled-link {
+  border: 0;
+  padding: 0;
+  color: var(--muted);
+  background: transparent;
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
+.desktop-nav .nav-disabled-link {
+  min-height: auto;
+}
+
+.nav-protected-notice {
+  max-width: 180px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+  text-align: right;
 }
 
 .bottom-nav {
@@ -182,19 +207,45 @@ a {
   backdrop-filter: blur(16px);
 }
 
-.bottom-nav a {
+.bottom-nav a,
+.bottom-nav button {
   display: grid;
   place-items: center;
   gap: 2px;
+  border: 0;
   padding: 10px 6px;
   color: var(--muted);
   font-size: 13px;
+  background: transparent;
   text-decoration: none;
 }
 
 .bottom-nav a.active {
   color: var(--forest);
   font-weight: 800;
+}
+
+.bottom-nav .nav-disabled-link {
+  opacity: 0.42;
+}
+
+.bottom-nav-notice {
+  position: fixed;
+  right: 20px;
+  bottom: 82px;
+  left: 20px;
+  z-index: 31;
+  display: none;
+  max-width: 360px;
+  margin: 0 auto;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 10px 14px;
+  color: var(--ink-soft);
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+  font-size: 13px;
+  text-align: center;
 }
 
 .home-hero {
@@ -663,6 +714,10 @@ a {
   margin: 0 auto;
   padding: 48px 28px;
   text-align: center;
+}
+
+.protected-feature-card {
+  margin-top: clamp(36px, 8vw, 88px);
 }
 
 .empty-result-card h1 {
@@ -1196,6 +1251,10 @@ a {
 
   .bottom-nav {
     display: grid;
+  }
+
+  .bottom-nav-notice {
+    display: block;
   }
 
   .three-columns,

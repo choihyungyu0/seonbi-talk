@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
 import { StatusBadge } from '../components/common/StatusBadge'
+import { ProtectedFeaturePrompt } from '../components/common/ProtectedFeaturePrompt'
 import { TourismCard } from '../components/tourism/TourismCard'
 import { CourseMap } from '../components/tourism/CourseMap'
 import { seonbiTypeInfo } from '../data/seonbiTypes'
@@ -84,10 +84,21 @@ export function CoursePage() {
   const shouldShowCards = tourismState.status === 'ready' && tourismState.contents.length > 0
   const shouldShowAllCards = tourismState.status === 'ready' && tourismState.contents.length > 0
 
+  if (!testResult) {
+    return (
+      <AppLayout>
+        <section className="page-section page-container">
+          <ProtectedFeaturePrompt />
+        </section>
+      </AppLayout>
+    )
+  }
+  const activeTestResult = testResult
+
   function selectTourismItem(item: TourismContent) {
     setSelectedContentId(getTourismItemKey(item))
     void trackEvent('tourism_card_clicked', {
-      seonbiType: testResult?.type,
+      seonbiType: activeTestResult.type,
       contentId: item.contentId,
       contentTitle: item.title,
       contentTypeId: item.contentTypeId,
@@ -106,18 +117,6 @@ export function CoursePage() {
               : '선비유형 테스트 결과를 기준으로 추천 코스를 준비합니다.'}
           </p>
         </div>
-
-        {!testResult && (
-          <article className="surface-card empty-result-card course-empty-result">
-            <h2>아직 선비유형 테스트 결과가 없습니다.</h2>
-            <p>
-              테스트를 먼저 진행하면 유형에 맞는 영주 코스를 추천받을 수 있습니다.
-            </p>
-            <Link className="common-button common-button--primary" to="/test">
-              선비유형 테스트 시작하기
-            </Link>
-          </article>
-        )}
 
         <div className="keyword-list course-keywords" aria-label="영주 대표 키워드">
           {yeongjuKeywords.map((keyword) => (
