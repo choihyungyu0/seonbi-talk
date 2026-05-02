@@ -3,16 +3,21 @@ import type { FormEvent } from 'react'
 import { CommonButton } from '../components/common/CommonButton'
 import { StatusBadge } from '../components/common/StatusBadge'
 import { AppLayout } from '../components/layout/AppLayout'
+import { seonbiTypeInfo } from '../data/seonbiTypes'
 import { requestSeonbiAdvice } from '../features/judge/judgeApi'
 import type { JudgeResult } from '../features/judge/judgeTypes'
+import { loadTestResult } from '../lib/storage'
 
 const defaultResultMessage = '문장을 입력하면 선비의 한마디가 표시됩니다.'
 
 export function JudgePage() {
+  const [testResult] = useState(() => loadTestResult())
   const [text, setText] = useState('')
   const [result, setResult] = useState<JudgeResult | null>(null)
   const [message, setMessage] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const typeInfo = testResult ? seonbiTypeInfo[testResult.type] : null
+  const pageTitle = typeInfo ? `${typeInfo.name} 선비의 한마디` : '선비의 한마디'
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -27,7 +32,7 @@ export function JudgePage() {
     setIsLoading(true)
     setMessage('')
 
-    const response = await requestSeonbiAdvice(trimmedText)
+    const response = await requestSeonbiAdvice(trimmedText, testResult?.type)
 
     if (!response.ok || !response.result) {
       setResult(null)
@@ -48,8 +53,13 @@ export function JudgePage() {
       <section className="page-section page-container judge-page">
         <div className="section-heading center">
           <StatusBadge>선비의 한마디</StatusBadge>
-          <h1>선비의 한마디</h1>
+          <h1>{pageTitle}</h1>
           <p>오늘의 문장을 선비 말투의 유쾌한 조언으로 바꿔드립니다.</p>
+          {!typeInfo && (
+            <p className="disabled-notice" role="status">
+              선비유형 테스트 후 더 어울리는 한마디를 받을 수 있습니다.
+            </p>
+          )}
         </div>
         <div className="judge-grid">
           <div className="wisdom-visual" aria-hidden="true">
@@ -84,7 +94,7 @@ export function JudgePage() {
           </form>
         </div>
         <section className="surface-card judge-result" aria-label="결과 영역">
-          <h2>선비의 한마디</h2>
+          <h2>{pageTitle}</h2>
           <p>{result?.seonbiAdvice ?? defaultResultMessage}</p>
           <h3>현대어 해석</h3>
           <p>{result?.modernTranslation ?? defaultResultMessage}</p>

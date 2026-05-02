@@ -1,3 +1,5 @@
+import type { SeonbiType } from '../seonbi-test/types'
+
 export interface JudgeResult {
   seonbiAdvice: string
   modernTranslation: string
@@ -11,4 +13,9 @@ export interface JudgeResponse {
   result?: JudgeResult
   emptyReason?: JudgeEmptyReason
   message?: string
+}
+
+export interface JudgeRequestBody {
+  text: string
+  seonbiType?: SeonbiType
 }

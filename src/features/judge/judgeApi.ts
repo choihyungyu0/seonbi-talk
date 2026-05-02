@@ -1,13 +1,18 @@
-import type { JudgeResponse } from './judgeTypes'
+import type { SeonbiType } from '../seonbi-test/types'
+import type { JudgeRequestBody, JudgeResponse } from './judgeTypes'
 
-export async function requestSeonbiAdvice(text: string): Promise<JudgeResponse> {
+export async function requestSeonbiAdvice(
+  text: string,
+  seonbiType?: SeonbiType,
+): Promise<JudgeResponse> {
   try {
+    const requestBody: JudgeRequestBody = { text, seonbiType }
     const response = await fetch('/api/judge', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ text }),
+      body: JSON.stringify(requestBody),
     })
 
     const data = (await response.json().catch(() => ({}))) as JudgeResponse

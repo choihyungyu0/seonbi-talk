@@ -1,6 +1,7 @@
 /* global process */
 
 type JudgeEmptyReason = 'missing_api_key' | 'invalid_input' | 'api_error'
+type SeonbiType = 'toegye' | 'yulgok' | 'cheosa' | 'uguk'
 
 interface VercelRequestLike {
   method?: string
@@ -28,6 +29,7 @@ interface JudgeResult {
 
 interface JudgeRequestBody {
   text?: unknown
+  seonbiType?: unknown
 }
 
 interface OpenAiChatResponse {
@@ -41,6 +43,16 @@ interface OpenAiChatResponse {
 const openAiChatCompletionsUrl = 'https://api.openai.com/v1/chat/completions'
 const defaultModel = 'gpt-4o-mini'
 const maxInputLength = 600
+const seonbiTypePrompts: Record<SeonbiType, string> = {
+  toegye:
+    '사용자의 선비유형은 퇴계형이다. 학문, 원칙, 성찰, 내면 수양을 중시하는 말투와 가치관을 담아 답한다.',
+  yulgok:
+    '사용자의 선비유형은 율곡형이다. 현실 문제 해결, 실천, 시간 활용을 중시하는 말투와 가치관을 담아 답한다.',
+  cheosa:
+    '사용자의 선비유형은 처사형이다. 자연, 여유, 마음 비움, 쉼을 중시하는 말투와 가치관을 담아 답한다.',
+  uguk:
+    '사용자의 선비유형은 우국형이다. 정의감, 책임감, 행동, 공동체를 중시하는 말투와 가치관을 담아 답한다.',
+}
 
 export default async function handler(
   request: VercelRequestLike,
@@ -58,6 +70,7 @@ export default async function handler(
   }
 
   const inputText = getInputText(request.body)
+  const seonbiType = getSeonbiType(request.body)
   const validationMessage = validateInput(inputText)
   if (validationMessage) {
     response.status(400).json({
@@ -102,6 +115,7 @@ export default async function handler(
               '반드시 JSON 객체만 반환한다.',
               '필드는 seonbiAdvice, modernTranslation, shareText 세 개만 사용한다.',
               '각 필드는 한국어 문자열이어야 한다.',
+              getSeonbiTypePrompt(seonbiType),
             ].join(' '),
           },
           {
@@ -155,10 +169,19 @@ export default async function handler(
 }
 
 function getInputText(body: unknown) {
-  const parsedBody =
-    typeof body === 'string' ? parseJsonBody(body) : (body as JudgeRequestBody)
+  const parsedBody = parseRequestBody(body)
   const value = parsedBody?.text
   return typeof value === 'string' ? value.trim() : ''
+}
+
+function getSeonbiType(body: unknown): SeonbiType | undefined {
+  const parsedBody = parseRequestBody(body)
+  const value = parsedBody?.seonbiType
+  return isSeonbiType(value) ? value : undefined
+}
+
+function parseRequestBody(body: unknown): JudgeRequestBody {
+  return typeof body === 'string' ? parseJsonBody(body) : (body as JudgeRequestBody)
 }
 
 function parseJsonBody(body: string): JudgeRequestBody {
@@ -181,6 +204,19 @@ function validateInput(text: string) {
     return '외모비하, 혐오, 욕설이 포함된 문장은 조언으로 바꿀 수 없습니다.'
   }
   return undefined
+}
+
+function isSeonbiType(value: unknown): value is SeonbiType {
+  return (
+    value === 'toegye' ||
+    value === 'yulgok' ||
+    value === 'cheosa' ||
+    value === 'uguk'
+  )
+}
+
+function getSeonbiTypePrompt(seonbiType: SeonbiType | undefined) {
+  return seonbiType ? seonbiTypePrompts[seonbiType] : ''
 }
 
 function containsPersonalInfo(text: string) {
