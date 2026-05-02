@@ -8,6 +8,13 @@ const keywordsByType: Record<SeonbiType, string[]> = {
   uguk: ['역사', '문화유산', '기념', '교육', '의미', '장소'],
 }
 
+const contentTypeWeightsByType: Record<SeonbiType, Record<string, number>> = {
+  toegye: { '14': 3, '12': 2 },
+  yulgok: { '12': 2, '39': 2 },
+  cheosa: { '12': 2 },
+  uguk: { '14': 3, '12': 2 },
+}
+
 const recommendationLimit = 6
 
 export function recommendCourseForSeonbiType(
@@ -23,23 +30,40 @@ export function recommendCourseForSeonbiType(
   }
 
   const keywords = keywordsByType[seonbiType]
+  const contentTypeWeights = contentTypeWeightsByType[seonbiType]
   const scoredContents = contents
-    .map((content, index) => ({
-      content,
-      index,
-      score: scoreTourismContent(content, keywords),
-    }))
-    .sort((a, b) => b.score - a.score || a.index - b.index)
+    .map((content, index) => {
+      const keywordScore = scoreTourismContent(content, keywords)
+      const contentTypeScore = content.contentTypeId
+        ? contentTypeWeights[content.contentTypeId] ?? 0
+        : 0
+
+      return {
+        content,
+        index,
+        keywordScore,
+        contentTypeScore,
+        hasImage: Boolean(content.firstImage || content.firstImage2),
+        hasCoordinates: content.mapX !== undefined && content.mapY !== undefined,
+        hasAddress: Boolean(content.address),
+      }
+    })
+    .sort((a, b) => {
+      return (
+        b.keywordScore - a.keywordScore ||
+        b.contentTypeScore - a.contentTypeScore ||
+        Number(b.hasImage) - Number(a.hasImage) ||
+        Number(b.hasCoordinates) - Number(a.hasCoordinates) ||
+        Number(b.hasAddress) - Number(a.hasAddress) ||
+        a.index - b.index
+      )
+    })
 
   return {
     seonbiType,
     items: scoredContents
-      .filter((item) => item.score > 0)
       .slice(0, recommendationLimit)
       .map((item) => item.content),
-    reason: scoredContents.some((item) => item.score > 0)
-      ? undefined
-      : 'no_data',
   }
 }
 

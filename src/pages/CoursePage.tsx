@@ -80,7 +80,7 @@ export function CoursePage() {
     : null
   const typeInfo = testResult ? seonbiTypeInfo[testResult.type] : null
   const recommendedItems = recommendedCourse?.items ?? []
-  const shouldShowCards = tourismState.status === 'ready' && recommendedItems.length > 0
+  const shouldShowCards = tourismState.status === 'ready' && tourismState.contents.length > 0
   const shouldShowAllCards = tourismState.status === 'ready' && tourismState.contents.length > 0
 
   function selectTourismItem(item: TourismContent) {
@@ -135,14 +135,14 @@ export function CoursePage() {
             {tourismState.status === 'empty' && testResult && (
               <TourismEmptyState title="조건에 맞는 영주 관광 정보가 없습니다." />
             )}
-            {tourismState.status === 'ready' && recommendedItems.length === 0 && (
-              <TourismEmptyState title="조건에 맞는 영주 관광 정보가 없습니다." />
-            )}
             {shouldShowCards && (
               <section className="tourism-section-block">
                 <div className="tourism-section-heading">
                   <StatusBadge>추천 코스</StatusBadge>
                   <h2>내 선비유형에 맞는 영주 추천 코스</h2>
+                  <p>
+                    실제 영주 관광 공공데이터 중 유형 성향과 가까운 장소를 우선 추천합니다.
+                  </p>
                 </div>
                 {recommendedItems.map((item) => (
                   <TourismCard
