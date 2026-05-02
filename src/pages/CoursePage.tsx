@@ -4,6 +4,7 @@ import { StatusBadge } from '../components/common/StatusBadge'
 import { ProtectedFeaturePrompt } from '../components/common/ProtectedFeaturePrompt'
 import { TourismCard } from '../components/tourism/TourismCard'
 import { CourseMap } from '../components/tourism/CourseMap'
+import { TourismDetailPanel } from '../components/tourism/TourismDetailPanel'
 import { seonbiTypeInfo } from '../data/seonbiTypes'
 import {
   getYeongjuAccommodations,
@@ -11,12 +12,14 @@ import {
   getYeongjuRestaurants,
   getYeongjuTourismContents,
   getYeongjuTouristAttractions,
+  getTourismDetail,
 } from '../features/tourism/tourismApi'
 import { recommendCourseForSeonbiType } from '../features/tourism/recommendation'
 import type {
   TourismApiResponse,
   TourismContent,
   TourismDataStatus,
+  TourismDetail,
   TourismEmptyStateReason,
 } from '../features/tourism/tourismTypes'
 import { trackEvent } from '../features/analytics/trackEvent'
@@ -40,10 +43,22 @@ interface TourismPageState {
   message?: string
 }
 
+type TourismDetailStatus = 'idle' | 'loading' | 'ready' | 'error'
+
+interface TourismDetailState {
+  status: TourismDetailStatus
+  item?: TourismContent
+  detail?: TourismDetail
+  message?: string
+}
+
 export function CoursePage() {
   const testResult = useMemo(() => loadTestResult(), [])
   const [activeFilter, setActiveFilter] = useState<TourismFilterId>('all')
   const [selectedContentId, setSelectedContentId] = useState<string | undefined>()
+  const [detailState, setDetailState] = useState<TourismDetailState>({
+    status: 'idle',
+  })
   const [tourismState, setTourismState] = useState<TourismPageState>({
     status: testResult ? 'loading' : 'empty',
     contents: [],
@@ -58,6 +73,7 @@ export function CoursePage() {
     async function loadTourismContents() {
       setTourismState({ status: 'loading', contents: [] })
       setSelectedContentId(undefined)
+      setDetailState({ status: 'idle' })
       const response: TourismApiResponse = await getTourismResponse(activeFilter)
       if (ignore) return
 
@@ -97,11 +113,41 @@ export function CoursePage() {
 
   function selectTourismItem(item: TourismContent) {
     setSelectedContentId(getTourismItemKey(item))
+    void openTourismDetail(item)
     void trackEvent('tourism_card_clicked', {
       seonbiType: activeTestResult.type,
       contentId: item.contentId,
       contentTitle: item.title,
       contentTypeId: item.contentTypeId,
+    })
+  }
+
+  async function openTourismDetail(item: TourismContent) {
+    if (!item.contentId || !item.contentTypeId) {
+      setDetailState({
+        status: 'error',
+        item,
+        message: '상세 조회에 필요한 공공데이터 식별자가 없습니다.',
+      })
+      return
+    }
+
+    setDetailState({ status: 'loading', item })
+
+    const response = await getTourismDetail(item.contentId, item.contentTypeId)
+    if (response.status !== 'ready' || !response.detail) {
+      setDetailState({
+        status: 'error',
+        item,
+        message: response.message ?? '상세 정보를 불러오지 못했습니다.',
+      })
+      return
+    }
+
+    setDetailState({
+      status: 'ready',
+      item,
+      detail: response.detail,
     })
   }
 
@@ -189,10 +235,19 @@ export function CoursePage() {
               </section>
             )}
           </div>
-          <CourseMap
-            items={tourismState.contents}
-            selectedContentId={selectedContentId}
-          />
+          <div className="course-side-panel">
+            <CourseMap
+              items={tourismState.contents}
+              selectedContentId={selectedContentId}
+            />
+            <TourismDetailPanel
+              selectedItem={detailState.item}
+              detail={detailState.detail}
+              status={detailState.status}
+              message={detailState.message}
+              onClose={() => setDetailState({ status: 'idle' })}
+            />
+          </div>
         </div>
       </section>
     </AppLayout>

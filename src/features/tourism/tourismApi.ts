@@ -1,6 +1,7 @@
 import type {
   TourismApiResponse,
   TourismContent,
+  TourismDetailResponse,
   TourismQueryParams,
 } from './tourismTypes'
 
@@ -56,6 +57,47 @@ export async function searchYeongjuTourismByKeyword(
   return requestTourismProxy({ type: 'keyword', keyword: query })
 }
 
+export async function getTourismDetail(
+  contentId: string,
+  contentTypeId: string,
+): Promise<TourismDetailResponse> {
+  const [commonResponse, introResponse, imageResponse] = await Promise.all([
+    requestTourismProxy({ type: 'detailCommon', contentId }),
+    requestTourismProxy({ type: 'detailIntro', contentId, contentTypeId }),
+    requestTourismProxy({ type: 'detailImage', contentId }),
+  ])
+
+  if (commonResponse.status === 'error' || introResponse.status === 'error') {
+    return {
+      status: 'error',
+      reason: 'api_error',
+      message: '상세 정보를 불러오는 중 문제가 발생했습니다.',
+    }
+  }
+
+  const commonItem = commonResponse.contents[0]
+  const introItem = introResponse.contents[0]
+
+  if (!commonItem && !introItem) {
+    return {
+      status: 'empty',
+      reason: 'no_data',
+      message: '상세 정보가 없습니다.',
+    }
+  }
+
+  return {
+    status: 'ready',
+    detail: {
+      item: {
+        ...commonItem,
+        ...introItem,
+      },
+      images: imageResponse.status === 'ready' ? imageResponse.contents : [],
+    },
+  }
+}
+
 export function normalizeTourismItem(raw: TourismContent): TourismContent {
   return {
     contentId: raw.contentId,
@@ -68,6 +110,14 @@ export function normalizeTourismItem(raw: TourismContent): TourismContent {
     firstImage2: raw.firstImage2,
     tel: raw.tel,
     overview: raw.overview,
+    homepage: raw.homepage,
+    operatingHours: raw.operatingHours,
+    restDate: raw.restDate,
+    useFee: raw.useFee,
+    parking: raw.parking,
+    originImage: raw.originImage,
+    smallImage: raw.smallImage,
+    imageName: raw.imageName,
     areaCode: raw.areaCode,
     sigunguCode: raw.sigunguCode,
     category: raw.category,
@@ -85,13 +135,14 @@ function createYeongjuAreaBasedParams(contentTypeId?: string) {
 }
 
 async function requestTourismProxy(
-  params: TourismQueryParams & { type: 'areaBased' | 'keyword' },
+  params: TourismQueryParams,
 ): Promise<TourismApiResponse> {
   const url = new URL('/api/tourism', window.location.origin)
-  url.searchParams.set('type', params.type)
+  url.searchParams.set('type', params.type ?? 'areaBased')
   if (params.keyword) url.searchParams.set('keyword', params.keyword)
   if (params.areaCode) url.searchParams.set('areaCode', params.areaCode)
   if (params.sigunguCode) url.searchParams.set('sigunguCode', params.sigunguCode)
+  if (params.contentId) url.searchParams.set('contentId', params.contentId)
   if (params.contentTypeId) {
     url.searchParams.set('contentTypeId', params.contentTypeId)
   }

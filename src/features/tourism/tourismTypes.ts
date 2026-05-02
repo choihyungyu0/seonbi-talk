@@ -37,6 +37,14 @@ export interface TourismContent {
   firstImage2?: string
   tel?: string
   overview?: string
+  homepage?: string
+  operatingHours?: string
+  restDate?: string
+  useFee?: string
+  parking?: string
+  originImage?: string
+  smallImage?: string
+  imageName?: string
   areaCode?: string
   sigunguCode?: string
   category?: string
@@ -51,13 +59,33 @@ export interface TourismApiResponse {
 }
 
 export interface TourismQueryParams {
-  type?: 'areaCode' | 'sigunguCode' | 'keyword' | 'areaBased'
+  type?:
+    | 'areaCode'
+    | 'sigunguCode'
+    | 'keyword'
+    | 'areaBased'
+    | 'detailCommon'
+    | 'detailIntro'
+    | 'detailImage'
   keyword?: string
   areaCode?: string
   sigunguCode?: string
+  contentId?: string
   contentTypeId?: string
   pageNo?: number
   numOfRows?: number
+}
+
+export interface TourismDetail {
+  item: TourismContent
+  images: TourismContent[]
+}
+
+export interface TourismDetailResponse {
+  detail?: TourismDetail
+  status: TourismDataStatus
+  reason?: TourismEmptyStateReason
+  message?: string
 }
 
 export interface RecommendedCourse {

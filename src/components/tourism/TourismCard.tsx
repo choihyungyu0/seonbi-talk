@@ -48,7 +48,7 @@ export function TourismCard({ item, selected = false, onSelect }: TourismCardPro
             <dd>{item.mapX !== undefined && item.mapY !== undefined ? '좌표 정보 있음' : '좌표 정보 없음'}</dd>
           </div>
         </dl>
-        <p>운영시간, 요금, 주차 정보는 별도 상세 API 연동 후 표시 예정입니다.</p>
+        <p>카드를 선택하면 운영시간, 요금, 주차 정보를 확인할 수 있습니다.</p>
       </div>
     </article>
   )

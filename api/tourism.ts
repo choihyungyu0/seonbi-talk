@@ -1,7 +1,14 @@
 /* global process */
 import type { TourismContent } from '../src/features/tourism/tourismTypes'
 
-type TourismProxyType = 'areaCode' | 'sigunguCode' | 'areaBased' | 'keyword'
+type TourismProxyType =
+  | 'areaCode'
+  | 'sigunguCode'
+  | 'areaBased'
+  | 'keyword'
+  | 'detailCommon'
+  | 'detailIntro'
+  | 'detailImage'
 type TourismEmptyReason = 'missing_api_key' | 'no_data' | 'api_error'
 
 interface VercelRequestLike {
@@ -11,6 +18,7 @@ interface VercelRequestLike {
     areaCode?: string | string[]
     sigunguCode?: string | string[]
     keyword?: string | string[]
+    contentId?: string | string[]
     contentTypeId?: string | string[]
     pageNo?: string | string[]
     numOfRows?: string | string[]
@@ -54,6 +62,25 @@ interface RawTourismItem {
   firstimage2?: string
   tel?: string
   overview?: string
+  homepage?: string
+  usetime?: string
+  usetimeculture?: string
+  opentime?: string
+  restdate?: string
+  restdateculture?: string
+  restdatefood?: string
+  restdateshopping?: string
+  usefee?: string
+  usefeeleports?: string
+  usefeeparking?: string
+  parking?: string
+  parkingculture?: string
+  parkingfood?: string
+  parkingleports?: string
+  parkingshopping?: string
+  originimgurl?: string
+  smallimageurl?: string
+  imgname?: string
   areacode?: string
   sigungucode?: string
   cat1?: string
@@ -179,6 +206,7 @@ function buildTourApiUrl(
   const areaCode = getQueryValue(query.areaCode)
   const sigunguCode = getQueryValue(query.sigunguCode)
   const keyword = getQueryValue(query.keyword) || yeongjuKeyword
+  const contentId = getQueryValue(query.contentId)
   const contentTypeId = getQueryValue(query.contentTypeId)
   const pageNo = getQueryValue(query.pageNo) || '1'
   const numOfRows = getQueryValue(query.numOfRows) || defaultNumOfRows
@@ -189,6 +217,33 @@ function buildTourApiUrl(
   url.searchParams.set('serviceKey', serviceKey)
   url.searchParams.set('numOfRows', numOfRows)
   url.searchParams.set('pageNo', pageNo)
+
+  if (isDetailProxyType(proxyType)) {
+    if (!contentId) throw new Error('contentId is required for detail type')
+    url.searchParams.set('contentId', contentId)
+
+    if (proxyType === 'detailCommon') {
+      url.searchParams.set('defaultYN', 'Y')
+      url.searchParams.set('firstImageYN', 'Y')
+      url.searchParams.set('areacodeYN', 'Y')
+      url.searchParams.set('catcodeYN', 'Y')
+      url.searchParams.set('addrinfoYN', 'Y')
+      url.searchParams.set('mapinfoYN', 'Y')
+      url.searchParams.set('overviewYN', 'Y')
+    }
+
+    if (proxyType === 'detailIntro') {
+      if (!contentTypeId) throw new Error('contentTypeId is required for detailIntro')
+      url.searchParams.set('contentTypeId', contentTypeId)
+    }
+
+    if (proxyType === 'detailImage') {
+      url.searchParams.set('imageYN', 'Y')
+      url.searchParams.set('subImageYN', 'Y')
+    }
+
+    return { url, proxyType }
+  }
 
   if (proxyType === 'sigunguCode') {
     if (!areaCode) throw new Error('areaCode is required for sigunguCode')
@@ -220,7 +275,10 @@ function normalizeProxyType(type: string | undefined): TourismProxyType {
     type === 'areaCode' ||
     type === 'sigunguCode' ||
     type === 'keyword' ||
-    type === 'areaBased'
+    type === 'areaBased' ||
+    type === 'detailCommon' ||
+    type === 'detailIntro' ||
+    type === 'detailImage'
   ) {
     return type
   }
@@ -231,7 +289,18 @@ function normalizeProxyType(type: string | undefined): TourismProxyType {
 function getEndpointPath(type: TourismProxyType) {
   if (type === 'areaCode' || type === 'sigunguCode') return 'areaCode2'
   if (type === 'keyword') return 'searchKeyword2'
+  if (type === 'detailCommon') return 'detailCommon2'
+  if (type === 'detailIntro') return 'detailIntro2'
+  if (type === 'detailImage') return 'detailImage2'
   return 'areaBasedList2'
+}
+
+function isDetailProxyType(type: TourismProxyType) {
+  return (
+    type === 'detailCommon' ||
+    type === 'detailIntro' ||
+    type === 'detailImage'
+  )
 }
 
 function normalizeBaseUrl(baseUrl: string) {
@@ -265,6 +334,23 @@ function normalizeTourismItem(
     firstImage2: raw.firstimage2,
     tel: raw.tel,
     overview: raw.overview,
+    homepage: raw.homepage,
+    operatingHours: raw.usetime ?? raw.usetimeculture ?? raw.opentime,
+    restDate:
+      raw.restdate ??
+      raw.restdateculture ??
+      raw.restdatefood ??
+      raw.restdateshopping,
+    useFee: raw.usefee ?? raw.usefeeleports ?? raw.usefeeparking,
+    parking:
+      raw.parking ??
+      raw.parkingculture ??
+      raw.parkingfood ??
+      raw.parkingleports ??
+      raw.parkingshopping,
+    originImage: raw.originimgurl,
+    smallImage: raw.smallimageurl,
+    imageName: raw.imgname,
     areaCode: raw.areacode ?? (proxyType === 'areaCode' ? code : undefined),
     sigunguCode:
       raw.sigungucode ?? (proxyType === 'sigunguCode' ? code : undefined),
