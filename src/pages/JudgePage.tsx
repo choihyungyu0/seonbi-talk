@@ -8,32 +8,42 @@ import { seonbiTypeInfo } from '../data/seonbiTypes'
 import { trackEvent } from '../features/analytics/trackEvent'
 import { requestSeonbiAdvice } from '../features/judge/judgeApi'
 import type { JudgeResult } from '../features/judge/judgeTypes'
+import type { SeonbiTypeInfo, TestResult } from '../features/seonbi-test/types'
 import { loadTestResult } from '../lib/storage'
 
 const defaultResultMessage = '문장을 입력하면 선비의 한마디가 표시됩니다.'
 
 export function JudgePage() {
-  const [testResult] = useState(() => loadTestResult())
-  const [text, setText] = useState('')
-  const [result, setResult] = useState<JudgeResult | null>(null)
-  const [message, setMessage] = useState('')
-  const [shareMessage, setShareMessage] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
+  const testResult = loadTestResult()
   const typeInfo = testResult ? seonbiTypeInfo[testResult.type] : null
-  const pageTitle = typeInfo ? `${typeInfo.name} 선비의 한마디` : '선비의 한마디'
-  const canShareResult = Boolean(result)
-  const canUseWebShare = typeof navigator.share === 'function'
 
   if (!testResult || !typeInfo) {
     return (
       <AppLayout>
         <section className="page-section page-container judge-page">
-          <ProtectedFeaturePrompt />
+          <ProtectedFeaturePrompt description="테스트 결과에 따라 선비의 한마디가 달라집니다." />
         </section>
       </AppLayout>
     )
   }
-  const activeTestResult = testResult
+
+  return <JudgePageContent testResult={testResult} typeInfo={typeInfo} />
+}
+
+interface JudgePageContentProps {
+  testResult: TestResult
+  typeInfo: SeonbiTypeInfo
+}
+
+function JudgePageContent({ testResult, typeInfo }: JudgePageContentProps) {
+  const [text, setText] = useState('')
+  const [result, setResult] = useState<JudgeResult | null>(null)
+  const [message, setMessage] = useState('')
+  const [shareMessage, setShareMessage] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+  const pageTitle = typeInfo ? `${typeInfo.name} 선비의 한마디` : '선비의 한마디'
+  const canShareResult = Boolean(result)
+  const canUseWebShare = typeof navigator.share === 'function'
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -49,7 +59,7 @@ export function JudgePage() {
     setMessage('')
     setShareMessage('')
 
-    const response = await requestSeonbiAdvice(trimmedText, activeTestResult.type)
+    const response = await requestSeonbiAdvice(trimmedText, testResult.type)
 
     if (!response.ok || !response.result) {
       setResult(null)
@@ -63,7 +73,7 @@ export function JudgePage() {
 
     setResult(response.result)
     void trackEvent('judge_used', {
-      seonbiType: activeTestResult.type,
+      seonbiType: testResult.type,
       metadata: {
         hasSeonbiType: true,
       },
@@ -75,7 +85,7 @@ export function JudgePage() {
     if (!result) return
 
     void trackEvent('judge_share_clicked', {
-      seonbiType: activeTestResult.type,
+      seonbiType: testResult.type,
       metadata: {
         method: 'copy',
       },
@@ -93,7 +103,7 @@ export function JudgePage() {
     if (!result || !canUseWebShare) return
 
     void trackEvent('judge_share_clicked', {
-      seonbiType: activeTestResult.type,
+      seonbiType: testResult.type,
       metadata: {
         method: 'web_share',
       },
