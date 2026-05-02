@@ -33,7 +33,7 @@ export function TourismCard({ item, selected = false, onSelect }: TourismCardPro
         <dl className="tourism-detail-list">
           <div>
             <dt>유형</dt>
-            <dd>{item.contentTypeId ?? '콘텐츠 유형 정보 없음'}</dd>
+            <dd>{getContentTypeLabel(item.contentTypeId)}</dd>
           </div>
           <div>
             <dt>주소</dt>
@@ -52,4 +52,12 @@ export function TourismCard({ item, selected = false, onSelect }: TourismCardPro
       </div>
     </article>
   )
+}
+
+function getContentTypeLabel(contentTypeId: string | undefined) {
+  if (contentTypeId === '12') return '관광지'
+  if (contentTypeId === '14') return '문화시설'
+  if (contentTypeId === '32') return '숙박'
+  if (contentTypeId === '39') return '음식점'
+  return '콘텐츠 유형 정보 없음'
 }

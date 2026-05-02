@@ -7,7 +7,20 @@ import type {
 
 const yeongjuKeyword = '영주'
 const yeongjuAreaCode = '35'
-const yeongjuSigunguCode = '12'
+// TourAPI areaCode2 기준: 경상북도(areaCode=35) 영주시 sigunguCode=14.
+const yeongjuSigunguCode = '14'
+const yeongjuAddressKeywords = ['영주시', 'Yeongju']
+const yeongjuTitleKeywords = [
+  '영주',
+  '소수서원',
+  '부석사',
+  '무섬마을',
+  '선비세상',
+  '선비촌',
+  '풍기',
+  '소백산',
+  '죽령',
+]
 const tourismContentTypes = {
   attraction: '12',
   culture: '14',
@@ -225,7 +238,10 @@ async function requestTourismProxy(
   try {
     const response = await fetch(url)
     const data = (await response.json()) as TourismProxyResponse
-    const contents = (data.items ?? []).map(normalizeTourismItem)
+    const normalizedContents = (data.items ?? []).map(normalizeTourismItem)
+    const contents = shouldFilterYeongjuContents(params.type)
+      ? normalizedContents.filter(isYeongjuTourismContent)
+      : normalizedContents
 
     if (data.emptyReason === 'missing_api_key') {
       return {
@@ -259,4 +275,26 @@ async function requestTourismProxy(
       message: '공공데이터를 불러오는 중 문제가 발생했습니다.',
     }
   }
+}
+
+function shouldFilterYeongjuContents(type: TourismQueryParams['type']) {
+  return type === 'areaBased' || type === 'keyword' || type === undefined
+}
+
+function isYeongjuTourismContent(content: TourismContent) {
+  const address = content.address ?? ''
+  if (address) {
+    return yeongjuAddressKeywords.some((keyword) => address.includes(keyword))
+  }
+
+  const searchableText = [
+    content.title,
+    content.name,
+    content.category,
+    content.overview,
+  ]
+    .filter(Boolean)
+    .join(' ')
+
+  return yeongjuTitleKeywords.some((keyword) => searchableText.includes(keyword))
 }
