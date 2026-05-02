@@ -3,10 +3,12 @@ import type { RecommendedCourse, TourismContent } from './tourismTypes'
 
 const keywordsByType: Record<SeonbiType, string[]> = {
   toegye: ['서원', '문화유산', '학문', '전통', '조용한'],
-  yulgok: ['체험', '시장', '실용', '도시', '가족'],
+  yulgok: ['체험', '시장', '실용', '가족', '도시'],
   cheosa: ['자연', '산책', '마을', '강', '산', '숲'],
-  uguk: ['역사', '문화유산', '기념', '교육', '의미'],
+  uguk: ['역사', '문화유산', '기념', '교육', '의미', '장소'],
 }
+
+const recommendationLimit = 6
 
 export function recommendCourseForSeonbiType(
   seonbiType: SeonbiType,
@@ -33,6 +35,7 @@ export function recommendCourseForSeonbiType(
     seonbiType,
     items: scoredContents
       .filter((item) => item.score > 0)
+      .slice(0, recommendationLimit)
       .map((item) => item.content),
     reason: scoredContents.some((item) => item.score > 0)
       ? undefined

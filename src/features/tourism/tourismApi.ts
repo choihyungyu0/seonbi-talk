@@ -5,6 +5,14 @@ import type {
 } from './tourismTypes'
 
 const yeongjuKeyword = '영주'
+const yeongjuAreaCode = '35'
+const yeongjuSigunguCode = '12'
+const tourismContentTypes = {
+  attraction: '12',
+  culture: '14',
+  accommodation: '32',
+  restaurant: '39',
+} as const
 
 interface TourismProxyResponse {
   ok: boolean
@@ -14,7 +22,31 @@ interface TourismProxyResponse {
 }
 
 export async function getYeongjuTourismContents(): Promise<TourismApiResponse> {
-  return requestTourismProxy({ type: 'areaBased' })
+  return requestTourismProxy(createYeongjuAreaBasedParams())
+}
+
+export async function getYeongjuTouristAttractions(): Promise<TourismApiResponse> {
+  return requestTourismProxy(
+    createYeongjuAreaBasedParams(tourismContentTypes.attraction),
+  )
+}
+
+export async function getYeongjuCultureFacilities(): Promise<TourismApiResponse> {
+  return requestTourismProxy(
+    createYeongjuAreaBasedParams(tourismContentTypes.culture),
+  )
+}
+
+export async function getYeongjuAccommodations(): Promise<TourismApiResponse> {
+  return requestTourismProxy(
+    createYeongjuAreaBasedParams(tourismContentTypes.accommodation),
+  )
+}
+
+export async function getYeongjuRestaurants(): Promise<TourismApiResponse> {
+  return requestTourismProxy(
+    createYeongjuAreaBasedParams(tourismContentTypes.restaurant),
+  )
 }
 
 export async function searchYeongjuTourismByKeyword(
@@ -40,6 +72,15 @@ export function normalizeTourismItem(raw: TourismContent): TourismContent {
     sigunguCode: raw.sigunguCode,
     category: raw.category,
     source: raw.source,
+  }
+}
+
+function createYeongjuAreaBasedParams(contentTypeId?: string) {
+  return {
+    type: 'areaBased' as const,
+    areaCode: yeongjuAreaCode,
+    sigunguCode: yeongjuSigunguCode,
+    contentTypeId,
   }
 }
 

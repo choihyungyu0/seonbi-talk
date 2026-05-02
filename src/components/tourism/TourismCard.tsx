@@ -19,12 +19,20 @@ export function TourismCard({ item }: TourismCardProps) {
         <h3>{item.title ?? '관광지 정보는 실제 공공데이터 연동 후 표시됩니다.'}</h3>
         <dl className="tourism-detail-list">
           <div>
+            <dt>유형</dt>
+            <dd>{item.contentTypeId ?? '콘텐츠 유형 정보 없음'}</dd>
+          </div>
+          <div>
             <dt>주소</dt>
             <dd>{item.address ?? '주소 정보 없음'}</dd>
           </div>
           <div>
             <dt>전화번호</dt>
             <dd>{item.tel ?? '전화번호 정보 없음'}</dd>
+          </div>
+          <div>
+            <dt>좌표</dt>
+            <dd>{item.mapX !== undefined && item.mapY !== undefined ? '좌표 정보 있음' : '좌표 정보 없음'}</dd>
           </div>
         </dl>
         <p>운영시간, 요금, 주차 정보는 별도 상세 API 연동 후 표시 예정입니다.</p>

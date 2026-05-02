@@ -1,9 +1,16 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
 import { StatusBadge } from '../components/common/StatusBadge'
 import { TourismCard } from '../components/tourism/TourismCard'
 import { seonbiTypeInfo } from '../data/seonbiTypes'
-import { getYeongjuTourismContents } from '../features/tourism/tourismApi'
+import {
+  getYeongjuAccommodations,
+  getYeongjuCultureFacilities,
+  getYeongjuRestaurants,
+  getYeongjuTourismContents,
+  getYeongjuTouristAttractions,
+} from '../features/tourism/tourismApi'
 import { recommendCourseForSeonbiType } from '../features/tourism/recommendation'
 import type {
   TourismApiResponse,
@@ -14,6 +21,15 @@ import type {
 import { loadTestResult } from '../lib/storage'
 
 const yeongjuKeywords = ['소수서원', '선비세상', '무섬마을', '부석사', '풍기인삼']
+const tourismFilters = [
+  { id: 'all', label: '전체', contentTypeId: undefined },
+  { id: 'attraction', label: '관광지', contentTypeId: '12' },
+  { id: 'culture', label: '문화시설', contentTypeId: '14' },
+  { id: 'accommodation', label: '숙박', contentTypeId: '32' },
+  { id: 'restaurant', label: '음식점', contentTypeId: '39' },
+] as const
+
+type TourismFilterId = (typeof tourismFilters)[number]['id']
 
 interface TourismPageState {
   status: TourismDataStatus
@@ -24,6 +40,7 @@ interface TourismPageState {
 
 export function CoursePage() {
   const testResult = useMemo(() => loadTestResult(), [])
+  const [activeFilter, setActiveFilter] = useState<TourismFilterId>('all')
   const [tourismState, setTourismState] = useState<TourismPageState>({
     status: testResult ? 'loading' : 'empty',
     contents: [],
@@ -37,7 +54,7 @@ export function CoursePage() {
 
     async function loadTourismContents() {
       setTourismState({ status: 'loading', contents: [] })
-      const response: TourismApiResponse = await getYeongjuTourismContents()
+      const response: TourismApiResponse = await getTourismResponse(activeFilter)
       if (ignore) return
 
       setTourismState({
@@ -53,7 +70,7 @@ export function CoursePage() {
     return () => {
       ignore = true
     }
-  }, [testResult])
+  }, [activeFilter, testResult])
 
   const recommendedCourse = testResult
     ? recommendCourseForSeonbiType(testResult.type, tourismState.contents)
@@ -61,6 +78,7 @@ export function CoursePage() {
   const typeInfo = testResult ? seonbiTypeInfo[testResult.type] : null
   const recommendedItems = recommendedCourse?.items ?? []
   const shouldShowCards = tourismState.status === 'ready' && recommendedItems.length > 0
+  const shouldShowAllCards = tourismState.status === 'ready' && tourismState.contents.length > 0
 
   return (
     <AppLayout>
@@ -75,6 +93,18 @@ export function CoursePage() {
           </p>
         </div>
 
+        {!testResult && (
+          <article className="surface-card empty-result-card course-empty-result">
+            <h2>아직 선비유형 테스트 결과가 없습니다.</h2>
+            <p>
+              테스트를 먼저 진행하면 유형에 맞는 영주 코스를 추천받을 수 있습니다.
+            </p>
+            <Link className="common-button common-button--primary" to="/test">
+              선비유형 테스트 시작하기
+            </Link>
+          </article>
+        )}
+
         <div className="keyword-list course-keywords" aria-label="영주 대표 키워드">
           {yeongjuKeywords.map((keyword) => (
             <span key={keyword}>{keyword}</span>
@@ -84,13 +114,7 @@ export function CoursePage() {
         <div className="course-layout">
           <div className="tourism-list">
             {tourismState.status === 'loading' && (
-              <TourismEmptyState title="공공데이터를 조회하고 있습니다." />
-            )}
-            {!testResult && (
-              <TourismEmptyState
-                title="선비유형 테스트 결과가 필요합니다."
-                description="테스트를 먼저 진행하면 유형에 맞는 추천 코스 영역을 확인할 수 있습니다."
-              />
+              <TourismEmptyState title="영주 관광 공공데이터를 불러오고 있습니다." />
             )}
             {tourismState.status === 'missing-api-key' && (
               <TourismEmptyState title="공공데이터 서비스키 설정 후 관광 정보를 불러올 수 있습니다." />
@@ -102,18 +126,45 @@ export function CoursePage() {
               />
             )}
             {tourismState.status === 'empty' && testResult && (
-              <TourismEmptyState title="공공데이터 조회 결과가 없습니다." />
+              <TourismEmptyState title="조건에 맞는 영주 관광 정보가 없습니다." />
             )}
             {tourismState.status === 'ready' && recommendedItems.length === 0 && (
               <TourismEmptyState title="조건에 맞는 영주 관광 정보가 없습니다." />
             )}
-            {shouldShowCards &&
-              recommendedItems.map((item) => (
-                <TourismCard
-                  key={item.contentId ?? `${item.title}-${item.mapX}-${item.mapY}`}
-                  item={item}
-                />
-              ))}
+            {shouldShowCards && (
+              <section className="tourism-section-block">
+                <div className="tourism-section-heading">
+                  <StatusBadge>추천 코스</StatusBadge>
+                  <h2>내 선비유형에 맞는 영주 추천 코스</h2>
+                </div>
+                {recommendedItems.map((item) => (
+                  <TourismCard key={getTourismItemKey(item)} item={item} />
+                ))}
+              </section>
+            )}
+            {shouldShowAllCards && (
+              <section className="tourism-section-block">
+                <div className="tourism-section-heading">
+                  <StatusBadge tone="brown">공공데이터</StatusBadge>
+                  <h2>전체 영주 관광 데이터 보기</h2>
+                </div>
+                <div className="filter-tabs" aria-label="관광 데이터 필터">
+                  {tourismFilters.map((filter) => (
+                    <button
+                      key={filter.id}
+                      type="button"
+                      className={activeFilter === filter.id ? 'active' : ''}
+                      onClick={() => setActiveFilter(filter.id)}
+                    >
+                      {filter.label}
+                    </button>
+                  ))}
+                </div>
+                {tourismState.contents.map((item) => (
+                  <TourismCard key={getTourismItemKey(item)} item={item} />
+                ))}
+              </section>
+            )}
           </div>
           <aside className="surface-card map-panel">
             <div className="map-panel-header">
@@ -129,6 +180,18 @@ export function CoursePage() {
       </section>
     </AppLayout>
   )
+}
+
+function getTourismResponse(filterId: TourismFilterId) {
+  if (filterId === 'attraction') return getYeongjuTouristAttractions()
+  if (filterId === 'culture') return getYeongjuCultureFacilities()
+  if (filterId === 'accommodation') return getYeongjuAccommodations()
+  if (filterId === 'restaurant') return getYeongjuRestaurants()
+  return getYeongjuTourismContents()
+}
+
+function getTourismItemKey(item: TourismContent) {
+  return item.contentId ?? `${item.title}-${item.mapX}-${item.mapY}`
 }
 
 interface TourismEmptyStateProps {

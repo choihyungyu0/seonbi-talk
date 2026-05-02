@@ -692,6 +692,56 @@ a {
   gap: 16px;
 }
 
+.tourism-section-block {
+  display: grid;
+  gap: 16px;
+}
+
+.tourism-section-block + .tourism-section-block {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+
+.tourism-section-heading {
+  display: grid;
+  gap: 10px;
+}
+
+.tourism-section-heading h2 {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: clamp(26px, 4vw, 38px);
+  line-height: 1.2;
+}
+
+.filter-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.filter-tabs button {
+  min-height: 38px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  padding: 0 14px;
+  color: var(--ink-soft);
+  background: var(--surface);
+  cursor: pointer;
+}
+
+.filter-tabs button.active {
+  border-color: var(--forest);
+  color: #fff;
+  background: var(--forest);
+}
+
+.course-empty-result {
+  margin-bottom: 28px;
+}
+
 .tourism-card {
   display: grid;
   grid-template-columns: 180px 1fr;
