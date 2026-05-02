@@ -564,6 +564,66 @@ a {
   font-size: 14px;
 }
 
+.tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 22px;
+}
+
+.tag-list span {
+  border-radius: 999px;
+  padding: 7px 11px;
+  color: var(--forest);
+  background: rgba(200, 234, 216, 0.6);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.score-table {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.score-table span {
+  border-radius: 12px;
+  padding: 10px 8px;
+  color: var(--ink-soft);
+  background: var(--surface-muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.empty-result-card {
+  display: grid;
+  gap: 16px;
+  justify-items: center;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 48px 28px;
+  text-align: center;
+}
+
+.empty-result-card h1 {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: clamp(30px, 5vw, 48px);
+  line-height: 1.18;
+}
+
+.empty-result-card p,
+.result-notice {
+  margin: 0;
+}
+
+.result-notice {
+  max-width: 520px;
+  margin: 20px auto 0;
+}
+
 .course-layout {
   grid-template-columns: minmax(0, 1fr) minmax(360px, 0.9fr);
   align-items: start;
@@ -992,5 +1052,9 @@ a {
 
   .page-actions.spread .common-button {
     flex: 1 1 auto;
+  }
+
+  .score-table {
+    grid-template-columns: repeat(2, 1fr);
   }
 }

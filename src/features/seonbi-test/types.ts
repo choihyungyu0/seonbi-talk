@@ -1,17 +1,37 @@
+export const seonbiTypes = ['toegye', 'yulgok', 'cheosa', 'uguk'] as const
+
 export const seonbiTypeNames = ['퇴계형', '율곡형', '처사형', '우국형'] as const
+
+export type SeonbiType = (typeof seonbiTypes)[number]
 
 export type SeonbiTypeName = (typeof seonbiTypeNames)[number]
 
-export interface SeonbiTypeResult {
-  name: SeonbiTypeName
-  summary: string
-  travelStyle: string
+export type ScoreTable = Record<SeonbiType, number>
+
+export interface AnswerOption {
+  id: string
+  label: string
+  scores: Partial<ScoreTable>
 }
 
-export interface TestQuestion {
+export interface Question {
   id: string
-  step: number
-  total: number
   prompt: string
-  options: [string, string]
+  options: AnswerOption[]
+}
+
+export interface TestResult {
+  type: SeonbiType
+  scores: ScoreTable
+  completedAt: string
+}
+
+export interface SeonbiTypeInfo {
+  id: SeonbiType
+  name: SeonbiTypeName
+  title: string
+  description: string
+  tags: string[]
+  travelStyle: string
+  recommendedKeywords: string[]
 }

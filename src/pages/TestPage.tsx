@@ -1,28 +1,60 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { CommonButton } from '../components/common/CommonButton'
 import { StatusBadge } from '../components/common/StatusBadge'
 import { AppLayout } from '../components/layout/AppLayout'
-import type { TestQuestion } from '../features/seonbi-test/types'
+import { seonbiQuestions } from '../features/seonbi-test/questions'
+import { calculateTestResult } from '../features/seonbi-test/scoring'
+import type { AnswerOption } from '../features/seonbi-test/types'
+import { saveTestResult } from '../lib/storage'
 
-const question: TestQuestion = {
-  id: 'q-04',
-  step: 4,
-  total: 12,
-  prompt: '여행 중 더 편안하게 느끼는 순간은 언제인가요?',
-  options: ['조용히 사색하며 걷는 시간', '해야 할 일을 차근히 정리하는 시간'],
-}
+const optionLabels = ['A', 'B', 'C', 'D']
 
 export function TestPage() {
-  const [selected, setSelected] = useState('')
-  const progress = (question.step / question.total) * 100
+  const navigate = useNavigate()
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const [answers, setAnswers] = useState<Record<string, AnswerOption>>({})
+  const question = seonbiQuestions[currentIndex]
+  const selectedAnswer = answers[question.id]
+  const currentStep = currentIndex + 1
+  const isLastQuestion = currentStep === seonbiQuestions.length
+  const progress = (currentStep / seonbiQuestions.length) * 100
+
+  function selectAnswer(answer: AnswerOption) {
+    setAnswers((current) => ({
+      ...current,
+      [question.id]: answer,
+    }))
+  }
+
+  function goPrevious() {
+    setCurrentIndex((index) => Math.max(index - 1, 0))
+  }
+
+  function goNext() {
+    if (!selectedAnswer) return
+    if (!isLastQuestion) {
+      setCurrentIndex((index) => Math.min(index + 1, seonbiQuestions.length - 1))
+      return
+    }
+
+    const orderedAnswers = seonbiQuestions
+      .map((item) => answers[item.id])
+      .filter((answer): answer is AnswerOption => Boolean(answer))
+
+    if (orderedAnswers.length !== seonbiQuestions.length) return
+
+    const result = calculateTestResult(orderedAnswers)
+    saveTestResult(result)
+    navigate('/result')
+  }
 
   return (
     <AppLayout>
       <section className="page-section page-container test-page">
         <div className="progress-row">
           <span>
-            {question.step} / {question.total} 문항
+            {currentStep} / {seonbiQuestions.length} 문항
           </span>
           <strong>{Math.round(progress)}% 완료</strong>
         </div>
@@ -37,24 +69,29 @@ export function TestPage() {
             {question.options.map((option, index) => (
               <button
                 type="button"
-                className={selected === option ? 'choice active' : 'choice'}
-                key={option}
-                onClick={() => setSelected(option)}
+                className={selectedAnswer?.id === option.id ? 'choice active' : 'choice'}
+                key={option.id}
+                onClick={() => selectAnswer(option)}
               >
-                <span>{index === 0 ? 'A' : 'B'}</span>
-                {option}
+                <span>{optionLabels[index]}</span>
+                {option.label}
               </button>
             ))}
           </div>
         </article>
 
         <div className="page-actions spread">
-          <CommonButton type="button" variant="secondary">
+          <CommonButton
+            type="button"
+            variant="secondary"
+            disabled={currentIndex === 0}
+            onClick={goPrevious}
+          >
             이전
           </CommonButton>
-          <Link className="common-button common-button--primary" to="/result">
-            다음
-          </Link>
+          <CommonButton type="button" disabled={!selectedAnswer} onClick={goNext}>
+            {isLastQuestion ? '결과 보기' : '다음'}
+          </CommonButton>
         </div>
       </section>
     </AppLayout>

@@ -1,19 +1,30 @@
 import { Link } from 'react-router-dom'
-import { AuthRequiredModal } from '../components/auth/AuthRequiredModal'
 import { CommonButton } from '../components/common/CommonButton'
 import { AppLayout } from '../components/layout/AppLayout'
 import { ResultCard } from '../components/result/ResultCard'
-import { useState } from 'react'
-import type { SeonbiTypeResult } from '../features/seonbi-test/types'
-
-const result: SeonbiTypeResult = {
-  name: '퇴계형',
-  summary: '학문과 원칙을 중시하는 사색형',
-  travelStyle: '조용한 탐방과 깊이 있는 해설을 중심으로 한 여행',
-}
+import { seonbiTypeInfo } from '../data/seonbiTypes'
+import { loadTestResult } from '../lib/storage'
 
 export function ResultPage() {
-  const [modalOpen, setModalOpen] = useState(false)
+  const result = loadTestResult()
+
+  if (!result) {
+    return (
+      <AppLayout>
+        <section className="page-section page-container result-page">
+          <article className="surface-card empty-result-card">
+            <h1>아직 선비유형 테스트 결과가 없습니다.</h1>
+            <p>테스트를 먼저 진행해주세요.</p>
+            <Link className="common-button common-button--primary" to="/test">
+              선비유형 테스트 시작하기
+            </Link>
+          </article>
+        </section>
+      </AppLayout>
+    )
+  }
+
+  const typeInfo = seonbiTypeInfo[result.type]
 
   return (
     <AppLayout>
@@ -22,20 +33,22 @@ export function ResultPage() {
           <p className="section-kicker">선비유형 결과</p>
           <h1>당신의 선비 기질은...</h1>
         </div>
-        <ResultCard result={result} />
+        <ResultCard typeInfo={typeInfo} result={result} />
         <div className="page-actions center">
           <Link className="common-button common-button--primary" to="/course">
             영주 추천 코스 보기
           </Link>
-          <CommonButton type="button" variant="secondary" onClick={() => setModalOpen(true)}>
+          <CommonButton type="button" variant="secondary" disabled>
             결과 이미지 저장
           </CommonButton>
-          <CommonButton type="button" variant="secondary" onClick={() => setModalOpen(true)}>
+          <CommonButton type="button" variant="secondary" disabled>
             친구에게 공유하기
           </CommonButton>
         </div>
+        <p className="disabled-notice result-notice">
+          결과 이미지 저장과 공유 기능은 준비 중입니다.
+        </p>
       </section>
-      <AuthRequiredModal open={modalOpen} onClose={() => setModalOpen(false)} />
     </AppLayout>
   )
 }
