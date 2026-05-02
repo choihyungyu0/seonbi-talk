@@ -25,6 +25,8 @@ export type TourismEmptyStateReason =
   | 'api_error'
 
 export interface TourismContent {
+  code?: string
+  name?: string
   contentId?: string
   contentTypeId?: string
   title?: string
@@ -49,6 +51,7 @@ export interface TourismApiResponse {
 }
 
 export interface TourismQueryParams {
+  type?: 'areaCode' | 'sigunguCode' | 'keyword' | 'areaBased'
   keyword?: string
   areaCode?: string
   sigunguCode?: string

@@ -49,6 +49,8 @@ async function requestTourismProxy(
   const url = new URL('/api/tourism', window.location.origin)
   url.searchParams.set('type', params.type)
   if (params.keyword) url.searchParams.set('keyword', params.keyword)
+  if (params.areaCode) url.searchParams.set('areaCode', params.areaCode)
+  if (params.sigunguCode) url.searchParams.set('sigunguCode', params.sigunguCode)
   if (params.contentTypeId) {
     url.searchParams.set('contentTypeId', params.contentTypeId)
   }

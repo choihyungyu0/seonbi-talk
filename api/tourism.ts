@@ -1,15 +1,19 @@
 /* global process */
 import type { TourismContent } from '../src/features/tourism/tourismTypes'
 
-type TourismProxyType = 'areaBased' | 'keyword'
+type TourismProxyType = 'areaCode' | 'sigunguCode' | 'areaBased' | 'keyword'
 type TourismEmptyReason = 'missing_api_key' | 'no_data' | 'api_error'
 
 interface VercelRequestLike {
   method?: string
   query: {
     type?: string | string[]
+    areaCode?: string | string[]
+    sigunguCode?: string | string[]
     keyword?: string | string[]
     contentTypeId?: string | string[]
+    pageNo?: string | string[]
+    numOfRows?: string | string[]
   }
 }
 
@@ -24,9 +28,21 @@ interface TourismProxyResponse {
   items: TourismContent[]
   emptyReason?: TourismEmptyReason
   message?: string
+  debug?: TourismDebugInfo
+}
+
+interface TourismDebugInfo {
+  endpoint: string
+  status?: number
+  statusText?: string
+  tourApiHeaderResultCode?: string
+  tourApiHeaderResultMsg?: string
 }
 
 interface RawTourismItem {
+  code?: string
+  name?: string
+  rnum?: string | number
   contentid?: string
   contenttypeid?: string
   title?: string
@@ -47,8 +63,12 @@ interface RawTourismItem {
 
 interface RawTourApiBody {
   response?: {
+    header?: {
+      resultCode?: string
+      resultMsg?: string
+    }
     body?: {
-      items?: {
+      items?: '' | Record<string, never> | {
         item?: RawTourismItem[] | RawTourismItem
       }
     }
@@ -90,28 +110,43 @@ export default async function handler(
     return
   }
 
-  try {
-    const url = buildTourApiUrl(baseUrl, serviceKey, request.query)
-    const tourApiResponse = await fetch(url)
+  let tourApiUrl: URL
+  let proxyType: TourismProxyType
 
-    if (!tourApiResponse.ok) {
-      response.status(502).json({
+  try {
+    const builtUrl = buildTourApiUrl(baseUrl, serviceKey, request.query)
+    tourApiUrl = builtUrl.url
+    proxyType = builtUrl.proxyType
+  } catch {
+    response.status(400).json({
+      ok: false,
+      items: [],
+      emptyReason: 'api_error',
+      message: '공공데이터 요청 파라미터를 확인해주세요.',
+    })
+    return
+  }
+
+  const debugBase = createDebugInfo(tourApiUrl)
+
+  try {
+    const tourApiResponse = await fetch(tourApiUrl)
+    const data = (await tourApiResponse.json().catch(() => ({}))) as RawTourApiBody
+    const debug = createDebugInfo(tourApiUrl, tourApiResponse, data)
+
+    if (!tourApiResponse.ok || data.response?.header?.resultCode !== '0000') {
+      response.status(tourApiResponse.ok ? 200 : 502).json({
         ok: false,
         items: [],
         emptyReason: 'api_error',
         message: '공공데이터를 불러오는 중 문제가 발생했습니다.',
+        debug: getDevelopmentDebug(debug),
       })
       return
     }
 
-    const data = (await tourApiResponse.json()) as RawTourApiBody
-    const rawItems = data.response?.body?.items?.item
-    const rawItemList = Array.isArray(rawItems)
-      ? rawItems
-      : rawItems
-        ? [rawItems]
-        : []
-    const items = rawItemList.map(normalizeTourismItem)
+    const rawItemList = getRawItemList(data)
+    const items = rawItemList.map((item) => normalizeTourismItem(item, proxyType))
 
     response.status(200).json({
       ok: true,
@@ -121,6 +156,7 @@ export default async function handler(
         items.length > 0
           ? undefined
           : '조건에 맞는 영주 관광 정보가 없습니다.',
+      debug: getDevelopmentDebug(debug),
     })
   } catch {
     response.status(500).json({
@@ -128,6 +164,7 @@ export default async function handler(
       items: [],
       emptyReason: 'api_error',
       message: '공공데이터를 불러오는 중 문제가 발생했습니다.',
+      debug: getDevelopmentDebug(debugBase),
     })
   }
 }
@@ -137,40 +174,90 @@ function buildTourApiUrl(
   serviceKey: string,
   query: VercelRequestLike['query'],
 ) {
-  const url = new URL(baseUrl)
-  const proxyType = getQueryValue(query.type) as TourismProxyType | undefined
-  const keyword = getQueryValue(query.keyword)
+  const proxyType = normalizeProxyType(getQueryValue(query.type))
+  const url = new URL(`${normalizeBaseUrl(baseUrl)}/${getEndpointPath(proxyType)}`)
+  const areaCode = getQueryValue(query.areaCode)
+  const sigunguCode = getQueryValue(query.sigunguCode)
+  const keyword = getQueryValue(query.keyword) || yeongjuKeyword
   const contentTypeId = getQueryValue(query.contentTypeId)
+  const pageNo = getQueryValue(query.pageNo) || '1'
+  const numOfRows = getQueryValue(query.numOfRows) || defaultNumOfRows
 
   url.searchParams.set('MobileOS', 'ETC')
   url.searchParams.set('MobileApp', 'YeongjuSeonbiGil')
   url.searchParams.set('_type', 'json')
   url.searchParams.set('serviceKey', serviceKey)
-  url.searchParams.set('numOfRows', defaultNumOfRows)
-  url.searchParams.set('pageNo', '1')
+  url.searchParams.set('numOfRows', numOfRows)
+  url.searchParams.set('pageNo', pageNo)
 
-  // 지역코드 조회 후 확정 필요. 확정 전에는 임의 areaCode/sigunguCode를
-  // 하드코딩하지 않고 영주 키워드 검색 기반으로 제한한다.
+  if (proxyType === 'sigunguCode') {
+    if (!areaCode) throw new Error('areaCode is required for sigunguCode')
+    url.searchParams.set('areaCode', areaCode)
+  }
+
   if (proxyType === 'keyword') {
-    url.searchParams.set('keyword', [yeongjuKeyword, keyword].filter(Boolean).join(' '))
-  } else {
-    url.searchParams.set('keyword', yeongjuKeyword)
+    url.searchParams.set('keyword', keyword)
+    url.searchParams.set('arrange', 'A')
   }
 
-  if (contentTypeId) {
-    url.searchParams.set('contentTypeId', contentTypeId)
+  if (proxyType === 'areaBased') {
+    // 지역코드 조회 후 확정 필요. 확정 전에는 임의 areaCode/sigunguCode를
+    // 하드코딩하지 않고 클라이언트가 전달한 값만 사용한다.
+    if (areaCode) url.searchParams.set('areaCode', areaCode)
+    if (sigunguCode) url.searchParams.set('sigunguCode', sigunguCode)
+    if (contentTypeId) url.searchParams.set('contentTypeId', contentTypeId)
   }
 
-  return url
+  if (proxyType === 'areaCode' && areaCode) {
+    url.searchParams.set('areaCode', areaCode)
+  }
+
+  return { url, proxyType }
 }
 
-function normalizeTourismItem(raw: RawTourismItem): TourismContent {
+function normalizeProxyType(type: string | undefined): TourismProxyType {
+  if (
+    type === 'areaCode' ||
+    type === 'sigunguCode' ||
+    type === 'keyword' ||
+    type === 'areaBased'
+  ) {
+    return type
+  }
+
+  return 'areaBased'
+}
+
+function getEndpointPath(type: TourismProxyType) {
+  if (type === 'areaCode' || type === 'sigunguCode') return 'areaCode2'
+  if (type === 'keyword') return 'searchKeyword2'
+  return 'areaBasedList2'
+}
+
+function normalizeBaseUrl(baseUrl: string) {
+  return baseUrl.replace(/\/+$/, '')
+}
+
+function getRawItemList(data: RawTourApiBody) {
+  const items = data.response?.body?.items
+  if (!items || typeof items === 'string') return []
+  if (!('item' in items) || !items.item) return []
+  return Array.isArray(items.item) ? items.item : [items.item]
+}
+
+function normalizeTourismItem(
+  raw: RawTourismItem,
+  proxyType: TourismProxyType,
+): TourismContent {
   const address = [raw.addr1, raw.addr2].filter(Boolean).join(' ') || undefined
+  const code = raw.code
 
   return {
+    code,
+    name: raw.name,
     contentId: raw.contentid,
     contentTypeId: raw.contenttypeid,
-    title: raw.title,
+    title: raw.title ?? raw.name,
     address,
     mapX: toNumber(raw.mapx),
     mapY: toNumber(raw.mapy),
@@ -178,11 +265,36 @@ function normalizeTourismItem(raw: RawTourismItem): TourismContent {
     firstImage2: raw.firstimage2,
     tel: raw.tel,
     overview: raw.overview,
-    areaCode: raw.areacode,
-    sigunguCode: raw.sigungucode,
+    areaCode: raw.areacode ?? (proxyType === 'areaCode' ? code : undefined),
+    sigunguCode:
+      raw.sigungucode ?? (proxyType === 'sigunguCode' ? code : undefined),
     category: [raw.cat1, raw.cat2, raw.cat3].filter(Boolean).join('>') || undefined,
     source: 'TourAPI',
   }
+}
+
+function createDebugInfo(
+  url: URL,
+  response?: Response,
+  data?: RawTourApiBody,
+): TourismDebugInfo {
+  return {
+    endpoint: createSafeEndpoint(url),
+    status: response?.status,
+    statusText: response?.statusText,
+    tourApiHeaderResultCode: data?.response?.header?.resultCode,
+    tourApiHeaderResultMsg: data?.response?.header?.resultMsg,
+  }
+}
+
+function createSafeEndpoint(url: URL) {
+  const safeUrl = new URL(url.toString())
+  safeUrl.searchParams.delete('serviceKey')
+  return `${safeUrl.pathname}${safeUrl.search}`
+}
+
+function getDevelopmentDebug(debug: TourismDebugInfo) {
+  return process.env.NODE_ENV === 'production' ? undefined : debug
 }
 
 function getQueryValue(value: string | string[] | undefined) {
