@@ -99,7 +99,7 @@ export function HomePage() {
               관광 데이터 영역 보기
             </Link>
             <CommonButton type="button" variant="ghost" disabled>
-              관심 코스 저장 준비 중
+              로그인하면 마음에 드는 영주 코스를 저장할 수 있습니다.
             </CommonButton>
           </div>
         </div>

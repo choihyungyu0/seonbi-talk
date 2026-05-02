@@ -113,6 +113,10 @@ export function getStoredAuthUser() {
   return getStoredSession()?.user ?? null
 }
 
+export function getStoredAccessToken() {
+  return getStoredSession()?.accessToken
+}
+
 export function onAuthStateChange(handler: AuthChangeHandler) {
   authHandlers.add(handler)
 

@@ -14,6 +14,12 @@ import {
   getYeongjuTouristAttractions,
   getTourismDetail,
 } from '../features/tourism/tourismApi'
+import {
+  addFavoriteCourse,
+  getFavoriteCourses,
+  removeFavoriteCourse,
+} from '../features/favorites/favoriteApi'
+import { getStoredAuthUser } from '../features/auth/authApi'
 import { recommendCourseForSeonbiType } from '../features/tourism/recommendation'
 import type {
   TourismApiResponse,
@@ -56,6 +62,10 @@ export function CoursePage() {
   const testResult = useMemo(() => loadTestResult(), [])
   const [activeFilter, setActiveFilter] = useState<TourismFilterId>('all')
   const [selectedContentId, setSelectedContentId] = useState<string | undefined>()
+  const [favoriteContentIds, setFavoriteContentIds] = useState<Set<string>>(
+    () => new Set(),
+  )
+  const [favoriteMessage, setFavoriteMessage] = useState('')
   const [detailState, setDetailState] = useState<TourismDetailState>({
     status: 'idle',
   })
@@ -91,6 +101,31 @@ export function CoursePage() {
       ignore = true
     }
   }, [activeFilter, testResult])
+
+  useEffect(() => {
+    if (!getStoredAuthUser()) return
+
+    let ignore = false
+
+    async function loadFavorites() {
+      try {
+        const favorites = await getFavoriteCourses()
+        if (ignore) return
+
+        setFavoriteContentIds(
+          new Set(favorites.map((favorite) => favorite.content_id)),
+        )
+      } catch {
+        if (!ignore) setFavoriteMessage('관심 코스 목록을 불러오지 못했습니다.')
+      }
+    }
+
+    void loadFavorites()
+
+    return () => {
+      ignore = true
+    }
+  }, [])
 
   const recommendedCourse = testResult
     ? recommendCourseForSeonbiType(testResult.type, tourismState.contents)
@@ -149,6 +184,45 @@ export function CoursePage() {
     })
   }
 
+  async function toggleFavoriteCourse(item: TourismContent) {
+    setFavoriteMessage('')
+
+    if (!getStoredAuthUser()) {
+      setFavoriteMessage('로그인하면 관심 코스를 저장할 수 있습니다.')
+      return
+    }
+
+    if (!item.contentId) {
+      setFavoriteMessage('저장할 관광지 식별자가 없습니다.')
+      return
+    }
+
+    const isSaved = favoriteContentIds.has(item.contentId)
+
+    try {
+      if (isSaved) {
+        await removeFavoriteCourse(item.contentId)
+        setFavoriteContentIds((current) => {
+          const next = new Set(current)
+          next.delete(item.contentId ?? '')
+          return next
+        })
+        setFavoriteMessage('관심 코스에서 해제했습니다.')
+        return
+      }
+
+      await addFavoriteCourse(item)
+      setFavoriteContentIds((current) => new Set(current).add(item.contentId ?? ''))
+      setFavoriteMessage('관심 코스로 저장했습니다.')
+    } catch (error) {
+      setFavoriteMessage(
+        error instanceof Error
+          ? error.message
+          : '관심 코스 처리 중 문제가 발생했습니다.',
+      )
+    }
+  }
+
   return (
     <AppLayout>
       <section className="page-section page-container">
@@ -167,6 +241,12 @@ export function CoursePage() {
             <span key={keyword}>{keyword}</span>
           ))}
         </div>
+        {favoriteMessage && (
+          <p className="disabled-notice course-favorite-notice" role="status">
+            {favoriteMessage}{' '}
+            {!getStoredAuthUser() && <a href="/login">로그인</a>}
+          </p>
+        )}
 
         <div className="course-layout">
           <div className="tourism-list">
@@ -199,7 +279,11 @@ export function CoursePage() {
                     key={getTourismItemKey(item)}
                     item={item}
                     selected={selectedContentId === getTourismItemKey(item)}
+                    isFavorite={Boolean(
+                      item.contentId && favoriteContentIds.has(item.contentId),
+                    )}
                     onSelect={selectTourismItem}
+                    onToggleFavorite={toggleFavoriteCourse}
                   />
                 ))}
               </section>
@@ -227,7 +311,11 @@ export function CoursePage() {
                     key={getTourismItemKey(item)}
                     item={item}
                     selected={selectedContentId === getTourismItemKey(item)}
+                    isFavorite={Boolean(
+                      item.contentId && favoriteContentIds.has(item.contentId),
+                    )}
                     onSelect={selectTourismItem}
+                    onToggleFavorite={toggleFavoriteCourse}
                   />
                 ))}
               </section>
@@ -245,6 +333,11 @@ export function CoursePage() {
           detail={detailState.detail}
           status={detailState.status}
           message={detailState.message}
+          isFavorite={Boolean(
+            detailState.item?.contentId &&
+              favoriteContentIds.has(detailState.item.contentId),
+          )}
+          onToggleFavorite={toggleFavoriteCourse}
           onClose={() => setDetailState({ status: 'idle' })}
         />
       </section>

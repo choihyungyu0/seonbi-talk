@@ -5,10 +5,18 @@ import { StatusBadge } from '../common/StatusBadge'
 interface TourismCardProps {
   item: TourismContent
   selected?: boolean
+  isFavorite?: boolean
   onSelect?: (item: TourismContent) => void
+  onToggleFavorite?: (item: TourismContent) => void
 }
 
-export function TourismCard({ item, selected = false, onSelect }: TourismCardProps) {
+export function TourismCard({
+  item,
+  selected = false,
+  isFavorite = false,
+  onSelect,
+  onToggleFavorite,
+}: TourismCardProps) {
   return (
     <article
       className={selected ? 'tourism-card selected' : 'tourism-card'}
@@ -49,6 +57,16 @@ export function TourismCard({ item, selected = false, onSelect }: TourismCardPro
           </div>
         </dl>
         <p>카드를 선택하면 운영시간, 요금, 주차 정보를 확인할 수 있습니다.</p>
+        <button
+          type="button"
+          className="favorite-toggle-button"
+          onClick={(event) => {
+            event.stopPropagation()
+            onToggleFavorite?.(item)
+          }}
+        >
+          {isFavorite ? '관심 코스 해제' : '관심 코스 저장'}
+        </button>
       </div>
     </article>
   )

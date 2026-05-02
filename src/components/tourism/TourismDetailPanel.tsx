@@ -8,6 +8,8 @@ interface TourismDetailPanelProps {
   detail?: TourismDetail
   status: 'idle' | 'loading' | 'ready' | 'error'
   message?: string
+  isFavorite?: boolean
+  onToggleFavorite?: (item: TourismContent) => void
   onClose: () => void
 }
 
@@ -16,6 +18,8 @@ export function TourismDetailPanel({
   detail,
   status,
   message,
+  isFavorite = false,
+  onToggleFavorite,
   onClose,
 }: TourismDetailPanelProps) {
   useEffect(() => {
@@ -65,6 +69,14 @@ export function TourismDetailPanel({
             닫기
           </button>
         </div>
+
+        <button
+          type="button"
+          className="favorite-toggle-button detail-favorite-button"
+          onClick={() => onToggleFavorite?.(item)}
+        >
+          {isFavorite ? '관심 코스 해제' : '관심 코스 저장'}
+        </button>
 
         {status === 'loading' && (
           <ImagePlaceholder label="상세 정보를 불러오고 있습니다." />

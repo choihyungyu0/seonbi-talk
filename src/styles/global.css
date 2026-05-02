@@ -862,6 +862,34 @@ a {
   box-shadow: 0 0 0 3px rgba(45, 75, 62, 0.12), var(--shadow);
 }
 
+.favorite-toggle-button {
+  min-height: 38px;
+  margin-top: 14px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  padding: 0 14px;
+  color: var(--forest);
+  background: var(--surface);
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.detail-favorite-button {
+  width: fit-content;
+  margin-top: 0;
+}
+
+.course-favorite-notice {
+  max-width: 640px;
+  margin: 18px 0 0;
+  text-align: left;
+}
+
+.course-favorite-notice a {
+  color: var(--forest);
+  font-weight: 800;
+}
+
 .tourism-card .image-placeholder {
   min-height: 150px;
 }

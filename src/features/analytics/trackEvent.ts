@@ -8,6 +8,8 @@ type AnalyticsEventType =
   | 'judge_used'
   | 'judge_share_clicked'
   | 'result_share_clicked'
+  | 'favorite_course_added'
+  | 'favorite_course_removed'
 
 interface AnalyticsPayload {
   seonbiType?: SeonbiType
