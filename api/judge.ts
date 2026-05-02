@@ -113,6 +113,15 @@ export default async function handler(
     })
 
     if (!openAiResponse.ok) {
+      const errorText = await openAiResponse.text().catch(() => '')
+      console.warn('[judge] OpenAI request failed', {
+        status: openAiResponse.status,
+        statusText: openAiResponse.statusText,
+        model: process.env.OPENAI_MODEL || defaultModel,
+        hasApiKey: Boolean(apiKey),
+        errorPreview: errorText.slice(0, 300),
+      })
+
       response.status(502).json(createSafeFailureResponse())
       return
     }
@@ -122,6 +131,11 @@ export default async function handler(
     const result = parseJudgeResult(content)
 
     if (!result) {
+      console.warn('[judge] OpenAI response parse failed', {
+        hasContent: Boolean(content),
+        contentPreview: content?.slice(0, 200) || '',
+      })
+
       response.status(502).json(createSafeFailureResponse())
       return
     }
@@ -130,7 +144,12 @@ export default async function handler(
       ok: true,
       result,
     })
-  } catch {
+  } catch (error) {
+    console.error('[judge] request failed', {
+      name: error instanceof Error ? error.name : 'UnknownError',
+      message: error instanceof Error ? error.message : String(error),
+    })
+
     response.status(500).json(createSafeFailureResponse())
   }
 }
