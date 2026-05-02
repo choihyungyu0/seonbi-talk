@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import type { TourismContent, TourismDetail } from '../../features/tourism/tourismTypes'
 import { ImagePlaceholder } from '../common/ImagePlaceholder'
 import { StatusBadge } from '../common/StatusBadge'
@@ -17,6 +18,17 @@ export function TourismDetailPanel({
   message,
   onClose,
 }: TourismDetailPanelProps) {
+  useEffect(() => {
+    if (status === 'idle' || !selectedItem) return undefined
+
+    function closeOnEscape(event: KeyboardEvent) {
+      if (event.key === 'Escape') onClose()
+    }
+
+    window.addEventListener('keydown', closeOnEscape)
+    return () => window.removeEventListener('keydown', closeOnEscape)
+  }, [onClose, selectedItem, status])
+
   if (status === 'idle' || !selectedItem) return null
 
   const item = {
@@ -28,78 +40,94 @@ export function TourismDetailPanel({
   const homepage = getHomepageLink(item.homepage)
 
   return (
-    <aside className="surface-card tourism-detail-panel" aria-live="polite">
-      <div className="tourism-detail-header">
-        <div>
-          <StatusBadge tone="brown">상세 정보</StatusBadge>
-          <h2>{cleanText(item.title) || '관광지명 정보 없음'}</h2>
+    <div
+      className="tourism-detail-overlay"
+      role="presentation"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onClose()
+      }}
+    >
+      <section
+        className="surface-card tourism-detail-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="tourism-detail-title"
+        aria-live="polite"
+      >
+        <div className="tourism-detail-header">
+          <div>
+            <StatusBadge tone="brown">상세 정보</StatusBadge>
+            <h2 id="tourism-detail-title">
+              {cleanText(item.title) || '관광지명 정보 없음'}
+            </h2>
+          </div>
+          <button type="button" className="detail-close-button" onClick={onClose}>
+            닫기
+          </button>
         </div>
-        <button type="button" className="detail-close-button" onClick={onClose}>
-          닫기
-        </button>
-      </div>
 
-      {status === 'loading' && (
-        <ImagePlaceholder label="상세 정보를 불러오고 있습니다." />
-      )}
+        {status === 'loading' && (
+          <ImagePlaceholder label="상세 정보를 불러오고 있습니다." />
+        )}
 
-      {status === 'error' && (
-        <p className="form-error" role="status">
-          {message ?? '상세 정보를 불러오지 못했습니다.'}
-        </p>
-      )}
-
-      {status === 'ready' && (
-        <>
-          {mainImage ? (
-            <img
-              className="tourism-detail-main-image"
-              src={mainImage.url}
-              alt={cleanText(item.title) || mainImage.name}
-            />
-          ) : (
-            <ImagePlaceholder label="대표 이미지 정보 없음" />
-          )}
-
-          {images.length > 1 && (
-            <div className="tourism-detail-image-list" aria-label="추가 이미지">
-              {images.slice(1).map((image) => (
-                <img key={image.url} src={image.url} alt={image.name} />
-              ))}
-            </div>
-          )}
-
-          <p className="tourism-detail-overview">
-            {cleanText(item.overview) || '개요 정보 없음'}
+        {status === 'error' && (
+          <p className="form-error" role="status">
+            {message ?? '상세 정보를 불러오지 못했습니다.'}
           </p>
+        )}
 
-          <dl className="tourism-detail-list expanded">
-            <DetailRow label="주소" value={item.address} fallback="주소 정보 없음" />
-            <DetailRow
-              label="운영시간"
-              value={item.operatingHours}
-              fallback="운영시간 정보 없음"
-            />
-            <DetailRow label="쉬는날" value={item.restDate} fallback="쉬는날 정보 없음" />
-            <DetailRow label="이용요금" value={item.useFee} fallback="요금 정보 없음" />
-            <DetailRow label="주차" value={item.parking} fallback="주차 정보 없음" />
-            <DetailRow label="전화번호" value={item.tel} fallback="전화번호 정보 없음" />
-            <div>
-              <dt>홈페이지</dt>
-              <dd>
-                {homepage ? (
-                  <a href={homepage} target="_blank" rel="noreferrer">
-                    홈페이지 보기
-                  </a>
-                ) : (
-                  '홈페이지 정보 없음'
-                )}
-              </dd>
-            </div>
-          </dl>
-        </>
-      )}
-    </aside>
+        {status === 'ready' && (
+          <>
+            {mainImage ? (
+              <img
+                className="tourism-detail-main-image"
+                src={mainImage.url}
+                alt={cleanText(item.title) || mainImage.name}
+              />
+            ) : (
+              <ImagePlaceholder label="대표 이미지 정보 없음" />
+            )}
+
+            {images.length > 1 && (
+              <div className="tourism-detail-image-list" aria-label="추가 이미지">
+                {images.slice(1).map((image) => (
+                  <img key={image.url} src={image.url} alt={image.name} />
+                ))}
+              </div>
+            )}
+
+            <p className="tourism-detail-overview">
+              {cleanText(item.overview) || '개요 정보 없음'}
+            </p>
+
+            <dl className="tourism-detail-list expanded">
+              <DetailRow label="주소" value={item.address} fallback="주소 정보 없음" />
+              <DetailRow
+                label="운영시간"
+                value={item.operatingHours}
+                fallback="운영시간 정보 없음"
+              />
+              <DetailRow label="쉬는날" value={item.restDate} fallback="쉬는날 정보 없음" />
+              <DetailRow label="이용요금" value={item.useFee} fallback="요금 정보 없음" />
+              <DetailRow label="주차" value={item.parking} fallback="주차 정보 없음" />
+              <DetailRow label="전화번호" value={item.tel} fallback="전화번호 정보 없음" />
+              <div>
+                <dt>홈페이지</dt>
+                <dd>
+                  {homepage ? (
+                    <a href={homepage} target="_blank" rel="noreferrer">
+                      홈페이지 보기
+                    </a>
+                  ) : (
+                    '홈페이지 정보 없음'
+                  )}
+                </dd>
+              </div>
+            </dl>
+          </>
+        )}
+      </section>
+    </div>
   )
 }
 

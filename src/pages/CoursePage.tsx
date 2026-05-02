@@ -240,15 +240,15 @@ export function CoursePage() {
               items={tourismState.contents}
               selectedContentId={selectedContentId}
             />
-            <TourismDetailPanel
-              selectedItem={detailState.item}
-              detail={detailState.detail}
-              status={detailState.status}
-              message={detailState.message}
-              onClose={() => setDetailState({ status: 'idle' })}
-            />
           </div>
         </div>
+        <TourismDetailPanel
+          selectedItem={detailState.item}
+          detail={detailState.detail}
+          status={detailState.status}
+          message={detailState.message}
+          onClose={() => setDetailState({ status: 'idle' })}
+        />
       </section>
     </AppLayout>
   )
