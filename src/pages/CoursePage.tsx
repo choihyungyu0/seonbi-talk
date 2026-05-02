@@ -123,7 +123,14 @@ export function CoursePage() {
   }
 
   async function openTourismDetail(item: TourismContent) {
-    setDetailState({ status: 'loading', item })
+    setDetailState({
+      status: 'ready',
+      item,
+      detail: {
+        item,
+        images: [],
+      },
+    })
 
     const response = await getTourismDetail(item)
     if (response.status !== 'ready' || !response.detail) {

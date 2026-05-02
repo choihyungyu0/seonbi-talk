@@ -62,43 +62,48 @@ export async function getTourismDetail(
 ): Promise<TourismDetailResponse> {
   const contentId = selectedItem.contentId
   const contentTypeId = selectedItem.contentTypeId
+  const fallbackResponse = createFallbackDetailResponse(selectedItem)
 
   if (!contentId || !contentTypeId) {
-    return createFallbackDetailResponse(selectedItem)
+    return fallbackResponse
   }
 
-  const [commonResponse, introResponse, imageResponse] = await Promise.all([
-    requestTourismProxy({ type: 'detailCommon', contentId }),
-    requestTourismProxy({ type: 'detailIntro', contentId, contentTypeId }),
-    requestTourismProxy({ type: 'detailImage', contentId }),
-  ])
+  try {
+    const [commonResponse, introResponse, imageResponse] = await Promise.all([
+      requestTourismProxy({ type: 'detailCommon', contentId }),
+      requestTourismProxy({ type: 'detailIntro', contentId, contentTypeId }),
+      requestTourismProxy({ type: 'detailImage', contentId }),
+    ])
 
-  warnFailedDetailResponse('detailCommon', commonResponse, contentId, contentTypeId)
-  warnFailedDetailResponse('detailIntro', introResponse, contentId, contentTypeId)
-  warnFailedDetailResponse('detailImage', imageResponse, contentId, contentTypeId)
+    warnFailedDetailResponse('detailCommon', commonResponse, contentId, contentTypeId)
+    warnFailedDetailResponse('detailIntro', introResponse, contentId, contentTypeId)
+    warnFailedDetailResponse('detailImage', imageResponse, contentId, contentTypeId)
 
-  const commonItem = commonResponse.contents[0]
-  const introItem = introResponse.contents[0]
-  const mergedItem = {
-    ...selectedItem,
-    ...commonItem,
-    ...introItem,
-  }
-  const images = imageResponse.status === 'ready' ? imageResponse.contents : []
+    const commonItem = commonResponse.contents[0]
+    const introItem = introResponse.contents[0]
+    const mergedItem = mergeTourismItems(selectedItem, commonItem, introItem)
+    const images = imageResponse.status === 'ready' ? imageResponse.contents : []
 
-  return hasDisplayableTourismInfo(mergedItem) || images.length > 0
-    ? {
+    if (hasDisplayableTourismInfo(mergedItem) || images.length > 0) {
+      return {
         status: 'ready',
         detail: {
           item: mergedItem,
           images,
         },
       }
-    : {
-        status: 'error',
-        reason: 'api_error',
-        message: '상세 정보를 불러오지 못했습니다.',
-      }
+    }
+  } catch (error) {
+    console.warn('[tourism] detail request unavailable', {
+      detailType: 'detail',
+      status: 'error',
+      message: error instanceof Error ? error.message : 'detail request failed',
+      contentId,
+      contentTypeId,
+    })
+  }
+
+  return fallbackResponse
 }
 
 export function normalizeTourismItem(raw: TourismContent): TourismContent {
@@ -157,15 +162,34 @@ function createFallbackDetailResponse(
 
 function hasDisplayableTourismInfo(item: TourismContent) {
   return Boolean(
-    item.title ||
-      item.address ||
-      item.firstImage ||
-      item.firstImage2 ||
-      item.tel ||
-      item.overview ||
-      item.mapX ||
-      item.mapY,
+    hasText(item.title) ||
+      hasText(item.address) ||
+      hasText(item.firstImage) ||
+      hasText(item.firstImage2) ||
+      hasText(item.tel) ||
+      hasText(item.overview) ||
+      item.mapX !== undefined ||
+      item.mapY !== undefined,
   )
+}
+
+function mergeTourismItems(...items: Array<TourismContent | undefined>) {
+  return items.reduce<TourismContent>((mergedItem, item) => {
+    if (!item) return mergedItem
+
+    return {
+      ...mergedItem,
+      ...Object.fromEntries(
+        Object.entries(item).filter(([, value]) => {
+          return value !== undefined && value !== ''
+        }),
+      ),
+    }
+  }, {})
+}
+
+function hasText(value: string | undefined) {
+  return Boolean(value?.trim())
 }
 
 function warnFailedDetailResponse(
