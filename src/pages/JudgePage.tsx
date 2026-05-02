@@ -15,9 +15,12 @@ export function JudgePage() {
   const [text, setText] = useState('')
   const [result, setResult] = useState<JudgeResult | null>(null)
   const [message, setMessage] = useState('')
+  const [shareMessage, setShareMessage] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const typeInfo = testResult ? seonbiTypeInfo[testResult.type] : null
   const pageTitle = typeInfo ? `${typeInfo.name} 선비의 한마디` : '선비의 한마디'
+  const canShareResult = Boolean(result)
+  const canUseWebShare = typeof navigator.share === 'function'
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -31,6 +34,7 @@ export function JudgePage() {
 
     setIsLoading(true)
     setMessage('')
+    setShareMessage('')
 
     const response = await requestSeonbiAdvice(trimmedText, testResult?.type)
 
@@ -46,6 +50,32 @@ export function JudgePage() {
 
     setResult(response.result)
     setIsLoading(false)
+  }
+
+  async function handleCopyShareText() {
+    if (!result) return
+
+    try {
+      await navigator.clipboard.writeText(result.shareText)
+      setShareMessage('공유 문구를 복사했습니다.')
+    } catch {
+      setShareMessage('공유 문구를 복사하지 못했습니다. 잠시 후 다시 시도해주세요.')
+    }
+  }
+
+  async function handleShareResult() {
+    if (!result || !canUseWebShare) return
+
+    try {
+      await navigator.share({
+        title: pageTitle,
+        text: result.shareText,
+      })
+      setShareMessage('공유 창을 열었습니다.')
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') return
+      setShareMessage('공유하기를 사용할 수 없습니다. 복사 기능을 이용해주세요.')
+    }
   }
 
   return (
@@ -100,6 +130,31 @@ export function JudgePage() {
           <p>{result?.modernTranslation ?? defaultResultMessage}</p>
           <h3>공유용 문구</h3>
           <p>{result?.shareText ?? defaultResultMessage}</p>
+          <div className="judge-share-actions">
+            <CommonButton
+              type="button"
+              variant="secondary"
+              disabled={!canShareResult}
+              onClick={handleCopyShareText}
+            >
+              공유 문구 복사
+            </CommonButton>
+            {canUseWebShare && (
+              <CommonButton
+                type="button"
+                variant="primary"
+                disabled={!canShareResult}
+                onClick={handleShareResult}
+              >
+                공유하기
+              </CommonButton>
+            )}
+          </div>
+          {shareMessage && (
+            <p className="disabled-notice judge-share-message" role="status">
+              {shareMessage}
+            </p>
+          )}
         </section>
       </section>
     </AppLayout>
