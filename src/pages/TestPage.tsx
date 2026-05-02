@@ -45,6 +45,10 @@ export function TestPage() {
     if (orderedAnswers.length !== seonbiQuestions.length) return
 
     const result = calculateTestResult(orderedAnswers)
+    console.debug('[seonbi-test] result calculated', {
+      type: result.type,
+      scores: result.scores,
+    })
     saveTestResult(result)
     navigate('/result')
   }

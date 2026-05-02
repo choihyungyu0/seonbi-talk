@@ -25,14 +25,32 @@ export function calculateTestResult(answers: AnswerOption[]): TestResult {
     }
   }
 
-  const type = seonbiTypePriority.reduce((currentBest, candidate) => {
-    if (scores[candidate] > scores[currentBest]) return candidate
-    return currentBest
-  }, seonbiTypePriority[0])
+  const type = resolveResultType(scores, answers)
 
   return {
     type,
     scores,
     completedAt: new Date().toISOString(),
   }
+}
+
+function resolveResultType(scores: ScoreTable, answers: AnswerOption[]) {
+  const highestScore = Math.max(...seonbiTypePriority.map((type) => scores[type]))
+  const tiedTypes = seonbiTypePriority.filter((type) => scores[type] === highestScore)
+
+  if (tiedTypes.length === 1) return tiedTypes[0]
+
+  return pickBalancedTieType(tiedTypes, answers)
+}
+
+function pickBalancedTieType(tiedTypes: SeonbiType[], answers: AnswerOption[]) {
+  const answerSignature = answers.map((answer) => answer.id).join('|')
+  const tieIndex = createStableHash(answerSignature) % tiedTypes.length
+  return tiedTypes[tieIndex]
+}
+
+function createStableHash(value: string) {
+  return Array.from(value).reduce((hash, character) => {
+    return (hash * 31 + character.charCodeAt(0)) >>> 0
+  }, 0)
 }

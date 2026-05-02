@@ -17,6 +17,8 @@ export const seonbiQuestions: Question[] = [
     options: [
       { id: 'q2-a', label: '원칙을 확인하고 신중히 판단한다', scores: { toegye: 2 } },
       { id: 'q2-b', label: '문제를 작게 나누어 해결한다', scores: { yulgok: 2 } },
+      { id: 'q2-c', label: '잠시 호흡을 고르고 분위기를 살핀다', scores: { cheosa: 2 } },
+      { id: 'q2-d', label: '필요한 역할을 찾아 먼저 움직인다', scores: { uguk: 2 } },
     ],
   },
   {
@@ -45,6 +47,8 @@ export const seonbiQuestions: Question[] = [
     options: [
       { id: 'q5-a', label: '깊이 있는 설명을 듣고 이해한 경험', scores: { toegye: 2 } },
       { id: 'q5-b', label: '실제로 도움이 되는 정보를 얻은 경험', scores: { yulgok: 2 } },
+      { id: 'q5-c', label: '조용한 풍경 속에서 마음이 느슨해진 경험', scores: { cheosa: 2 } },
+      { id: 'q5-d', label: '함께한 사람에게 좋은 변화를 만든 경험', scores: { uguk: 2 } },
     ],
   },
   {
@@ -73,6 +77,8 @@ export const seonbiQuestions: Question[] = [
     options: [
       { id: 'q8-a', label: '깨달은 생각과 문장', scores: { toegye: 2 } },
       { id: 'q8-b', label: '다음에 참고할 요령', scores: { yulgok: 2 } },
+      { id: 'q8-c', label: '풍경과 마음이 편안해진 순간', scores: { cheosa: 2 } },
+      { id: 'q8-d', label: '함께 나누고 싶은 가치와 이야기', scores: { uguk: 2 } },
     ],
   },
   {
