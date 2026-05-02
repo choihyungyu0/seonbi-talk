@@ -27,7 +27,7 @@ export function CoursePage() {
   const [tourismState, setTourismState] = useState<TourismPageState>({
     status: testResult ? 'loading' : 'empty',
     contents: [],
-    reason: testResult ? undefined : 'no-test-result',
+    reason: testResult ? undefined : 'no_test_result',
   })
 
   useEffect(() => {
@@ -93,19 +93,19 @@ export function CoursePage() {
               />
             )}
             {tourismState.status === 'missing-api-key' && (
-              <TourismEmptyState title="공공데이터 연동 준비 중" />
+              <TourismEmptyState title="공공데이터 서비스키 설정 후 관광 정보를 불러올 수 있습니다." />
             )}
             {tourismState.status === 'error' && (
               <TourismEmptyState
-                title="공공데이터 조회 후 추천 코스가 표시됩니다."
-                description={tourismState.message ?? '관광지 정보는 실제 공공데이터 연동 후 표시됩니다.'}
+                title="공공데이터를 불러오는 중 문제가 발생했습니다."
+                description={tourismState.message}
               />
             )}
             {tourismState.status === 'empty' && testResult && (
-              <TourismEmptyState title="공공데이터 조회 후 추천 코스가 표시됩니다." />
+              <TourismEmptyState title="공공데이터 조회 결과가 없습니다." />
             )}
             {tourismState.status === 'ready' && recommendedItems.length === 0 && (
-              <TourismEmptyState title="공공데이터 조회 후 추천 코스가 표시됩니다." />
+              <TourismEmptyState title="조건에 맞는 영주 관광 정보가 없습니다." />
             )}
             {shouldShowCards &&
               recommendedItems.map((item) => (

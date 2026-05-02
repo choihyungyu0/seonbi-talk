@@ -16,7 +16,7 @@ export function recommendCourseForSeonbiType(
     return {
       seonbiType,
       items: [],
-      reason: 'empty-data',
+      reason: 'no_data',
     }
   }
 
@@ -36,7 +36,7 @@ export function recommendCourseForSeonbiType(
       .map((item) => item.content),
     reason: scoredContents.some((item) => item.score > 0)
       ? undefined
-      : 'empty-data',
+      : 'no_data',
   }
 }
 

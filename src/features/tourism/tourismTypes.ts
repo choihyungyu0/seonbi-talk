@@ -19,10 +19,10 @@ export type TourismContentType =
   | 'unknown'
 
 export type TourismEmptyStateReason =
-  | 'missing-api-key'
-  | 'empty-data'
-  | 'no-test-result'
-  | 'error'
+  | 'missing_api_key'
+  | 'no_data'
+  | 'no_test_result'
+  | 'api_error'
 
 export interface TourismContent {
   contentId?: string
