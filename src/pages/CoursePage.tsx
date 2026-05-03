@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AppLayout } from '../components/layout/AppLayout'
 import { StatusBadge } from '../components/common/StatusBadge'
 import { ProtectedFeaturePrompt } from '../components/common/ProtectedFeaturePrompt'
@@ -60,6 +60,7 @@ interface TourismDetailState {
 
 export function CoursePage() {
   const testResult = useMemo(() => loadTestResult(), [])
+  const tourismCardRefs = useRef(new Map<string, HTMLElement>())
   const [activeFilter, setActiveFilter] = useState<TourismFilterId>('all')
   const [selectedContentId, setSelectedContentId] = useState<string | undefined>()
   const [favoriteContentIds, setFavoriteContentIds] = useState<Set<string>>(
@@ -127,37 +128,32 @@ export function CoursePage() {
     }
   }, [])
 
-  const recommendedCourse = testResult
-    ? recommendCourseForSeonbiType(testResult.type, tourismState.contents)
-    : null
+  const recommendedCourse = useMemo(() => {
+    return testResult
+      ? recommendCourseForSeonbiType(testResult.type, tourismState.contents)
+      : null
+  }, [testResult, tourismState.contents])
   const typeInfo = testResult ? seonbiTypeInfo[testResult.type] : null
   const recommendedItems = recommendedCourse?.items ?? []
   const shouldShowCards = tourismState.status === 'ready' && tourismState.contents.length > 0
   const shouldShowAllCards = tourismState.status === 'ready' && tourismState.contents.length > 0
+  const activeSeonbiType = testResult?.type
 
-  if (!testResult) {
-    return (
-      <AppLayout>
-        <section className="page-section page-container">
-          <ProtectedFeaturePrompt />
-        </section>
-      </AppLayout>
-    )
-  }
-  const activeTestResult = testResult
+  useEffect(() => {
+    if (!selectedContentId) return
 
-  function selectTourismItem(item: TourismContent) {
-    setSelectedContentId(getTourismItemKey(item))
-    void openTourismDetail(item)
-    void trackEvent('tourism_card_clicked', {
-      seonbiType: activeTestResult.type,
-      contentId: item.contentId,
-      contentTitle: item.title,
-      contentTypeId: item.contentTypeId,
+    const target =
+      tourismCardRefs.current.get(`recommended:${selectedContentId}`) ??
+      tourismCardRefs.current.get(`all:${selectedContentId}`)
+    if (!target || isElementComfortablyVisible(target)) return
+
+    target.scrollIntoView({
+      behavior: 'smooth',
+      block: 'center',
     })
-  }
+  }, [selectedContentId])
 
-  async function openTourismDetail(item: TourismContent) {
+  const openTourismDetail = useCallback(async (item: TourismContent) => {
     setDetailState({
       status: 'ready',
       item,
@@ -182,6 +178,40 @@ export function CoursePage() {
       item,
       detail: response.detail,
     })
+  }, [])
+
+  const selectTourismItem = useCallback((item: TourismContent) => {
+    if (!activeSeonbiType) return
+
+    setSelectedContentId(getTourismItemKey(item))
+    void openTourismDetail(item)
+    void trackEvent('tourism_card_clicked', {
+      seonbiType: activeSeonbiType,
+      contentId: item.contentId,
+      contentTitle: item.title,
+      contentTypeId: item.contentTypeId,
+    })
+  }, [activeSeonbiType, openTourismDetail])
+
+  if (!testResult) {
+    return (
+      <AppLayout>
+        <section className="page-section page-container">
+          <ProtectedFeaturePrompt />
+        </section>
+      </AppLayout>
+    )
+  }
+
+  function setTourismCardRef(section: 'recommended' | 'all', item: TourismContent) {
+    return (element: HTMLDivElement | null) => {
+      const refKey = `${section}:${getTourismItemKey(item)}`
+      if (element) {
+        tourismCardRefs.current.set(refKey, element)
+        return
+      }
+      tourismCardRefs.current.delete(refKey)
+    }
   }
 
   async function toggleFavoriteCourse(item: TourismContent) {
@@ -275,16 +305,21 @@ export function CoursePage() {
                   </p>
                 </div>
                 {recommendedItems.map((item) => (
-                  <TourismCard
+                  <div
+                    data-tourism-card-id={getTourismItemKey(item)}
                     key={getTourismItemKey(item)}
-                    item={item}
-                    selected={selectedContentId === getTourismItemKey(item)}
-                    isFavorite={Boolean(
-                      item.contentId && favoriteContentIds.has(item.contentId),
-                    )}
-                    onSelect={selectTourismItem}
-                    onToggleFavorite={toggleFavoriteCourse}
-                  />
+                    ref={setTourismCardRef('recommended', item)}
+                  >
+                    <TourismCard
+                      item={item}
+                      selected={selectedContentId === getTourismItemKey(item)}
+                      isFavorite={Boolean(
+                        item.contentId && favoriteContentIds.has(item.contentId),
+                      )}
+                      onSelect={selectTourismItem}
+                      onToggleFavorite={toggleFavoriteCourse}
+                    />
+                  </div>
                 ))}
               </section>
             )}
@@ -307,16 +342,21 @@ export function CoursePage() {
                   ))}
                 </div>
                 {tourismState.contents.map((item) => (
-                  <TourismCard
+                  <div
+                    data-tourism-card-id={getTourismItemKey(item)}
                     key={getTourismItemKey(item)}
-                    item={item}
-                    selected={selectedContentId === getTourismItemKey(item)}
-                    isFavorite={Boolean(
-                      item.contentId && favoriteContentIds.has(item.contentId),
-                    )}
-                    onSelect={selectTourismItem}
-                    onToggleFavorite={toggleFavoriteCourse}
-                  />
+                    ref={setTourismCardRef('all', item)}
+                  >
+                    <TourismCard
+                      item={item}
+                      selected={selectedContentId === getTourismItemKey(item)}
+                      isFavorite={Boolean(
+                        item.contentId && favoriteContentIds.has(item.contentId),
+                      )}
+                      onSelect={selectTourismItem}
+                      onToggleFavorite={toggleFavoriteCourse}
+                    />
+                  </div>
                 ))}
               </section>
             )}
@@ -324,7 +364,9 @@ export function CoursePage() {
           <div className="course-side-panel">
             <CourseMap
               items={tourismState.contents}
+              routeItems={recommendedItems}
               selectedContentId={selectedContentId}
+              onSelectItem={selectTourismItem}
             />
           </div>
         </div>
@@ -355,6 +397,14 @@ function getTourismResponse(filterId: TourismFilterId) {
 
 function getTourismItemKey(item: TourismContent) {
   return item.contentId ?? `${item.title}-${item.mapX}-${item.mapY}`
+}
+
+function isElementComfortablyVisible(element: HTMLElement) {
+  const rect = element.getBoundingClientRect()
+  const topPadding = 96
+  const bottomPadding = 80
+
+  return rect.top >= topPadding && rect.bottom <= window.innerHeight - bottomPadding
 }
 
 interface TourismEmptyStateProps {

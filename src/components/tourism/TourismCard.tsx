@@ -62,13 +62,20 @@ export function TourismCard({
         <p>카드를 선택하면 운영시간, 요금, 주차 정보를 확인할 수 있습니다.</p>
         <button
           type="button"
-          className="favorite-toggle-button"
+          className={
+            isFavorite
+              ? 'favorite-toggle-button favorite-toggle-button--saved'
+              : 'favorite-toggle-button'
+          }
+          aria-pressed={isFavorite}
+          aria-label={isFavorite ? '관심 코스 저장 해제' : '관심 코스 저장'}
           onClick={(event) => {
             event.stopPropagation()
             onToggleFavorite?.(item)
           }}
         >
-          {isFavorite ? '관심 코스 해제' : '관심 코스 저장'}
+          <span aria-hidden="true">{isFavorite ? '♥' : '♡'}</span>
+          {isFavorite ? '저장됨' : '관심 코스 저장'}
         </button>
       </div>
     </article>

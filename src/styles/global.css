@@ -882,6 +882,7 @@ a {
 .course-side-panel {
   display: grid;
   gap: 16px;
+  align-self: start;
 }
 
 .tourism-section-block {
@@ -955,15 +956,46 @@ a {
 }
 
 .favorite-toggle-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
   min-height: 38px;
   margin-top: 14px;
-  border: 1px solid var(--line-strong);
+  border: 1px solid rgba(45, 75, 62, 0.42);
   border-radius: 999px;
   padding: 0 14px;
   color: var(--forest);
   background: var(--surface);
   cursor: pointer;
   font-weight: 800;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+}
+
+.favorite-toggle-button:hover,
+.favorite-toggle-button:focus-visible {
+  border-color: var(--forest);
+  background: rgba(200, 234, 216, 0.34);
+  outline: none;
+  transform: translateY(-1px);
+}
+
+.favorite-toggle-button--saved {
+  border-color: var(--chestnut);
+  color: var(--surface);
+  background: var(--chestnut);
+  box-shadow: 0 10px 24px rgba(107, 68, 54, 0.16);
+}
+
+.favorite-toggle-button--saved:hover,
+.favorite-toggle-button--saved:focus-visible {
+  border-color: var(--chestnut);
+  color: var(--surface);
+  background: #5d382b;
 }
 
 .detail-favorite-button {

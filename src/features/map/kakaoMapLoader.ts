@@ -15,9 +15,17 @@ interface KakaoMarkerOptions {
 
 export interface KakaoMarker {
   setMap(map: KakaoMap | null): void
+  setZIndex(zIndex: number): void
+}
+
+export interface KakaoPolyline {
+  setMap(map: KakaoMap | null): void
 }
 
 interface KakaoMapsApi {
+  event: {
+    addListener(target: unknown, type: string, handler: () => void): void
+  }
   load(callback: () => void): void
   LatLng: new (lat: number, lng: number) => KakaoLatLng
   Map: new (
@@ -25,6 +33,14 @@ interface KakaoMapsApi {
     options: { center: KakaoLatLng; level: number },
   ) => KakaoMap
   Marker: new (options: KakaoMarkerOptions) => KakaoMarker
+  Polyline: new (options: {
+    map: KakaoMap
+    path: KakaoLatLng[]
+    strokeWeight: number
+    strokeColor: string
+    strokeOpacity: number
+    strokeStyle: string
+  }) => KakaoPolyline
 }
 
 export interface KakaoMapsWindow {

@@ -76,10 +76,17 @@ export function TourismDetailPanel({
 
         <button
           type="button"
-          className="favorite-toggle-button detail-favorite-button"
+          className={
+            isFavorite
+              ? 'favorite-toggle-button favorite-toggle-button--saved detail-favorite-button'
+              : 'favorite-toggle-button detail-favorite-button'
+          }
+          aria-pressed={isFavorite}
+          aria-label={isFavorite ? '관심 코스 저장 해제' : '관심 코스 저장'}
           onClick={() => onToggleFavorite?.(item)}
         >
-          {isFavorite ? '관심 코스 해제' : '관심 코스 저장'}
+          <span aria-hidden="true">{isFavorite ? '♥' : '♡'}</span>
+          {isFavorite ? '저장됨' : '관심 코스 저장'}
         </button>
 
         {status === 'loading' && (

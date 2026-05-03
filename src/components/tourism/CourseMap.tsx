@@ -5,12 +5,15 @@ import {
   type KakaoMap,
   type KakaoMarker,
   loadKakaoMapsSdk,
+  type KakaoPolyline,
   type KakaoMapsWindow,
 } from '../../features/map/kakaoMapLoader'
 
 interface CourseMapProps {
   items: TourismContent[]
+  routeItems?: TourismContent[]
   selectedContentId?: string
+  onSelectItem?: (item: TourismContent) => void
 }
 
 type CourseMapStatus = 'loading' | 'ready' | 'missing-key' | 'no-coordinates' | 'error'
@@ -20,12 +23,24 @@ interface CoordinateItem {
   title: string
   lat: number
   lng: number
+  item: TourismContent
 }
 
-export function CourseMap({ items, selectedContentId }: CourseMapProps) {
+interface MarkerRef {
+  id: string
+  marker: KakaoMarker
+}
+
+export function CourseMap({
+  items,
+  routeItems = [],
+  selectedContentId,
+  onSelectItem,
+}: CourseMapProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<KakaoMap | null>(null)
-  const markerRefs = useRef<KakaoMarker[]>([])
+  const markerRefs = useRef<MarkerRef[]>([])
+  const polylineRef = useRef<KakaoPolyline | null>(null)
   const [loadStatus, setLoadStatus] = useState<'loading' | 'ready' | 'error'>('loading')
   const appKey = getKakaoMapAppKey()
 
@@ -37,11 +52,25 @@ export function CourseMap({ items, selectedContentId }: CourseMapProps) {
         title: item.title ?? '관광지 정보',
         lat: item.mapY as number,
         lng: item.mapX as number,
+        item,
       }))
   }, [items])
 
+  const routeCoordinateItems = useMemo(() => {
+    return routeItems
+      .filter((item) => item.mapX !== undefined && item.mapY !== undefined)
+      .map((item) => ({
+        lat: item.mapY as number,
+        lng: item.mapX as number,
+      }))
+  }, [routeItems])
+
   useEffect(() => {
     if (coordinateItems.length === 0) {
+      markerRefs.current.forEach(({ marker }) => marker.setMap(null))
+      markerRefs.current = []
+      polylineRef.current?.setMap(null)
+      polylineRef.current = null
       return
     }
 
@@ -71,14 +100,34 @@ export function CourseMap({ items, selectedContentId }: CourseMapProps) {
         map.setCenter(center)
         mapRef.current = map
 
-        markerRefs.current.forEach((marker) => marker.setMap(null))
+        markerRefs.current.forEach(({ marker }) => marker.setMap(null))
         markerRefs.current = coordinateItems.map((item) => {
-          return new maps.Marker({
+          const marker = new maps.Marker({
             map,
             position: new maps.LatLng(item.lat, item.lng),
             title: item.title,
           })
+          marker.setZIndex(1)
+          maps.event.addListener(marker, 'click', () => onSelectItem?.(item.item))
+
+          return {
+            id: item.id,
+            marker,
+          }
         })
+
+        polylineRef.current?.setMap(null)
+        polylineRef.current = null
+        if (routeCoordinateItems.length >= 2) {
+          polylineRef.current = new maps.Polyline({
+            map,
+            path: routeCoordinateItems.map((item) => new maps.LatLng(item.lat, item.lng)),
+            strokeWeight: 4,
+            strokeColor: '#2d654c',
+            strokeOpacity: 0.82,
+            strokeStyle: 'solid',
+          })
+        }
 
         setLoadStatus('ready')
       } catch {
@@ -91,7 +140,7 @@ export function CourseMap({ items, selectedContentId }: CourseMapProps) {
     return () => {
       ignore = true
     }
-  }, [appKey, coordinateItems])
+  }, [appKey, coordinateItems, onSelectItem, routeCoordinateItems])
 
   useEffect(() => {
     if (!selectedContentId || !mapRef.current) return
@@ -101,6 +150,9 @@ export function CourseMap({ items, selectedContentId }: CourseMapProps) {
     if (!selectedItem || !maps) return
 
     mapRef.current.setCenter(new maps.LatLng(selectedItem.lat, selectedItem.lng))
+    markerRefs.current.forEach(({ id, marker }) => {
+      marker.setZIndex(id === selectedContentId ? 20 : 1)
+    })
   }, [coordinateItems, selectedContentId])
 
   const status = getDisplayStatus({
