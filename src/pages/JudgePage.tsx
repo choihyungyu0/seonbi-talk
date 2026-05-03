@@ -8,7 +8,12 @@ import { seonbiTypeInfo } from '../data/seonbiTypes'
 import { trackEvent } from '../features/analytics/trackEvent'
 import { requestSeonbiAdvice } from '../features/judge/judgeApi'
 import { saveJudgeHistory } from '../features/judge/judgeHistoryApi'
-import { getJudgeModeOption, judgeModeOptions } from '../features/judge/judgeModes'
+import {
+  getJudgeModeOption,
+  getSeonbiVisualImageAlt,
+  getSeonbiVisualImagePath,
+  judgeModeOptions,
+} from '../features/judge/judgeModes'
 import type { JudgeMode, JudgeResult } from '../features/judge/judgeTypes'
 import type { SeonbiTypeInfo, TestResult } from '../features/seonbi-test/types'
 import { loadTestResult } from '../lib/storage'
@@ -43,7 +48,7 @@ interface JudgePageContentProps {
 function JudgePageContent({ testResult, typeInfo }: JudgePageContentProps) {
   const [text, setText] = useState('')
   const [judgeMode, setJudgeMode] = useState<JudgeMode>('default')
-  const [hasSeonbiImageError, setHasSeonbiImageError] = useState(false)
+  const [failedSeonbiImageSrc, setFailedSeonbiImageSrc] = useState('')
   const [result, setResult] = useState<JudgeResult | null>(null)
   const [message, setMessage] = useState('')
   const [shareMessage, setShareMessage] = useState('')
@@ -56,8 +61,9 @@ function JudgePageContent({ testResult, typeInfo }: JudgePageContentProps) {
   const canUseWebShare = typeof navigator.share === 'function'
   const hasImage = Boolean(imageDataUrl)
   const selectedModeOption = getJudgeModeOption(judgeMode)
-  const seonbiImageSrc = `/images/seonbi/${testResult.type}.png`
-  const seonbiImageAlt = `${typeInfo.name} 선비 이미지`
+  const seonbiImageSrc = getSeonbiVisualImagePath(testResult.type, judgeMode)
+  const seonbiImageAlt = getSeonbiVisualImageAlt(typeInfo.name, judgeMode)
+  const hasSeonbiImageError = failedSeonbiImageSrc === seonbiImageSrc
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -209,7 +215,7 @@ function JudgePageContent({ testResult, typeInfo }: JudgePageContentProps) {
               <img
                 src={seonbiImageSrc}
                 alt={seonbiImageAlt}
-                onError={() => setHasSeonbiImageError(true)}
+                onError={() => setFailedSeonbiImageSrc(seonbiImageSrc)}
               />
             ) : (
               <span className="wisdom-visual-fallback" aria-hidden="true">

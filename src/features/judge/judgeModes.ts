@@ -1,4 +1,5 @@
 import type { JudgeMode } from './judgeTypes'
+import type { SeonbiType, SeonbiTypeName } from '../seonbi-test/types'
 
 export interface JudgeModeOption {
   id: JudgeMode
@@ -75,4 +76,24 @@ export function getJudgeModeOption(judgeMode: JudgeMode | undefined) {
       description: '선비유형 말투를 그대로 살립니다.',
     }
   )
+}
+
+export function getSeonbiVisualImagePath(
+  seonbiType: SeonbiType,
+  judgeMode: JudgeMode,
+) {
+  if (seonbiType === 'toegye' && judgeMode !== 'default') {
+    return `/images/seonbi/toegye-${judgeMode}.png`
+  }
+
+  return `/images/seonbi/${seonbiType}.png`
+}
+
+export function getSeonbiVisualImageAlt(
+  seonbiTypeName: SeonbiTypeName,
+  judgeMode: JudgeMode,
+) {
+  if (judgeMode === 'default') return `${seonbiTypeName} 선비 이미지`
+
+  return `${seonbiTypeName} 선비 ${getJudgeModeOption(judgeMode).badge} 모드 이미지`
 }
