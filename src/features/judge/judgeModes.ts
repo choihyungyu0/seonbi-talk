@@ -99,5 +99,10 @@ export function getSeonbiVisualImageAlt(
 }
 
 function hasModeSpecificSeonbiImage(seonbiType: SeonbiType) {
-  return seonbiType === 'toegye' || seonbiType === 'yulgok' || seonbiType === 'cheosa'
+  return (
+    seonbiType === 'toegye' ||
+    seonbiType === 'yulgok' ||
+    seonbiType === 'cheosa' ||
+    seonbiType === 'uguk'
+  )
 }
