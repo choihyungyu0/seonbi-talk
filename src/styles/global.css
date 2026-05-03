@@ -883,6 +883,7 @@ a {
 .course-category-tabs button.active {
   color: #fff;
   background: var(--forest);
+  box-shadow: 0 10px 24px rgba(45, 75, 62, 0.18);
 }
 
 .inline-actions,

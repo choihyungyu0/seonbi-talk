@@ -199,13 +199,14 @@ export function CoursePage() {
   const routePath = routeState.key === routePointsKey ? routeState.path : []
   const routeSource = routeState.key === routePointsKey ? routeState.source : 'straight-line'
   const activeFilterLabel = getTourismFilterLabel(activeFilter)
+  const selectedRecommendationTitle = getRecommendationTitle(activeFilter)
   const selectedDataTitle = getTourismDataTitle(activeFilter)
   const selectedEmptyTitle = getTourismEmptyTitle(activeFilter)
   const selectedRecommendationDescription = getRecommendationDescription(activeFilter)
   const locationMessage = isLocationFallback
     ? `위치 권한이 없어 영주 중심 기준으로 가까운 ${activeFilterLabel} 추천 코스 3곳을 표시합니다.`
     : `현재 위치 기준 가까운 ${activeFilterLabel} 추천 코스 3곳`
-  const routeLabel = `현재 위치 기준 ${activeFilterLabel} 추천 경로`
+  const routeLabel = `현재 위치 기준 가까운 ${activeFilterLabel} 추천 경로`
   const shouldShowCards = tourismState.status === 'ready' && tourismState.contents.length > 0
   const shouldShowAllCards = tourismState.status === 'ready' && tourismState.contents.length > 0
   const activeSeonbiType = testResult?.type
@@ -413,7 +414,7 @@ export function CoursePage() {
               <section className="tourism-section-block">
                 <div className="tourism-section-heading">
                   <StatusBadge>추천 코스</StatusBadge>
-                  <h2>내 선비유형에 맞는 영주 추천 코스</h2>
+                  <h2>{selectedRecommendationTitle}</h2>
                   <p>현재 선택한 유형: {activeFilterLabel}</p>
                   <p>
                     {selectedRecommendationDescription}
@@ -506,6 +507,14 @@ function getTourismDataTitle(filterId: TourismFilterId) {
   if (filterId === 'accommodation') return '영주 숙박 데이터 보기'
   if (filterId === 'restaurant') return '영주 음식점 데이터 보기'
   return '전체 영주 관광 데이터 보기'
+}
+
+function getRecommendationTitle(filterId: TourismFilterId) {
+  if (filterId === 'attraction') return '내 선비유형에 맞는 영주 관광지 추천'
+  if (filterId === 'culture') return '내 선비유형에 맞는 영주 문화시설 추천'
+  if (filterId === 'accommodation') return '내 선비유형에 맞는 영주 숙박 추천'
+  if (filterId === 'restaurant') return '내 선비유형에 맞는 영주 음식점 추천'
+  return '내 선비유형에 맞는 영주 추천 코스'
 }
 
 function getTourismEmptyTitle(filterId: TourismFilterId) {
