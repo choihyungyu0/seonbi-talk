@@ -6,8 +6,8 @@ import { TextField } from '../components/auth/TextField'
 import { CommonButton } from '../components/common/CommonButton'
 import { StatusBadge } from '../components/common/StatusBadge'
 import { AppLayout } from '../components/layout/AppLayout'
-import { signIn } from '../features/auth/authApi'
-import type { LoginFormValues } from '../features/auth/authTypes'
+import { authService } from '../features/auth/authService'
+import type { LoginFormValues, OAuthProvider } from '../features/auth/authTypes'
 import { validateLogin } from '../features/auth/authValidation'
 
 const initialValues: LoginFormValues = {
@@ -23,6 +23,7 @@ export function LoginPage() {
   const [errors, setErrors] = useState<Partial<Record<keyof LoginFormValues, string>>>({})
   const [statusMessage, setStatusMessage] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [socialProvider, setSocialProvider] = useState<OAuthProvider | null>(null)
   const [adminCode, setAdminCode] = useState('')
   const [adminStatusMessage, setAdminStatusMessage] = useState('')
   const [isAdminSubmitting, setIsAdminSubmitting] = useState(false)
@@ -36,18 +37,27 @@ export function LoginPage() {
     setIsSubmitting(true)
     setStatusMessage('')
 
-    try {
-      await signIn(values.email.trim(), values.password)
-      const redirectTo = getRedirectPath(location.state)
-      navigate(redirectTo, { replace: true })
-    } catch (error) {
-      setStatusMessage(
-        error instanceof Error
-          ? error.message
-          : '로그인 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요.',
-      )
-    } finally {
+    const result = await authService.login(values)
+    if (result.ok) {
+      navigate(getRedirectPath(location.state), { replace: true })
+    } else {
+      setStatusMessage(result.message ?? '로그인 중 문제가 발생했습니다.')
       setIsSubmitting(false)
+    }
+  }
+
+  async function handleSocialLogin(provider: OAuthProvider) {
+    setStatusMessage('')
+    setSocialProvider(provider)
+
+    const result = await authService.socialLogin(
+      provider,
+      getRedirectPath(location.state, '/mypage'),
+    )
+
+    if (!result.ok) {
+      setStatusMessage(result.message ?? '간편로그인으로 이동하지 못했습니다.')
+      setSocialProvider(null)
     }
   }
 
@@ -98,6 +108,40 @@ export function LoginPage() {
           <p>결과 저장, 관심 코스, 여행 기록은 로그인 후 이용할 수 있어요.</p>
         </div>
         <form className="surface-card auth-form" onSubmit={handleSubmit}>
+          <div className="social-login-section" aria-labelledby="social-login-title">
+            <div className="social-login-heading">
+              <span id="social-login-title">간편로그인</span>
+            </div>
+            <div className="social-login-actions">
+              <button
+                className="social-login-button social-login-button--google"
+                type="button"
+                disabled={Boolean(socialProvider) || isSubmitting}
+                onClick={() => void handleSocialLogin('google')}
+              >
+                <span aria-hidden="true">G</span>
+                {socialProvider === 'google'
+                  ? 'Google로 이동 중...'
+                  : 'Google로 계속하기'}
+              </button>
+              <button
+                className="social-login-button social-login-button--kakao"
+                type="button"
+                disabled={Boolean(socialProvider) || isSubmitting}
+                onClick={() => void handleSocialLogin('kakao')}
+              >
+                <span aria-hidden="true">K</span>
+                {socialProvider === 'kakao'
+                  ? 'Kakao로 이동 중...'
+                  : 'Kakao로 계속하기'}
+              </button>
+            </div>
+          </div>
+          <div className="admin-code-divider" aria-hidden="true">
+            <span />
+            <strong>또는 이메일 로그인</strong>
+            <span />
+          </div>
           <TextField
             label="이메일"
             name="email"
@@ -139,7 +183,9 @@ export function LoginPage() {
               {statusMessage}
             </p>
           )}
-          <AuthButton isLoading={isSubmitting}>로그인</AuthButton>
+          <AuthButton isLoading={isSubmitting} disabled={Boolean(socialProvider)}>
+            로그인
+          </AuthButton>
           <div className="auth-links">
             <Link to="/forgot-password">비밀번호 찾기</Link>
             <Link to="/signup">회원가입</Link>
@@ -203,7 +249,7 @@ export function LoginPage() {
   )
 }
 
-function getRedirectPath(state: unknown) {
+function getRedirectPath(state: unknown, fallback = '/') {
   if (
     state &&
     typeof state === 'object' &&
@@ -213,5 +259,5 @@ function getRedirectPath(state: unknown) {
     return state.from
   }
 
-  return '/'
+  return fallback
 }

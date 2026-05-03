@@ -1,4 +1,5 @@
 import { getSupabaseConfig } from '../../lib/supabase'
+import type { OAuthProvider } from './authTypes'
 
 export interface AuthUser {
   id: string
@@ -26,6 +27,7 @@ interface SupabaseAuthResponse {
   access_token?: string
   refresh_token?: string
   expires_in?: number
+  expires_at?: number
   user?: SupabaseAuthUser
 }
 
@@ -33,6 +35,7 @@ type AuthChangeHandler = (user: AuthUser | null) => void
 
 const authSessionKey = 'yeongju-seonbi-auth-session'
 const authChangeEventName = 'yeongju-seonbi-auth-change'
+const authReturnToKey = 'yeongju-auth-return-to'
 const authHandlers = new Set<AuthChangeHandler>()
 
 export async function signUp(email: string, password: string, nickname?: string) {
@@ -73,6 +76,71 @@ export async function signIn(email: string, password: string) {
   saveSession(session)
   notifyAuthChange()
   return session.user
+}
+
+export function signInWithOAuthProvider(
+  provider: OAuthProvider,
+  returnTo = getSafeCurrentPath(),
+) {
+  const { url, isConfigured } = getSupabaseConfig()
+
+  if (!isConfigured) {
+    throw new Error('Supabase Auth 환경변수가 설정되지 않았습니다.')
+  }
+
+  const safeReturnTo = normalizeReturnTo(returnTo)
+  if (safeReturnTo) {
+    window.sessionStorage.setItem(authReturnToKey, safeReturnTo)
+  }
+
+  const redirectTo = `${window.location.origin}/auth/callback`
+  const oauthUrl = `${url}/auth/v1/authorize?provider=${provider}&redirect_to=${encodeURIComponent(
+    redirectTo,
+  )}`
+
+  window.location.assign(oauthUrl)
+}
+
+export async function completeOAuthSignInFromUrl(
+  url = window.location.href,
+  hash = window.location.hash,
+) {
+  const params = getOAuthCallbackParams(url, hash)
+  const errorMessage =
+    params.get('error_description') ?? params.get('error') ?? params.get('message')
+
+  if (errorMessage) {
+    throw new Error('간편로그인 처리 중 문제가 발생했습니다.')
+  }
+
+  const accessToken = params.get('access_token')
+  if (!accessToken) {
+    throw new Error('간편로그인 세션을 확인할 수 없습니다.')
+  }
+
+  const user = await requestAuth<SupabaseAuthUser>('user', {
+    method: 'GET',
+    accessToken,
+  })
+
+  const session = createSession({
+    access_token: accessToken,
+    refresh_token: params.get('refresh_token') ?? undefined,
+    expires_in: toNumber(params.get('expires_in')),
+    expires_at: toNumber(params.get('expires_at')),
+    user,
+  })
+
+  saveSession(session)
+  notifyAuthChange()
+
+  return session.user
+}
+
+export function consumeOAuthReturnTo() {
+  const returnTo = normalizeReturnTo(window.sessionStorage.getItem(authReturnToKey))
+  window.sessionStorage.removeItem(authReturnToKey)
+  return returnTo
 }
 
 export async function signOut() {
@@ -146,11 +214,19 @@ function createSession(response: SupabaseAuthResponse): AuthSession {
   return {
     accessToken: response.access_token,
     refreshToken: response.refresh_token,
-    expiresAt: response.expires_in
-      ? Date.now() + response.expires_in * 1000
-      : undefined,
+    expiresAt: getExpiresAt(response),
     user: toAuthUser(response.user),
   }
+}
+
+function getExpiresAt(response: SupabaseAuthResponse) {
+  if (response.expires_at) {
+    return response.expires_at > 10_000_000_000
+      ? response.expires_at
+      : response.expires_at * 1000
+  }
+
+  return response.expires_in ? Date.now() + response.expires_in * 1000 : undefined
 }
 
 async function requestAuth<T = unknown>(
@@ -241,4 +317,31 @@ function notifyAuthChange() {
   const user = getStoredAuthUser()
   authHandlers.forEach((handler) => handler(user))
   window.dispatchEvent(new Event(authChangeEventName))
+}
+
+function getOAuthCallbackParams(url: string, hash: string) {
+  const params = new URLSearchParams(new URL(url).search)
+  const hashParams = new URLSearchParams(hash.replace(/^#/, ''))
+
+  hashParams.forEach((value, key) => {
+    if (!params.has(key)) params.set(key, value)
+  })
+
+  return params
+}
+
+function getSafeCurrentPath() {
+  return `${window.location.pathname}${window.location.search}`
+}
+
+function normalizeReturnTo(value: string | null | undefined) {
+  if (!value || !value.startsWith('/') || value.startsWith('//')) return null
+  if (value.startsWith('/auth/callback') || value.startsWith('/login')) return null
+  return value
+}
+
+function toNumber(value: string | null) {
+  if (!value) return undefined
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : undefined
 }

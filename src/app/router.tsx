@@ -1,6 +1,7 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AdminPage } from '../pages/AdminPage'
 import { AdminLoginPage } from '../pages/AdminLoginPage'
+import { AuthCallbackPage } from '../pages/AuthCallbackPage'
 import { CoursePage } from '../pages/CoursePage'
 import { ForgotPasswordPage } from '../pages/ForgotPasswordPage'
 import { HomePage } from '../pages/HomePage'
@@ -22,6 +23,7 @@ export function AppRouter() {
         <Route path="/judge" element={<JudgePage />} />
         <Route path="/mypage" element={<MyPage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/auth/callback" element={<AuthCallbackPage />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/admin-login" element={<AdminLoginPage />} />

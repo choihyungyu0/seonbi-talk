@@ -20,8 +20,11 @@ export interface AuthResult {
   message?: string
 }
 
+export type OAuthProvider = 'google' | 'kakao'
+
 export interface AuthService {
   login(values: LoginFormValues): Promise<AuthResult>
   signup(values: SignupFormValues): Promise<AuthResult>
+  socialLogin(provider: OAuthProvider, returnTo?: string): Promise<AuthResult>
   sendPasswordReset(values: ForgotPasswordFormValues): Promise<AuthResult>
 }

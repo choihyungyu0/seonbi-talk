@@ -3,9 +3,10 @@ import type {
   AuthService,
   ForgotPasswordFormValues,
   LoginFormValues,
+  OAuthProvider,
   SignupFormValues,
 } from './authTypes'
-import { signIn, signUp } from './authApi'
+import { signIn, signInWithOAuthProvider, signUp } from './authApi'
 
 export const authService: AuthService = {
   async login(values: LoginFormValues): Promise<AuthResult> {
@@ -33,6 +34,20 @@ export const authService: AuthService = {
           error instanceof Error
             ? error.message
             : '회원가입 중 문제가 발생했습니다.',
+      }
+    }
+  },
+  async socialLogin(
+    provider: OAuthProvider,
+    returnTo?: string,
+  ): Promise<AuthResult> {
+    try {
+      signInWithOAuthProvider(provider, returnTo)
+      return { ok: true }
+    } catch {
+      return {
+        ok: false,
+        message: '간편로그인으로 이동하지 못했습니다.',
       }
     }
   },
