@@ -1,5 +1,6 @@
 /* global Buffer, process */
 import { createHmac, timingSafeEqual } from 'node:crypto'
+import { createEmptyRagStatus, getRagDocumentStatus } from '../_rag'
 
 type DashboardRange = 'today' | '7d' | '30d' | 'all'
 type SeonbiType = 'toegye' | 'yulgok' | 'cheosa' | 'uguk'
@@ -92,7 +93,7 @@ export default async function handler(
   const range = normalizeRange(request.query?.range)
   const dateFilter = getDateFilter(range)
 
-  const [analyticsEvents, favoriteCourses, judgeHistories, totalUsers] =
+  const [analyticsEvents, favoriteCourses, judgeHistories, totalUsers, ragStatus] =
     await Promise.all([
       fetchSupabaseRows<AnalyticsEventRow>(
         supabase,
@@ -116,6 +117,7 @@ export default async function handler(
         1000,
       ),
       fetchTotalUsers(supabase),
+      getRagDocumentStatus(),
     ])
 
   response.status(200).json({
@@ -126,6 +128,7 @@ export default async function handler(
       favoriteCourses,
       judgeHistories,
       totalUsers,
+      ragStatus,
     }),
   })
 }
@@ -135,6 +138,7 @@ function createDashboard(input: {
   favoriteCourses: FavoriteCourseRow[]
   judgeHistories: JudgeHistoryRow[]
   totalUsers: number
+  ragStatus: ReturnType<typeof createEmptyRagStatus>
 }) {
   return {
     summary: {
@@ -148,6 +152,7 @@ function createDashboard(input: {
     courseStats: createCourseStats(input.favoriteCourses, input.analyticsEvents),
     behaviorFunnel: createBehaviorFunnel(input.analyticsEvents),
     publicDataStatus: createPublicDataStatus(input.favoriteCourses, input.analyticsEvents),
+    ragStatus: input.ragStatus,
     recentActivities: createRecentActivities(input.analyticsEvents),
   }
 }
@@ -161,6 +166,7 @@ function createEmptyDashboard() {
       favoriteCourses: [],
       judgeHistories: [],
       totalUsers: 0,
+      ragStatus: createEmptyRagStatus(),
     }),
   }
 }

@@ -48,6 +48,14 @@ interface AdminDashboard {
     lastSyncedAt: string | null
     unavailableMetrics: string[]
   }
+  ragStatus: {
+    totalDocuments: number
+    tourismPlaceDocuments: number
+    seonbiPersonaDocuments: number
+    judgeModeDocuments: number
+    recommendationRuleDocuments: number
+    lastUpdatedAt: string | null
+  }
   recentActivities: Array<{
     eventType: string
     createdAt: string
@@ -284,6 +292,7 @@ export function AdminPage() {
             <section className="admin-analytics-grid">
               <BehaviorFunnel steps={dashboard.behaviorFunnel} />
               <PublicDataStatusPanel status={dashboard.publicDataStatus} />
+              <RagStatusPanel status={dashboard.ragStatus} />
               <ChartPanel
                 title="선비유형 분포"
                 rows={toChartRows(dashboard.seonbiTypeDistribution, seonbiTypeLabels)}
@@ -463,6 +472,46 @@ function PublicDataStatusPanel({
         <p className="admin-data-note">
           {status.unavailableMetrics.join(', ')}은 수집 예정입니다.
         </p>
+      )}
+    </article>
+  )
+}
+
+function RagStatusPanel({
+  status,
+}: {
+  status: AdminDashboard['ragStatus']
+}) {
+  const metrics = [
+    { label: 'RAG 문서 수', value: status.totalDocuments },
+    { label: '관광지 문서 수', value: status.tourismPlaceDocuments },
+    { label: '선비유형 문서 수', value: status.seonbiPersonaDocuments },
+    { label: '모드 문서 수', value: status.judgeModeDocuments },
+    { label: '추천 규칙 문서 수', value: status.recommendationRuleDocuments },
+  ]
+
+  return (
+    <article className="surface-card admin-chart-panel admin-rag-status-panel">
+      <div className="admin-panel-heading">
+        <h2>AI 참고 데이터 상태</h2>
+        <span>전체 기준</span>
+      </div>
+      {status.totalDocuments === 0 ? (
+        <p className="admin-empty-panel">아직 등록된 AI 참고 데이터가 없습니다.</p>
+      ) : (
+        <>
+          <dl className="admin-rag-status-grid">
+            {metrics.map((metric) => (
+              <div key={metric.label}>
+                <dt>{metric.label}</dt>
+                <dd>{formatNumber(metric.value)}</dd>
+              </div>
+            ))}
+          </dl>
+          <p className="admin-data-note">
+            마지막 업데이트: {status.lastUpdatedAt ? formatDateTime(status.lastUpdatedAt) : '데이터 없음'}
+          </p>
+        </>
       )}
     </article>
   )

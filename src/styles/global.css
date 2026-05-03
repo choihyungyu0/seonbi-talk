@@ -2682,14 +2682,24 @@ a {
   grid-column: span 2;
 }
 
-.admin-public-data-grid {
+.admin-public-data-grid,
+.admin-rag-status-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
   margin: 0;
 }
 
-.admin-public-data-grid div {
+.admin-rag-status-panel {
+  grid-column: span 2;
+}
+
+.admin-rag-status-grid {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.admin-public-data-grid div,
+.admin-rag-status-grid div {
   display: grid;
   gap: 6px;
   border: 1px solid rgba(225, 221, 214, 0.78);
@@ -2698,13 +2708,15 @@ a {
   background: rgba(246, 243, 242, 0.64);
 }
 
-.admin-public-data-grid dt {
+.admin-public-data-grid dt,
+.admin-rag-status-grid dt {
   color: var(--muted);
   font-size: 13px;
   font-weight: 900;
 }
 
-.admin-public-data-grid dd {
+.admin-public-data-grid dd,
+.admin-rag-status-grid dd {
   margin: 0;
   color: var(--ink);
   font-family: var(--serif);
@@ -3285,7 +3297,8 @@ a {
   }
 
   .admin-funnel-panel,
-  .admin-public-data-panel {
+  .admin-public-data-panel,
+  .admin-rag-status-panel {
     grid-column: auto;
   }
 
@@ -3299,7 +3312,8 @@ a {
     text-align: left;
   }
 
-  .admin-public-data-grid {
+  .admin-public-data-grid,
+  .admin-rag-status-grid {
     grid-template-columns: 1fr;
   }
 

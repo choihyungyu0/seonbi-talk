@@ -1,4 +1,5 @@
 /* global process */
+import { searchRagDocuments } from './_rag'
 
 type JudgeEmptyReason = 'missing_api_key' | 'invalid_input' | 'api_error'
 type SeonbiType = 'toegye' | 'yulgok' | 'cheosa' | 'uguk'
@@ -140,6 +141,7 @@ export default async function handler(
   }
 
   try {
+    const ragContext = await createRagContext(inputText, seonbiType, judgeMode, Boolean(imageInput?.dataUrl))
     const openAiResponse = await fetch(openAiChatCompletionsUrl, {
       method: 'POST',
       headers: {
@@ -168,6 +170,7 @@ export default async function handler(
               '각 필드는 한국어 문자열이어야 한다.',
               getSeonbiTypePrompt(seonbiType),
               getJudgeModePrompt(judgeMode),
+              ragContext,
             ].join(' '),
           },
           {
@@ -230,6 +233,47 @@ export default async function handler(
         : createSafeFailureResponse(),
     )
   }
+}
+
+async function createRagContext(
+  inputText: string,
+  seonbiType: SeonbiType | undefined,
+  judgeMode: JudgeMode,
+  hasImage: boolean,
+) {
+  try {
+    const query = [
+      seonbiType ?? '선비',
+      judgeMode,
+      inputText || (hasImage ? '사진 기반 고민' : ''),
+    ]
+      .filter(Boolean)
+      .join(' ')
+      .slice(0, 800)
+    const documents = await searchRagDocuments(query, 5)
+    const safeDocuments = documents
+      .filter((document) => document.title && document.content)
+      .slice(0, 5)
+
+    if (safeDocuments.length === 0) return ''
+
+    return [
+      '[영주선비길 참고 데이터]',
+      ...safeDocuments.map((document, index) =>
+        [
+          `${index + 1}. ${document.title}`,
+          `- ${summarizeRagContent(document.content)}`,
+        ].join('\n'),
+      ),
+      '주의: 참고 데이터는 답변의 근거로만 사용한다. 참고 데이터에 없는 운영시간, 요금, 주소는 지어내지 않는다. 사용자에게 RAG 내부 구조를 설명하지 않는다.',
+    ].join('\n\n')
+  } catch {
+    return ''
+  }
+}
+
+function summarizeRagContent(content: string) {
+  return content.replace(/\s+/g, ' ').trim().slice(0, 260)
 }
 
 function getInputText(body: unknown) {
