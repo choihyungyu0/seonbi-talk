@@ -27,13 +27,8 @@ interface RouteProxyResponse {
   message?: string
 }
 
-interface ExternalRouteResponse {
-  path?: RouteCoordinate[]
-  route?: {
-    path?: RouteCoordinate[]
-  }
+interface KakaoDirectionsResponse {
   routes?: Array<{
-    path?: RouteCoordinate[]
     sections?: Array<{
       roads?: Array<{
         vertexes?: number[]
@@ -41,6 +36,13 @@ interface ExternalRouteResponse {
     }>
   }>
 }
+
+const KAKAO_DIRECTIONS_ENDPOINT =
+  'https://apis-navi.kakaomobility.com/v1/directions'
+const ROUTE_TIMEOUT_MS = 7000
+const MIN_ROUTE_POINTS = 2
+const MAX_ROUTE_POINTS = 4
+const ROUTE_FAILURE_MESSAGE = '경로를 불러오지 못했습니다.'
 
 export default async function handler(
   request: VercelRequestLike,
@@ -56,52 +58,53 @@ export default async function handler(
     return
   }
 
-  const points = getRoutePoints(request.body)
-  if (points.length < 2) {
+  const validation = getValidatedRoutePoints(request.body)
+  if (!validation.ok) {
     response.status(400).json({
       ok: false,
-      message: '경로 좌표를 확인할 수 없습니다.',
+      message: validation.message,
     })
     return
   }
 
-  // 경로 API URL과 키는 서버 환경변수로만 관리한다.
-  // 프론트에는 길찾기 REST 키를 노출하지 않는다.
-  const routeApiUrl = process.env.ROUTE_DIRECTIONS_API_URL
-  const routeApiKey = process.env.ROUTE_DIRECTIONS_API_KEY
+  const points = validation.points
+  const kakaoApiKey =
+    process.env.KAKAO_MOBILITY_REST_API_KEY ?? process.env.KAKAO_REST_API_KEY
 
-  if (!routeApiUrl || !routeApiKey) {
+  if (!kakaoApiKey) {
     response.status(200).json({
       ok: false,
-      message: '길찾기 API 환경변수가 설정되지 않았습니다.',
+      message: ROUTE_FAILURE_MESSAGE,
     })
     return
   }
 
+  const abortController = new AbortController()
+  const timeoutId = setTimeout(() => abortController.abort(), ROUTE_TIMEOUT_MS)
+
   try {
-    const routeResponse = await fetch(routeApiUrl, {
-      method: 'POST',
+    const routeResponse = await fetch(createKakaoDirectionsUrl(points), {
+      method: 'GET',
       headers: {
-        Authorization: `Bearer ${routeApiKey}`,
-        'Content-Type': 'application/json',
+        Authorization: `KakaoAK ${kakaoApiKey}`,
       },
-      body: JSON.stringify({ points }),
+      signal: abortController.signal,
     })
 
     if (!routeResponse.ok) {
       response.status(200).json({
         ok: false,
-        message: '길찾기 API 호출에 실패했습니다.',
+        message: ROUTE_FAILURE_MESSAGE,
       })
       return
     }
 
-    const data = (await routeResponse.json().catch(() => ({}))) as ExternalRouteResponse
-    const path = normalizeRoutePath(data)
+    const data = (await routeResponse.json().catch(() => ({}))) as KakaoDirectionsResponse
+    const path = extractKakaoRoutePath(data)
     if (path.length < 2) {
       response.status(200).json({
         ok: false,
-        message: '길찾기 경로를 확인할 수 없습니다.',
+        message: ROUTE_FAILURE_MESSAGE,
       })
       return
     }
@@ -114,26 +117,68 @@ export default async function handler(
   } catch {
     response.status(200).json({
       ok: false,
-      message: '길찾기 API 처리 중 문제가 발생했습니다.',
+      message: ROUTE_FAILURE_MESSAGE,
     })
+  } finally {
+    clearTimeout(timeoutId)
   }
 }
 
-function getRoutePoints(body: unknown) {
-  const parsedBody = parseRequestBody(body)
-  const rawPoints = Array.isArray(parsedBody.points) ? parsedBody.points : []
+type RoutePointsValidation =
+  | {
+      ok: true
+      points: RouteCoordinate[]
+    }
+  | {
+      ok: false
+      message: string
+    }
 
-  return rawPoints
-    .map((point) => {
-      if (!point || typeof point !== 'object') return null
-      const coordinate = point as Partial<RouteCoordinate>
-      if (!isValidCoordinate(coordinate.lat, coordinate.lng)) return null
+function getValidatedRoutePoints(body: unknown): RoutePointsValidation {
+  const parsedBody = parseRequestBody(body)
+  const rawPoints = parsedBody.points
+
+  if (!Array.isArray(rawPoints)) {
+    return {
+      ok: false,
+      message: '경로 좌표를 확인할 수 없습니다.',
+    }
+  }
+
+  if (rawPoints.length < MIN_ROUTE_POINTS || rawPoints.length > MAX_ROUTE_POINTS) {
+    return {
+      ok: false,
+      message: '경로 좌표는 2개 이상 4개 이하로 입력해야 합니다.',
+    }
+  }
+
+  const points: RouteCoordinate[] = []
+  for (const point of rawPoints) {
+    if (!point || typeof point !== 'object') {
       return {
-        lat: coordinate.lat,
-        lng: coordinate.lng,
+        ok: false,
+        message: '경로 좌표 형식이 올바르지 않습니다.',
       }
+    }
+
+    const coordinate = point as Partial<RouteCoordinate>
+    if (!isValidCoordinate(coordinate.lat, coordinate.lng)) {
+      return {
+        ok: false,
+        message: '경로 좌표 범위가 올바르지 않습니다.',
+      }
+    }
+
+    points.push({
+      lat: coordinate.lat,
+      lng: coordinate.lng,
     })
-    .filter((point): point is RouteCoordinate => Boolean(point))
+  }
+
+  return {
+    ok: true,
+    points,
+  }
 }
 
 function parseRequestBody(body: unknown): RouteRequestBody {
@@ -146,10 +191,28 @@ function parseRequestBody(body: unknown): RouteRequestBody {
   }
 }
 
-function normalizeRoutePath(data: ExternalRouteResponse) {
-  const directPath = data.path ?? data.route?.path
-  if (directPath) return directPath.filter((point) => isValidCoordinate(point.lat, point.lng))
+function createKakaoDirectionsUrl(points: RouteCoordinate[]) {
+  const [origin, ...remainingPoints] = points
+  const destination = remainingPoints[remainingPoints.length - 1]
+  const waypoints = remainingPoints.slice(0, -1)
+  const searchParams = new URLSearchParams({
+    origin: formatKakaoCoordinate(origin),
+    destination: formatKakaoCoordinate(destination),
+    priority: 'RECOMMEND',
+  })
 
+  if (waypoints.length > 0) {
+    searchParams.set('waypoints', waypoints.map(formatKakaoCoordinate).join('|'))
+  }
+
+  return `${KAKAO_DIRECTIONS_ENDPOINT}?${searchParams.toString()}`
+}
+
+function formatKakaoCoordinate(point: RouteCoordinate) {
+  return `${point.lng},${point.lat}`
+}
+
+function extractKakaoRoutePath(data: KakaoDirectionsResponse) {
   const vertexes =
     data.routes?.[0]?.sections?.flatMap((section) => {
       return section.roads?.flatMap((road) => road.vertexes ?? []) ?? []
@@ -172,6 +235,10 @@ function isValidCoordinate(lat: unknown, lng: unknown): lat is number {
     typeof lat === 'number' &&
     typeof lng === 'number' &&
     Number.isFinite(lat) &&
-    Number.isFinite(lng)
+    Number.isFinite(lng) &&
+    lat >= -90 &&
+    lat <= 90 &&
+    lng >= -180 &&
+    lng <= 180
   )
 }
