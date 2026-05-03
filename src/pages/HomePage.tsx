@@ -4,7 +4,11 @@ import { AppLayout } from '../components/layout/AppLayout'
 import { CommonButton } from '../components/common/CommonButton'
 import { ImagePlaceholder } from '../components/common/ImagePlaceholder'
 import { StatusBadge } from '../components/common/StatusBadge'
-import { searchYeongjuTourismByKeyword } from '../features/tourism/tourismApi'
+import {
+  getYeongjuCultureFacilities,
+  getYeongjuTouristAttractions,
+  searchYeongjuTourismByKeyword,
+} from '../features/tourism/tourismApi'
 import { getTourismPrimaryImageUrl } from '../features/tourism/tourismImageUrl'
 import type { TourismContent } from '../features/tourism/tourismTypes'
 import { useHeroMotion } from '../hooks/useHeroMotion'
@@ -27,8 +31,12 @@ const featureCards = [
 
 const yeongjuKeywords = ['소수서원', '선비세상', '무섬마을', '부석사', '풍기인삼']
 const homeImageKeywords = ['소수서원', '부석사', '무섬마을', '선비세상']
-const heroImageCacheKey = 'yeongju-home-hero-image'
-const secondaryImageCacheKey = 'yeongju-home-secondary-image'
+const heroSlidesCacheKey = 'yeongju-home-tourism-slides'
+const cultureSlidesCacheKey = 'yeongju-home-culture-slides'
+const heroSlideLimit = 8
+const cultureSlideLimit = 10
+const minHeroSlideCount = 3
+const minCultureSlideCount = 3
 
 interface HomeHeroImage {
   src: string
@@ -37,10 +45,16 @@ interface HomeHeroImage {
 }
 
 export function HomePage() {
-  const [heroImage, setHeroImage] = useState<HomeHeroImage | null>(null)
-  const [secondaryImage, setSecondaryImage] = useState<HomeHeroImage | null>(null)
+  const [heroTourismSlides, setHeroTourismSlides] = useState<HomeHeroImage[]>([])
+  const [cultureSlides, setCultureSlides] = useState<HomeHeroImage[]>([])
   const [isHeroImageLoading, setIsHeroImageLoading] = useState(true)
-  const [isSecondaryImageLoading, setIsSecondaryImageLoading] = useState(true)
+  const [isCultureImageLoading, setIsCultureImageLoading] = useState(true)
+  const [activeHeroSlideIndex, setActiveHeroSlideIndex] = useState(0)
+  const [isHeroCarouselPaused, setIsHeroCarouselPaused] = useState(false)
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  })
   const [heroRef, handleHeroPointerMove, handleHeroPointerLeave] =
     useHeroMotion<HTMLElement>()
   const [featureRevealRef, isFeatureVisible] = useRevealOnScroll<HTMLDivElement>()
@@ -51,43 +65,68 @@ export function HomePage() {
   useEffect(() => {
     let ignore = false
 
-    async function loadHeroImage() {
+    async function loadHomeImages() {
       setIsHeroImageLoading(true)
-      setIsSecondaryImageLoading(true)
+      setIsCultureImageLoading(true)
 
-      const cachedHeroImage = getCachedHomeImage(heroImageCacheKey)
-      const cachedSecondaryImage = getCachedHomeImage(secondaryImageCacheKey)
-      if (cachedHeroImage) {
-        setHeroImage(cachedHeroImage)
+      const cachedHeroSlides = getCachedHomeImages(heroSlidesCacheKey)
+      const cachedCultureSlides = getCachedHomeImages(cultureSlidesCacheKey)
+      if (cachedHeroSlides.length > 0) {
+        setHeroTourismSlides(cachedHeroSlides)
         setIsHeroImageLoading(false)
       }
-      if (
-        cachedHeroImage &&
-        cachedSecondaryImage &&
-        !isSameHomeImage(cachedHeroImage, cachedSecondaryImage)
-      ) {
-        setSecondaryImage(cachedSecondaryImage)
-        setIsSecondaryImageLoading(false)
+      if (cachedCultureSlides.length > 0) {
+        setCultureSlides(removeDuplicateHomeImages(cachedCultureSlides, cachedHeroSlides))
+        setIsCultureImageLoading(false)
       }
 
-      const images = await findHomeTourismImages(cachedHeroImage)
+      const images = await findHomeImageSlides(cachedHeroSlides, cachedCultureSlides)
       if (ignore) return
 
-      setHeroImage(images.heroImage)
-      setSecondaryImage(images.secondaryImage)
+      setHeroTourismSlides(images.heroSlides)
+      setCultureSlides(images.cultureSlides)
       setIsHeroImageLoading(false)
-      setIsSecondaryImageLoading(false)
+      setIsCultureImageLoading(false)
 
-      setCachedHomeImage(heroImageCacheKey, images.heroImage)
-      setCachedHomeImage(secondaryImageCacheKey, images.secondaryImage)
+      setCachedHomeImages(heroSlidesCacheKey, images.heroSlides)
+      setCachedHomeImages(cultureSlidesCacheKey, images.cultureSlides)
     }
 
-    void loadHeroImage()
+    void loadHomeImages()
 
     return () => {
       ignore = true
     }
   }, [])
+
+  useEffect(() => {
+    const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
+
+    function handleMotionChange(event: MediaQueryListEvent) {
+      setPrefersReducedMotion(event.matches)
+    }
+
+    motionQuery.addEventListener('change', handleMotionChange)
+    return () => motionQuery.removeEventListener('change', handleMotionChange)
+  }, [])
+
+  useEffect(() => {
+    if (prefersReducedMotion) return
+    if (isHeroCarouselPaused) return
+    if (heroTourismSlides.length < 2) return
+
+    const intervalId = window.setInterval(() => {
+      if (document.hidden) return
+      setActiveHeroSlideIndex((currentIndex) => {
+        return (currentIndex + 1) % heroTourismSlides.length
+      })
+    }, 4600)
+
+    return () => window.clearInterval(intervalId)
+  }, [heroTourismSlides.length, isHeroCarouselPaused, prefersReducedMotion])
+
+  const visibleHeroSlideIndex =
+    activeHeroSlideIndex < heroTourismSlides.length ? activeHeroSlideIndex : 0
 
   return (
     <AppLayout>
@@ -128,17 +167,54 @@ export function HomePage() {
             </div>
           </div>
           <div className="home-hero-visual" aria-label="영주 대표 관광 이미지">
-            <div className="home-hero-visual-frame">
-              {heroImage ? (
-                <figure className="home-floating-image">
-                  <img
-                    src={heroImage.src}
-                    alt={heroImage.title}
-                    loading="eager"
-                    decoding="async"
-                  />
-                  <figcaption>{heroImage.title}</figcaption>
-                </figure>
+            <div
+              className="home-hero-visual-frame"
+              onMouseEnter={() => setIsHeroCarouselPaused(true)}
+              onMouseLeave={() => setIsHeroCarouselPaused(false)}
+              onFocus={() => setIsHeroCarouselPaused(true)}
+              onBlur={() => setIsHeroCarouselPaused(false)}
+            >
+              {heroTourismSlides.length > 0 ? (
+                <div className="home-hero-carousel" aria-label="영주 관광지 사진">
+                  {heroTourismSlides.map((slide, index) => (
+                    <figure
+                      className={
+                          index === visibleHeroSlideIndex
+                          ? 'home-floating-image is-active'
+                          : 'home-floating-image'
+                      }
+                      key={`${slide.contentId ?? slide.src}-${index}`}
+                      aria-hidden={index !== visibleHeroSlideIndex}
+                    >
+                      <img
+                        src={slide.src}
+                        alt={slide.title}
+                        loading={index === 0 ? 'eager' : 'lazy'}
+                        decoding="async"
+                      />
+                      {index === visibleHeroSlideIndex && (
+                        <figcaption>{slide.title}</figcaption>
+                      )}
+                    </figure>
+                  ))}
+                  <div className="home-carousel-status" aria-hidden="true">
+                    <span>{visibleHeroSlideIndex + 1}</span>
+                    <span>/</span>
+                    <span>{heroTourismSlides.length}</span>
+                  </div>
+                  <div className="home-carousel-dots" aria-label="관광지 사진 순서">
+                    {heroTourismSlides.map((slide, index) => (
+                      <button
+                        type="button"
+                        key={`${slide.contentId ?? slide.src}-dot-${index}`}
+                        className={index === visibleHeroSlideIndex ? 'active' : ''}
+                        onClick={() => setActiveHeroSlideIndex(index)}
+                        aria-label={`${index + 1}번째 관광지 사진 보기: ${slide.title}`}
+                        aria-current={index === visibleHeroSlideIndex}
+                      />
+                    ))}
+                  </div>
+                </div>
               ) : (
                 <ImagePlaceholder
                   className="home-hero-image-placeholder"
@@ -213,24 +289,34 @@ export function HomePage() {
           ref={tourismRevealRef}
           className={`reveal-on-scroll reveal-from-right ${isTourismVisible ? 'is-visible' : ''}`}
         >
-          {secondaryImage ? (
-            <figure className="hero-tourism-image">
-              <img
-                src={secondaryImage.src}
-                alt={secondaryImage.title}
-                loading="lazy"
-                decoding="async"
-              />
-              <figcaption>{secondaryImage.title}</figcaption>
-            </figure>
+          {cultureSlides.length >= minCultureSlideCount ? (
+            <div className="home-culture-gallery" aria-label="영주 문화시설 사진">
+              <div className="home-culture-track">
+                {[...cultureSlides, ...cultureSlides].map((slide, index) => (
+                  <figure
+                    className="home-culture-card"
+                    key={`${slide.contentId ?? slide.src}-culture-${index}`}
+                    aria-hidden={index >= cultureSlides.length}
+                  >
+                    <img
+                      src={slide.src}
+                      alt={slide.title}
+                      loading="lazy"
+                      decoding="async"
+                    />
+                    <figcaption>{slide.title}</figcaption>
+                  </figure>
+                ))}
+              </div>
+            </div>
           ) : (
             <article className="surface-card home-path-card">
               <StatusBadge tone="neutral">선비길 안내</StatusBadge>
-              <h3>반복되는 사진 대신 길의 맥락을 보여줍니다</h3>
+              <h3>문화시설 사진은 준비되는 대로 이어집니다</h3>
               <p>
-                {isSecondaryImageLoading
-                  ? '다른 영주 관광 이미지를 찾고 있습니다.'
-                  : '다른 대표 이미지를 찾지 못하면 키워드와 코스 안내를 중심으로 홈 화면을 유지합니다.'}
+                {isCultureImageLoading
+                  ? '영주 문화시설 이미지를 찾고 있습니다.'
+                  : '문화시설 이미지가 부족하면 키워드와 코스 안내를 중심으로 홈 화면을 유지합니다.'}
               </p>
             </article>
           )}
@@ -240,86 +326,146 @@ export function HomePage() {
   )
 }
 
-async function findHomeTourismImages(cachedHeroImage: HomeHeroImage | null) {
+async function findHomeImageSlides(
+  cachedHeroSlides: HomeHeroImage[],
+  cachedCultureSlides: HomeHeroImage[],
+) {
+  const heroSlides = cachedHeroSlides.slice(0, heroSlideLimit)
+  const cultureSlides = removeDuplicateHomeImages(
+    cachedCultureSlides.slice(0, cultureSlideLimit),
+    heroSlides,
+  )
+
+  if (heroSlides.length >= minHeroSlideCount && cultureSlides.length >= minCultureSlideCount) {
+    return {
+      heroSlides,
+      cultureSlides,
+    }
+  }
+
+  const loadedHeroSlides =
+    heroSlides.length >= minHeroSlideCount
+      ? heroSlides
+      : await loadTourismSlides('attraction', heroSlideLimit)
+  const loadedCultureSlides =
+    cultureSlides.length >= minCultureSlideCount
+      ? cultureSlides
+      : removeDuplicateHomeImages(
+          await loadTourismSlides('culture', cultureSlideLimit),
+          loadedHeroSlides,
+        )
+
+  return {
+    heroSlides: loadedHeroSlides,
+    cultureSlides: loadedCultureSlides,
+  }
+}
+
+async function loadTourismSlides(
+  type: 'attraction' | 'culture',
+  limit: number,
+): Promise<HomeHeroImage[]> {
+  try {
+    const response =
+      type === 'attraction'
+        ? await getYeongjuTouristAttractions()
+        : await getYeongjuCultureFacilities()
+    if (response.status === 'ready') {
+      const slides = getHomeTourismImages(response.contents, limit)
+      if (slides.length > 0) return slides
+    }
+  } catch {
+    // 홈 화면은 관광 이미지 검색 실패 시 조용히 fallback UI를 사용한다.
+  }
+
   const foundImages: HomeHeroImage[] = []
-
-  if (cachedHeroImage) foundImages.push(cachedHeroImage)
-
   for (const keyword of homeImageKeywords) {
-    if (foundImages.length >= 2) break
-
+    if (foundImages.length >= limit) break
     try {
       const response = await searchYeongjuTourismByKeyword(keyword)
       if (response.status !== 'ready') continue
 
-      for (const item of response.contents) {
-        const image = getHomeTourismImage(item, keyword)
-        if (!image) continue
-        if (foundImages.some((foundImage) => isSameHomeImage(foundImage, image))) {
-          continue
-        }
-
-        foundImages.push(image)
-        if (foundImages.length >= 2) break
-      }
+      foundImages.push(
+        ...getHomeTourismImages(response.contents, limit - foundImages.length).filter(
+          (image) => !foundImages.some((foundImage) => isSameHomeImage(foundImage, image)),
+        ),
+      )
     } catch {
       // 홈 화면은 관광 이미지 검색 실패 시 조용히 fallback UI를 사용한다.
     }
   }
 
-  return {
-    heroImage: foundImages[0] ?? null,
-    secondaryImage:
-      foundImages[0] && foundImages[1] && !isSameHomeImage(foundImages[0], foundImages[1])
-        ? foundImages[1]
-        : null,
-  }
+  return foundImages.slice(0, limit)
 }
 
-function getHomeTourismImage(item: TourismContent, fallbackTitle: string) {
+function getHomeTourismImages(items: TourismContent[], limit: number) {
+  return items.reduce<HomeHeroImage[]>((slides, item) => {
+    if (slides.length >= limit) return slides
+
+    const image = getHomeTourismImage(item)
+    if (!image) return slides
+    if (slides.some((slide) => isSameHomeImage(slide, image))) return slides
+
+    slides.push(image)
+    return slides
+  }, [])
+}
+
+function getHomeTourismImage(item: TourismContent) {
   const src = getTourismImageUrl(item)
   if (!src) return null
 
   return {
     src,
-    title: item.title ?? fallbackTitle,
+    title: item.title ?? '영주 관광지',
     contentId: item.contentId,
   }
 }
 
-function getCachedHomeImage(key: string) {
-  if (typeof window === 'undefined') return null
+function getCachedHomeImages(key: string) {
+  if (typeof window === 'undefined') return []
 
   try {
-    const rawImage = window.sessionStorage.getItem(key)
-    if (!rawImage) return null
+    const rawImages = window.sessionStorage.getItem(key)
+    if (!rawImages) return []
 
-    const image = JSON.parse(rawImage) as Partial<HomeHeroImage>
-    if (!image.src || !image.title) return null
+    const images = JSON.parse(rawImages) as Array<Partial<HomeHeroImage>>
+    if (!Array.isArray(images)) return []
 
-    return {
-      src: image.src,
-      title: image.title,
-      contentId: image.contentId,
-    }
+    return images
+      .filter((image) => image.src && image.title)
+      .map((image) => ({
+        src: image.src as string,
+        title: image.title as string,
+        contentId: image.contentId,
+      }))
   } catch {
-    return null
+    return []
   }
 }
 
-function setCachedHomeImage(key: string, image: HomeHeroImage | null) {
+function setCachedHomeImages(key: string, images: HomeHeroImage[]) {
   if (typeof window === 'undefined') return
 
   try {
-    if (!image) {
+    if (images.length === 0) {
       window.sessionStorage.removeItem(key)
       return
     }
 
-    window.sessionStorage.setItem(key, JSON.stringify(image))
+    window.sessionStorage.setItem(key, JSON.stringify(images))
   } catch {
     // 캐시 저장 실패는 홈 렌더링에 영향을 주지 않는다.
   }
+}
+
+function removeDuplicateHomeImages(
+  targetImages: HomeHeroImage[],
+  sourceImages: HomeHeroImage[],
+) {
+  return targetImages.filter((targetImage) => {
+    return !sourceImages.some((sourceImage) => isSameHomeImage(sourceImage, targetImage))
+  })
 }
 
 function isSameHomeImage(firstImage: HomeHeroImage, secondImage: HomeHeroImage) {
