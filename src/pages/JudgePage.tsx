@@ -64,6 +64,7 @@ function JudgePageContent({ testResult, typeInfo }: JudgePageContentProps) {
   const seonbiImageSrc = getSeonbiVisualImagePath(testResult.type, judgeMode)
   const seonbiImageAlt = getSeonbiVisualImageAlt(typeInfo.name, judgeMode)
   const hasSeonbiImageError = failedSeonbiImageSrc === seonbiImageSrc
+  const modeDescription = selectedModeOption.description
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -222,6 +223,11 @@ function JudgePageContent({ testResult, typeInfo }: JudgePageContentProps) {
                 書
               </span>
             )}
+            <div className="wisdom-visual-info">
+              <h2>{typeInfo.name} 선비</h2>
+              <p>현재 모드: {selectedModeOption.badge}</p>
+              <p>{modeDescription}</p>
+            </div>
           </div>
           <form className="surface-card judge-form" onSubmit={handleSubmit}>
             <label htmlFor="judge-text">지금 어떤 생각을 하고 계신가요?</label>
@@ -237,7 +243,7 @@ function JudgePageContent({ testResult, typeInfo }: JudgePageContentProps) {
               외모비하, 혐오, 욕설, 개인정보가 포함된 문장은 처리하지 않습니다.
             </p>
             <fieldset className="judge-mode-field">
-              <legend>한마디 모드 선택</legend>
+              <legend>한마디 분위기 선택</legend>
               <div className="judge-mode-options">
                 {judgeModeOptions.map((option) => (
                   <button
@@ -248,22 +254,33 @@ function JudgePageContent({ testResult, typeInfo }: JudgePageContentProps) {
                     title={option.description}
                     onClick={() => setJudgeMode(option.id)}
                   >
-                    {option.label}
+                    {option.badge}
                   </button>
                 ))}
               </div>
+              <p className="judge-selected-mode">
+                선택한 분위기: {selectedModeOption.badge} — {modeDescription}
+              </p>
             </fieldset>
             <div className="judge-image-field">
-              <label htmlFor="judge-image">사진으로도 한마디를 받을 수 있습니다.</label>
-              <p className="judge-help">
-                사진을 올리면 선비가 장면을 보고 한마디를 건넵니다.
-              </p>
+              <div>
+                <p className="judge-image-title">사진으로도 한마디를 받을 수 있습니다.</p>
+                <p className="judge-help">
+                  사진을 올리면 선비가 장면을 보고 한마디를 건넵니다.
+                </p>
+              </div>
               <input
+                className="visually-hidden"
                 id="judge-image"
                 type="file"
                 accept="image/jpeg,image/png,image/webp"
                 onChange={handleImageChange}
               />
+              <label className="judge-upload-box" htmlFor="judge-image">
+                <span aria-hidden="true">+</span>
+                <strong>사진 올리기</strong>
+                <small>JPG, PNG, WebP 지원 · 선택 사항</small>
+              </label>
               {isProcessingImage && (
                 <p className="disabled-notice" role="status">
                   이미지를 준비하고 있습니다.
@@ -291,44 +308,56 @@ function JudgePageContent({ testResult, typeInfo }: JudgePageContentProps) {
               disabled={isProcessingImage || (!text.trim() && !imageDataUrl)}
               isLoading={isLoading}
               loadingLabel="한마디를 받고 있습니다..."
+              fullWidth
+              className="judge-submit-button"
             >
               한마디 받아보기
             </CommonButton>
           </form>
         </div>
         <section className="surface-card judge-result" aria-label="결과 영역">
-          <h2>{pageTitle}</h2>
-          <p>{result?.seonbiAdvice ?? defaultResultMessage}</p>
-          {result?.imageObservation && (
+          {result ? (
             <>
-              <h3>사진에서 읽은 분위기</h3>
-              <p>{result.imageObservation}</p>
+              <h2>선비의 한마디</h2>
+              <p>{result.seonbiAdvice}</p>
+              {result.imageObservation && (
+                <>
+                  <h3>사진에서 읽은 분위기</h3>
+                  <p>{result.imageObservation}</p>
+                </>
+              )}
+              <h3>현대어 해석</h3>
+              <p>{result.modernTranslation}</p>
+              <h3>공유용 문구</h3>
+              <p>{result.shareText}</p>
+              <div className="judge-share-actions">
+                <CommonButton
+                  type="button"
+                  variant="secondary"
+                  disabled={!canShareResult}
+                  onClick={handleCopyShareText}
+                >
+                  공유 문구 복사
+                </CommonButton>
+                {canUseWebShare && (
+                  <CommonButton
+                    type="button"
+                    variant="primary"
+                    disabled={!canShareResult}
+                    onClick={handleShareResult}
+                  >
+                    공유하기
+                  </CommonButton>
+                )}
+              </div>
             </>
+          ) : (
+            <div className="judge-empty-state">
+              <StatusBadge tone="neutral">대기 중</StatusBadge>
+              <h2>아직 받은 한마디가 없습니다.</h2>
+              <p>{defaultResultMessage}</p>
+            </div>
           )}
-          <h3>현대어 해석</h3>
-          <p>{result?.modernTranslation ?? defaultResultMessage}</p>
-          <h3>공유용 문구</h3>
-          <p>{result?.shareText ?? defaultResultMessage}</p>
-          <div className="judge-share-actions">
-            <CommonButton
-              type="button"
-              variant="secondary"
-              disabled={!canShareResult}
-              onClick={handleCopyShareText}
-            >
-              공유 문구 복사
-            </CommonButton>
-            {canUseWebShare && (
-              <CommonButton
-                type="button"
-                variant="primary"
-                disabled={!canShareResult}
-                onClick={handleShareResult}
-              >
-                공유하기
-              </CommonButton>
-            )}
-          </div>
           {shareMessage && (
             <p className="disabled-notice judge-share-message" role="status">
               {shareMessage}

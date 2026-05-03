@@ -1717,14 +1717,16 @@ a {
 }
 
 .judge-grid {
-  grid-template-columns: 0.8fr 1fr;
+  grid-template-columns: minmax(280px, 0.72fr) minmax(0, 1fr);
+  align-items: start;
 }
 
 .wisdom-visual {
   position: relative;
   display: grid;
-  min-height: 360px;
-  place-items: center;
+  min-height: 420px;
+  max-height: 560px;
+  align-content: end;
   overflow: hidden;
   border-radius: 18px;
   color: rgba(249, 246, 239, 0.9);
@@ -1771,7 +1773,8 @@ a {
 .wisdom-visual img {
   width: 100%;
   height: 100%;
-  min-height: 360px;
+  min-height: 420px;
+  max-height: 560px;
   object-fit: cover;
 }
 
@@ -1788,24 +1791,64 @@ a {
 .wisdom-visual-fallback {
   position: relative;
   z-index: 1;
+  align-self: center;
+  justify-self: center;
+  font-size: 96px;
+}
+
+.wisdom-visual-info {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  left: 16px;
+  z-index: 1;
+  display: grid;
+  gap: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 16px;
+  padding: 16px;
+  background: rgba(35, 43, 36, 0.66);
+  backdrop-filter: blur(8px);
+}
+
+.wisdom-visual-info h2,
+.wisdom-visual-info p {
+  margin: 0;
+}
+
+.wisdom-visual-info h2 {
+  color: #f8f2e8;
+  font-family: var(--serif);
+  font-size: 24px;
+  line-height: 1.2;
+}
+
+.wisdom-visual-info p {
+  color: rgba(248, 242, 232, 0.86);
+  font-family: var(--sans);
+  font-size: 14px;
 }
 
 .judge-form,
 .judge-result {
-  padding: 32px;
+  padding: 34px;
+}
+
+.judge-form {
+  display: grid;
+  gap: 16px;
 }
 
 .judge-form label {
   display: block;
-  margin-bottom: 12px;
+  margin-bottom: 0;
   color: var(--ink);
   font-weight: 800;
 }
 
 .judge-form textarea {
   width: 100%;
-  min-height: 180px;
-  margin-bottom: 12px;
+  min-height: 170px;
   resize: vertical;
   border: 1px solid var(--line-strong);
   border-radius: 14px;
@@ -1815,7 +1858,7 @@ a {
 }
 
 .judge-help {
-  margin: 0 0 16px;
+  margin: -8px 0 0;
   color: var(--muted);
   font-size: 14px;
   line-height: 1.5;
@@ -1824,10 +1867,10 @@ a {
 .judge-mode-field {
   display: grid;
   gap: 12px;
-  margin: 8px 0 18px;
+  margin: 0;
   border: 1px solid var(--line);
   border-radius: 16px;
-  padding: 16px;
+  padding: 18px;
   background: rgba(255, 253, 249, 0.78);
 }
 
@@ -1840,13 +1883,13 @@ a {
 .judge-mode-options {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 9px;
 }
 
 .judge-mode-options button {
   border: 1px solid var(--line-strong);
   border-radius: 999px;
-  padding: 8px 12px;
+  padding: 9px 13px;
   color: var(--ink-soft);
   background: var(--surface);
   cursor: pointer;
@@ -1858,33 +1901,78 @@ a {
   border-color: var(--forest);
   color: var(--surface);
   background: var(--forest);
+  box-shadow: 0 10px 22px rgba(45, 75, 62, 0.16);
+}
+
+.judge-selected-mode {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.5;
 }
 
 .judge-image-field {
   display: grid;
   gap: 12px;
-  margin: 8px 0 18px;
+  margin: 0;
   border: 1px solid var(--line);
   border-radius: 16px;
-  padding: 16px;
+  padding: 18px;
   background: rgba(246, 243, 242, 0.72);
 }
 
-.judge-image-field label {
+.judge-image-title {
   margin: 0;
+  color: var(--ink);
+  font-weight: 800;
 }
 
 .judge-image-field .judge-help {
-  margin: -6px 0 0;
+  margin: 6px 0 0;
 }
 
-.judge-image-field input[type='file'] {
-  width: 100%;
+.judge-upload-box {
+  display: grid;
+  min-height: 112px;
+  place-items: center;
+  align-content: center;
+  gap: 6px;
   border: 1px dashed var(--line-strong);
   border-radius: 14px;
-  padding: 14px;
+  padding: 18px;
   color: var(--ink-soft);
   background: var(--surface);
+  cursor: pointer;
+  text-align: center;
+}
+
+.judge-upload-box span {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border-radius: 999px;
+  color: #fff;
+  background: var(--forest);
+  font-size: 22px;
+  line-height: 1;
+}
+
+.judge-upload-box strong,
+.judge-upload-box small {
+  display: block;
+}
+
+.judge-upload-box small {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.judge-upload-box:hover,
+.visually-hidden:focus + .judge-upload-box {
+  border-color: var(--forest);
+  box-shadow: 0 12px 28px rgba(45, 75, 62, 0.12);
 }
 
 .judge-image-preview {
@@ -1923,6 +2011,36 @@ a {
   margin-top: 28px;
 }
 
+.judge-empty-state {
+  display: grid;
+  min-height: 220px;
+  align-content: center;
+  justify-items: center;
+  gap: 12px;
+  text-align: center;
+}
+
+.judge-empty-state h2,
+.judge-empty-state p {
+  margin: 0;
+}
+
+.judge-empty-state h2 {
+  font-family: var(--serif);
+  font-size: clamp(28px, 4vw, 42px);
+}
+
+.judge-empty-state p {
+  max-width: 460px;
+  color: var(--muted);
+}
+
+.judge-submit-button {
+  min-height: 54px;
+  font-size: 16px;
+  box-shadow: 0 14px 34px rgba(45, 75, 62, 0.18);
+}
+
 .judge-share-actions {
   display: flex;
   flex-wrap: wrap;
@@ -1933,6 +2051,16 @@ a {
 .judge-share-message {
   margin-top: 12px;
   text-align: left;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .auth-page {
