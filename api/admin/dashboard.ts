@@ -1,6 +1,6 @@
 /* global Buffer, process */
 import { createHmac, timingSafeEqual } from 'node:crypto'
-import { createEmptyRagStatus, getRagDocumentStatus } from '../_rag'
+import { createEmptyRagStatus, getRagDocumentStatus } from '../_rag.js'
 
 type DashboardRange = 'today' | '7d' | '30d' | 'all'
 type SeonbiType = 'toegye' | 'yulgok' | 'cheosa' | 'uguk'

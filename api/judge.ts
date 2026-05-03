@@ -1,5 +1,5 @@
 /* global process */
-import { searchRagDocuments } from './_rag'
+import { searchRagDocuments } from './_rag.js'
 
 type JudgeEmptyReason = 'missing_api_key' | 'invalid_input' | 'api_error'
 type SeonbiType = 'toegye' | 'yulgok' | 'cheosa' | 'uguk'

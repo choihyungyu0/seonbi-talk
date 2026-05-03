@@ -1,5 +1,5 @@
-import { hasValidAdminSession } from '../../_adminAuth'
-import { type RagDocumentInput, upsertRagDocuments } from '../../_rag'
+import { hasValidAdminSession } from '../../_adminAuth.js'
+import { type RagDocumentInput, upsertRagDocuments } from '../../_rag.js'
 
 interface RagSeedRequest {
   method?: string

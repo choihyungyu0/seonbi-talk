@@ -1,4 +1,4 @@
-import { searchRagDocuments } from '../_rag'
+import { searchRagDocuments } from '../_rag.js'
 
 interface RagSearchRequest {
   method?: string
