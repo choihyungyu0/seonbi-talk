@@ -1,5 +1,5 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
-import { AdminInsightPage } from '../pages/AdminInsightPage'
+import { AdminPage } from '../pages/AdminPage'
 import { AdminLoginPage } from '../pages/AdminLoginPage'
 import { CoursePage } from '../pages/CoursePage'
 import { ForgotPasswordPage } from '../pages/ForgotPasswordPage'
@@ -25,7 +25,7 @@ export function AppRouter() {
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/admin-login" element={<AdminLoginPage />} />
-        <Route path="/admin" element={<AdminInsightPage />} />
+        <Route path="/admin" element={<AdminPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

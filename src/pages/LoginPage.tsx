@@ -23,6 +23,9 @@ export function LoginPage() {
   const [errors, setErrors] = useState<Partial<Record<keyof LoginFormValues, string>>>({})
   const [statusMessage, setStatusMessage] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [adminCode, setAdminCode] = useState('')
+  const [adminStatusMessage, setAdminStatusMessage] = useState('')
+  const [isAdminSubmitting, setIsAdminSubmitting] = useState(false)
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -45,6 +48,44 @@ export function LoginPage() {
       )
     } finally {
       setIsSubmitting(false)
+    }
+  }
+
+  async function handleAdminSubmit() {
+    setAdminStatusMessage('')
+
+    if (!adminCode.trim()) {
+      setAdminStatusMessage('관리자 코드를 입력해주세요.')
+      return
+    }
+
+    setIsAdminSubmitting(true)
+
+    try {
+      const response = await fetch('/api/admin/verify', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ code: adminCode }),
+      })
+      const data = (await response.json().catch(() => ({}))) as {
+        ok?: boolean
+        message?: string
+      }
+
+      if (!response.ok || !data.ok) {
+        setAdminStatusMessage(data.message ?? '관리자 코드가 올바르지 않습니다.')
+        return
+      }
+
+      setAdminCode('')
+      navigate('/admin', { replace: true })
+    } catch {
+      setAdminStatusMessage('관리자 코드 확인 중 문제가 발생했습니다.')
+    } finally {
+      setIsAdminSubmitting(false)
     }
   }
 
@@ -111,6 +152,51 @@ export function LoginPage() {
           >
             로그인 없이 둘러보기
           </CommonButton>
+
+          <div className="admin-code-section" aria-labelledby="admin-code-title">
+            <div className="admin-code-divider" aria-hidden="true">
+              <span />
+              <strong>또는</strong>
+              <span />
+            </div>
+            <div className="admin-code-copy">
+              <h2 id="admin-code-title">관리자 코드</h2>
+              <p>관리자 권한이 있는 경우 코드를 입력해 관리자 페이지로 이동할 수 있습니다.</p>
+            </div>
+            <label className="field admin-code-field" htmlFor="admin-code">
+              <span>관리자 코드</span>
+              <input
+                id="admin-code"
+                type="password"
+                placeholder="관리자 코드를 입력하세요"
+                value={adminCode}
+                onChange={(event) => setAdminCode(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') {
+                    event.preventDefault()
+                    void handleAdminSubmit()
+                  }
+                }}
+                autoComplete="off"
+              />
+            </label>
+            {adminStatusMessage && (
+              <p className="form-error" role="status">
+                {adminStatusMessage}
+              </p>
+            )}
+            <CommonButton
+              type="button"
+              variant="secondary"
+              fullWidth
+              disabled={isAdminSubmitting}
+              isLoading={isAdminSubmitting}
+              loadingLabel="관리자 코드를 확인하고 있습니다..."
+              onClick={() => void handleAdminSubmit()}
+            >
+              관리자 페이지 입장
+            </CommonButton>
+          </div>
         </form>
       </section>
     </AppLayout>

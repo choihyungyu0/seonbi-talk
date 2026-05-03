@@ -2182,6 +2182,52 @@ a {
   background: rgba(200, 234, 216, 0.55);
 }
 
+.admin-code-section {
+  display: grid;
+  gap: 14px;
+  margin-top: 2px;
+}
+
+.admin-code-divider {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.admin-code-divider span {
+  height: 1px;
+  background: var(--line);
+}
+
+.admin-code-copy {
+  display: grid;
+  gap: 6px;
+}
+
+.admin-code-copy h2,
+.admin-code-copy p {
+  margin: 0;
+}
+
+.admin-code-copy h2 {
+  font-family: var(--serif);
+  font-size: 24px;
+}
+
+.admin-code-copy p {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.admin-code-field {
+  gap: 8px;
+}
+
 .optional-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -2216,6 +2262,30 @@ a {
 
 .admin-page {
   padding: 48px 0 72px;
+}
+
+.admin-auth-card,
+.admin-next-panel {
+  display: grid;
+  gap: 12px;
+  margin-top: 24px;
+  padding: 28px;
+}
+
+.admin-auth-card h2,
+.admin-auth-card p,
+.admin-next-panel h2,
+.admin-next-panel p {
+  margin: 0;
+}
+
+.admin-auth-card h2,
+.admin-next-panel h2 {
+  font-family: var(--serif);
+}
+
+.admin-status-message {
+  margin-top: 18px;
 }
 
 .admin-header {
