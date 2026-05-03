@@ -10,7 +10,10 @@ interface ResultCardProps {
 }
 
 export function ResultCard({ typeInfo, result }: ResultCardProps) {
-  const statEntries = Object.entries(typeInfo.stats)
+  const statEntries = Object.entries(typeInfo.stats).map(([label, value]) => ({
+    label,
+    score: clampScore(value),
+  }))
 
   return (
     <article className="result-card">
@@ -30,14 +33,17 @@ export function ResultCard({ typeInfo, result }: ResultCardProps) {
       </div>
 
       <div className="result-stat-list" aria-label="선비 능력치">
-        {statEntries.map(([label, value]) => (
+        {statEntries.map(({ label, score }) => (
           <div className="result-stat" key={label}>
             <div>
-              <span>{label}</span>
-              <strong>{value}</strong>
+              <span className="result-stat-label">{label}</span>
+              <strong>{score}</strong>
             </div>
             <span className="result-stat-bar" aria-hidden="true">
-              <span style={{ width: `${value}%` }} />
+              <span
+                className="result-stat-fill"
+                style={{ width: `${score}%` }}
+              />
             </span>
           </div>
         ))}
@@ -74,4 +80,9 @@ export function ResultCard({ typeInfo, result }: ResultCardProps) {
       </div>
     </article>
   )
+}
+
+function clampScore(value: number) {
+  if (!Number.isFinite(value)) return 0
+  return Math.min(100, Math.max(0, Math.round(value)))
 }
