@@ -31,6 +31,16 @@ export interface SeonbiTypeInfo {
   name: SeonbiTypeName
   title: string
   description: string
+  oneLineJudgement: string
+  joseonTitle: string
+  stats: {
+    학문: number
+    절개: number
+    풍류: number
+    개혁: number
+  }
+  recommendedRoute: string[]
+  friendInviteText: string
   tags: string[]
   travelStyle: string
   recommendedKeywords: string[]

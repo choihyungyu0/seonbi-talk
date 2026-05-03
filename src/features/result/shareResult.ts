@@ -3,7 +3,7 @@ import type { SeonbiTypeInfo } from '../seonbi-test/types'
 export type ShareResultStatus = 'shared' | 'copied' | 'cancelled'
 
 export function createResultShareText(typeInfo: SeonbiTypeInfo) {
-  return `나는 영주선비길에서 ${typeInfo.name} 선비가 나왔어요. 나의 선비유형으로 영주 여행길을 찾아보세요.`
+  return `나는 영주선비길에서 ${typeInfo.joseonTitle}(${typeInfo.name})이 나왔어요. ${typeInfo.friendInviteText}`
 }
 
 export async function shareResult(typeInfo: SeonbiTypeInfo): Promise<ShareResultStatus> {
