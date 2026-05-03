@@ -1,4 +1,6 @@
 import type {
+  ScoreTable,
+  SeonbiType,
   SeonbiTypeInfo,
   TestResult,
 } from '../../features/seonbi-test/types'
@@ -10,7 +12,8 @@ interface ResultCardProps {
 }
 
 export function ResultCard({ typeInfo, result }: ResultCardProps) {
-  const statEntries = Object.entries(typeInfo.stats).map(([label, value]) => ({
+  const personalizedStats = getPersonalizedStats(typeInfo, result)
+  const statEntries = Object.entries(personalizedStats).map(([label, value]) => ({
     label,
     score: clampScore(value),
   }))
@@ -86,3 +89,56 @@ function clampScore(value: number) {
   if (!Number.isFinite(value)) return 0
   return Math.min(100, Math.max(0, Math.round(value)))
 }
+
+function getPersonalizedStats(typeInfo: SeonbiTypeInfo, result: TestResult) {
+  const scoreRatios = getScoreRatios(result.scores)
+
+  return {
+    학문: applyScoreInfluence(typeInfo.stats.학문, scoreRatios.toegye),
+    절개: applyScoreInfluence(typeInfo.stats.절개, scoreRatios.uguk),
+    풍류: applyScoreInfluence(typeInfo.stats.풍류, scoreRatios.cheosa),
+    개혁: applyScoreInfluence(typeInfo.stats.개혁, scoreRatios.yulgok),
+  }
+}
+
+function applyScoreInfluence(baseScore: number, scoreRatio: number) {
+  const neutralRatio = 0.25
+  const maxInfluence = 16
+  return clampScore(baseScore + (scoreRatio - neutralRatio) * maxInfluence)
+}
+
+function getScoreRatios(scores: ScoreTable | undefined) {
+  const normalizedScores: ScoreTable = {
+    toegye: getValidScore(scores?.toegye),
+    yulgok: getValidScore(scores?.yulgok),
+    cheosa: getValidScore(scores?.cheosa),
+    uguk: getValidScore(scores?.uguk),
+  }
+  const totalScore = seonbiTypes.reduce((total, type) => {
+    return total + (normalizedScores[type] ?? 0)
+  }, 0)
+
+  if (totalScore <= 0) {
+    return {
+      toegye: 0.25,
+      yulgok: 0.25,
+      cheosa: 0.25,
+      uguk: 0.25,
+    } satisfies Record<SeonbiType, number>
+  }
+
+  return {
+    toegye: normalizedScores.toegye / totalScore,
+    yulgok: normalizedScores.yulgok / totalScore,
+    cheosa: normalizedScores.cheosa / totalScore,
+    uguk: normalizedScores.uguk / totalScore,
+  } satisfies Record<SeonbiType, number>
+}
+
+function getValidScore(value: number | undefined) {
+  return typeof value === 'number' && Number.isFinite(value) && value > 0
+    ? value
+    : 0
+}
+
+const seonbiTypes = ['toegye', 'yulgok', 'cheosa', 'uguk'] as const
