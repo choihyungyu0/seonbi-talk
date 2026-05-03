@@ -1,5 +1,9 @@
 import { hasValidAdminSession } from '../../_adminAuth.js'
-import { type RagDocumentInput, upsertRagDocuments } from '../../_rag.js'
+import {
+  RagOperationError,
+  type RagDocumentInput,
+  upsertRagDocuments,
+} from '../../_rag.js'
 
 interface RagSeedRequest {
   method?: string
@@ -39,12 +43,32 @@ export default async function handler(
   try {
     const count = await upsertRagDocuments(seedDocuments)
     response.status(200).json({ ok: true, count })
-  } catch {
+  } catch (error) {
+    console.error('[admin/rag/seed] RAG seed failed', {
+      name: error instanceof Error ? error.name : 'UnknownError',
+      message: error instanceof Error ? error.message : String(error),
+      operation: error instanceof RagOperationError ? error.operation : undefined,
+      status: error instanceof RagOperationError ? error.status : undefined,
+      responsePreview:
+        error instanceof RagOperationError ? error.responsePreview : undefined,
+      documentCount: seedDocuments.length,
+    })
+
     response.status(500).json({
       ok: false,
       message: 'AI 참고 데이터 등록 중 문제가 발생했습니다.',
+      errorCode: getSeedErrorCode(error),
     })
   }
+}
+
+function getSeedErrorCode(error: unknown) {
+  if (error instanceof RagOperationError) {
+    if (error.operation === 'embedding') return 'embedding_failed'
+    if (error.operation === 'upsert_rag_documents') return 'rag_documents_upsert_failed'
+  }
+
+  return 'rag_seed_failed'
 }
 
 const seedDocuments: RagDocumentInput[] = [

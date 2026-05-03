@@ -56,10 +56,18 @@ export default async function handler(
         similarity,
       })),
     })
-  } catch {
+  } catch (error) {
+    console.error('[rag/search] RAG search failed', {
+      name: error instanceof Error ? error.name : 'UnknownError',
+      message: error instanceof Error ? error.message : String(error),
+      matchCount,
+      queryLength: query.length,
+    })
+
     response.status(200).json({
       ok: true,
       documents: [],
+      reason: 'search_failed',
     })
   }
 }

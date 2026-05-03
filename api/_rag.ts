@@ -33,6 +33,24 @@ interface SupabaseServerConfig {
   key: string
 }
 
+export class RagOperationError extends Error {
+  operation: string
+  status?: number
+  responsePreview?: string
+
+  constructor(
+    operation: string,
+    message: string,
+    options: { status?: number; responsePreview?: string } = {},
+  ) {
+    super(message)
+    this.name = 'RagOperationError'
+    this.operation = operation
+    this.status = options.status
+    this.responsePreview = options.responsePreview
+  }
+}
+
 const openAiEmbeddingsUrl = 'https://api.openai.com/v1/embeddings'
 const defaultEmbeddingModel = 'text-embedding-3-small'
 
@@ -53,7 +71,17 @@ export async function createEmbedding(input: string) {
   })
 
   if (!response.ok) {
-    throw new Error('Embedding request failed.')
+    const responsePreview = await response.text().catch(() => '')
+    console.error('[rag] embedding request failed', {
+      status: response.status,
+      statusText: response.statusText,
+      model: process.env.OPENAI_EMBEDDING_MODEL || defaultEmbeddingModel,
+      responsePreview: responsePreview.slice(0, 500),
+    })
+    throw new RagOperationError('embedding', 'Embedding request failed.', {
+      status: response.status,
+      responsePreview: responsePreview.slice(0, 500),
+    })
   }
 
   const data = (await response.json()) as OpenAiEmbeddingResponse
@@ -64,7 +92,18 @@ export async function createEmbedding(input: string) {
 
 export async function searchRagDocuments(query: string, matchCount = 5) {
   const supabase = getSupabaseServerConfig()
-  if (!supabase) return []
+  if (!supabase) {
+    console.warn('[rag] search skipped because Supabase server config is missing', {
+      hasSupabaseUrl: Boolean(process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL),
+      hasSupabaseKey: Boolean(
+        process.env.SUPABASE_SERVICE_ROLE_KEY ??
+          process.env.SUPABASE_SERVICE_KEY ??
+          process.env.SUPABASE_ANON_KEY ??
+          process.env.VITE_SUPABASE_ANON_KEY,
+      ),
+    })
+    return []
+  }
 
   const embedding = await createEmbedding(query)
   const response = await fetch(`${supabase.url}/rest/v1/rpc/match_rag_documents`, {
@@ -76,9 +115,29 @@ export async function searchRagDocuments(query: string, matchCount = 5) {
     }),
   })
 
-  if (!response.ok) return []
+  if (!response.ok) {
+    const responsePreview = await response.text().catch(() => '')
+    console.error('[rag] match_rag_documents RPC failed', {
+      status: response.status,
+      statusText: response.statusText,
+      matchCount: clampMatchCount(matchCount),
+      responsePreview: responsePreview.slice(0, 800),
+    })
+    return []
+  }
   const data = await response.json().catch(() => [])
-  return Array.isArray(data) ? data.map(toRagSearchResult) : []
+  if (!Array.isArray(data)) {
+    console.warn('[rag] match_rag_documents returned a non-array response', {
+      responseType: typeof data,
+    })
+    return []
+  }
+  if (data.length === 0) {
+    console.info('[rag] match_rag_documents returned no matching documents', {
+      matchCount: clampMatchCount(matchCount),
+    })
+  }
+  return data.map(toRagSearchResult)
 }
 
 export async function upsertRagDocuments(documents: RagDocumentInput[]) {
@@ -103,7 +162,19 @@ export async function upsertRagDocuments(documents: RagDocumentInput[]) {
     body: JSON.stringify(rows),
   })
 
-  if (!response.ok) throw new Error('RAG document upsert failed.')
+  if (!response.ok) {
+    const responsePreview = await response.text().catch(() => '')
+    console.error('[rag] rag_documents upsert failed', {
+      status: response.status,
+      statusText: response.statusText,
+      documentCount: rows.length,
+      responsePreview: responsePreview.slice(0, 1200),
+    })
+    throw new RagOperationError('upsert_rag_documents', 'RAG document upsert failed.', {
+      status: response.status,
+      responsePreview: responsePreview.slice(0, 1200),
+    })
+  }
   return rows.length
 }
 
