@@ -4,6 +4,7 @@ export interface JudgeResult {
   seonbiAdvice: string
   modernTranslation: string
   shareText: string
+  imageObservation?: string
 }
 
 export type JudgeEmptyReason = 'missing_api_key' | 'invalid_input' | 'api_error'
@@ -16,6 +17,15 @@ export interface JudgeResponse {
 }
 
 export interface JudgeRequestBody {
-  text: string
+  text?: string
   seonbiType?: SeonbiType
+  imageDataUrl?: string
+  imageMimeType?: string
+}
+
+export interface JudgeAdviceRequest {
+  text?: string
+  seonbiType?: SeonbiType
+  imageDataUrl?: string
+  imageMimeType?: string
 }

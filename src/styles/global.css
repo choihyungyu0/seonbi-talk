@@ -1146,6 +1146,65 @@ a {
   line-height: 1.5;
 }
 
+.judge-image-field {
+  display: grid;
+  gap: 12px;
+  margin: 8px 0 18px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 16px;
+  background: rgba(246, 243, 242, 0.72);
+}
+
+.judge-image-field label {
+  margin: 0;
+}
+
+.judge-image-field .judge-help {
+  margin: -6px 0 0;
+}
+
+.judge-image-field input[type='file'] {
+  width: 100%;
+  border: 1px dashed var(--line-strong);
+  border-radius: 14px;
+  padding: 14px;
+  color: var(--ink-soft);
+  background: var(--surface);
+}
+
+.judge-image-preview {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+
+.judge-image-preview img {
+  width: 100%;
+  max-height: 280px;
+  border-radius: 14px;
+  object-fit: cover;
+}
+
+.judge-image-preview figcaption {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.judge-image-preview button {
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  padding: 7px 12px;
+  color: var(--forest);
+  background: var(--surface);
+  cursor: pointer;
+  font-weight: 800;
+}
+
 .judge-result {
   margin-top: 28px;
 }
@@ -1216,7 +1275,8 @@ a {
 .field input:focus,
 .field select:focus,
 .password-field input:focus,
-.judge-form textarea:focus {
+.judge-form textarea:focus,
+.judge-image-field input[type='file']:focus {
   outline: 3px solid rgba(185, 154, 87, 0.26);
   border-color: var(--gold);
 }

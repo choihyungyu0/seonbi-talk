@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { FormEvent } from 'react'
+import type { ChangeEvent, FormEvent } from 'react'
 import { CommonButton } from '../components/common/CommonButton'
 import { ProtectedFeaturePrompt } from '../components/common/ProtectedFeaturePrompt'
 import { StatusBadge } from '../components/common/StatusBadge'
@@ -11,7 +11,10 @@ import type { JudgeResult } from '../features/judge/judgeTypes'
 import type { SeonbiTypeInfo, TestResult } from '../features/seonbi-test/types'
 import { loadTestResult } from '../lib/storage'
 
-const defaultResultMessage = '문장을 입력하면 선비의 한마디가 표시됩니다.'
+const defaultResultMessage = '고민을 적거나 사진을 올리면 선비의 한마디가 표시됩니다.'
+const allowedImageTypes = ['image/jpeg', 'image/png', 'image/webp']
+const maxImageDimension = 1024
+const maxImageDataUrlLength = 1_100_000
 
 export function JudgePage() {
   const testResult = loadTestResult()
@@ -41,16 +44,20 @@ function JudgePageContent({ testResult, typeInfo }: JudgePageContentProps) {
   const [message, setMessage] = useState('')
   const [shareMessage, setShareMessage] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [isProcessingImage, setIsProcessingImage] = useState(false)
+  const [imageDataUrl, setImageDataUrl] = useState('')
+  const [imageMimeType, setImageMimeType] = useState('')
   const pageTitle = typeInfo ? `${typeInfo.name} 선비의 한마디` : '선비의 한마디'
   const canShareResult = Boolean(result)
   const canUseWebShare = typeof navigator.share === 'function'
+  const hasImage = Boolean(imageDataUrl)
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
     const trimmedText = text.trim()
-    if (!trimmedText) {
-      setMessage('문장을 입력하면 선비의 한마디를 받을 수 있습니다.')
+    if (!trimmedText && !imageDataUrl) {
+      setMessage('고민을 적거나 사진을 올려주세요.')
       setResult(null)
       return
     }
@@ -59,7 +66,12 @@ function JudgePageContent({ testResult, typeInfo }: JudgePageContentProps) {
     setMessage('')
     setShareMessage('')
 
-    const response = await requestSeonbiAdvice(trimmedText, testResult.type)
+    const response = await requestSeonbiAdvice({
+      text: trimmedText,
+      seonbiType: testResult.type,
+      imageDataUrl: imageDataUrl || undefined,
+      imageMimeType: imageMimeType || undefined,
+    })
 
     if (!response.ok || !response.result) {
       setResult(null)
@@ -76,9 +88,50 @@ function JudgePageContent({ testResult, typeInfo }: JudgePageContentProps) {
       seonbiType: testResult.type,
       metadata: {
         hasSeonbiType: true,
+        hasText: Boolean(trimmedText),
+        hasImage,
       },
     })
+    if (hasImage) {
+      void trackEvent('judge_image_used', {
+        seonbiType: testResult.type,
+        metadata: {
+          hasImage: true,
+          hasText: Boolean(trimmedText),
+        },
+      })
+    }
     setIsLoading(false)
+  }
+
+  async function handleImageChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    setMessage('')
+    setIsProcessingImage(true)
+
+    try {
+      const processedImage = await resizeImageFile(file)
+      setImageDataUrl(processedImage.dataUrl)
+      setImageMimeType(processedImage.mimeType)
+    } catch (error) {
+      setImageDataUrl('')
+      setImageMimeType('')
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : '이미지 용량이 큽니다. 더 작은 이미지를 올려주세요.',
+      )
+    } finally {
+      setIsProcessingImage(false)
+      event.target.value = ''
+    }
+  }
+
+  function handleRemoveImage() {
+    setImageDataUrl('')
+    setImageMimeType('')
   }
 
   async function handleCopyShareText() {
@@ -146,6 +199,34 @@ function JudgePageContent({ testResult, typeInfo }: JudgePageContentProps) {
             <p id="judge-help" className="judge-help">
               외모비하, 혐오, 욕설, 개인정보가 포함된 문장은 처리하지 않습니다.
             </p>
+            <div className="judge-image-field">
+              <label htmlFor="judge-image">사진으로도 한마디를 받을 수 있습니다.</label>
+              <p className="judge-help">
+                사진을 올리면 선비가 장면을 보고 한마디를 건넵니다.
+              </p>
+              <input
+                id="judge-image"
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={handleImageChange}
+              />
+              {isProcessingImage && (
+                <p className="disabled-notice" role="status">
+                  이미지를 준비하고 있습니다.
+                </p>
+              )}
+              {imageDataUrl && (
+                <figure className="judge-image-preview">
+                  <img src={imageDataUrl} alt="선택한 사진 미리보기" />
+                  <figcaption>
+                    <span>선택한 사진</span>
+                    <button type="button" onClick={handleRemoveImage}>
+                      이미지 제거
+                    </button>
+                  </figcaption>
+                </figure>
+              )}
+            </div>
             {message && (
               <p id="judge-message" className="form-error" role="status">
                 {message}
@@ -153,7 +234,7 @@ function JudgePageContent({ testResult, typeInfo }: JudgePageContentProps) {
             )}
             <CommonButton
               type="submit"
-              disabled={!text.trim()}
+              disabled={isProcessingImage || (!text.trim() && !imageDataUrl)}
               isLoading={isLoading}
               loadingLabel="한마디를 받고 있습니다..."
             >
@@ -164,6 +245,12 @@ function JudgePageContent({ testResult, typeInfo }: JudgePageContentProps) {
         <section className="surface-card judge-result" aria-label="결과 영역">
           <h2>{pageTitle}</h2>
           <p>{result?.seonbiAdvice ?? defaultResultMessage}</p>
+          {result?.imageObservation && (
+            <>
+              <h3>사진에서 읽은 분위기</h3>
+              <p>{result.imageObservation}</p>
+            </>
+          )}
           <h3>현대어 해석</h3>
           <p>{result?.modernTranslation ?? defaultResultMessage}</p>
           <h3>공유용 문구</h3>
@@ -197,4 +284,51 @@ function JudgePageContent({ testResult, typeInfo }: JudgePageContentProps) {
       </section>
     </AppLayout>
   )
+}
+
+async function resizeImageFile(file: File) {
+  if (!allowedImageTypes.includes(file.type)) {
+    throw new Error('JPG, PNG, WebP 이미지만 올릴 수 있습니다.')
+  }
+
+  const image = await loadImage(file)
+  const scale = Math.min(1, maxImageDimension / Math.max(image.width, image.height))
+  const width = Math.max(1, Math.round(image.width * scale))
+  const height = Math.max(1, Math.round(image.height * scale))
+  const canvas = document.createElement('canvas')
+  canvas.width = width
+  canvas.height = height
+
+  const context = canvas.getContext('2d')
+  if (!context) {
+    throw new Error('이미지를 처리하지 못했습니다. 다른 이미지를 올려주세요.')
+  }
+
+  context.drawImage(image, 0, 0, width, height)
+
+  const outputMimeType = file.type === 'image/png' ? 'image/jpeg' : file.type
+  const dataUrl = canvas.toDataURL(outputMimeType, 0.82)
+
+  if (dataUrl.length > maxImageDataUrlLength) {
+    throw new Error('이미지 용량이 큽니다. 더 작은 이미지를 올려주세요.')
+  }
+
+  return {
+    dataUrl,
+    mimeType: outputMimeType,
+  }
+}
+
+function loadImage(file: File) {
+  return new Promise<HTMLImageElement>((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => {
+      const image = new Image()
+      image.onload = () => resolve(image)
+      image.onerror = () => reject(new Error('이미지를 읽지 못했습니다.'))
+      image.src = String(reader.result)
+    }
+    reader.onerror = () => reject(new Error('이미지를 읽지 못했습니다.'))
+    reader.readAsDataURL(file)
+  })
 }

@@ -25,11 +25,14 @@ interface JudgeResult {
   seonbiAdvice: string
   modernTranslation: string
   shareText: string
+  imageObservation?: string
 }
 
 interface JudgeRequestBody {
   text?: unknown
   seonbiType?: unknown
+  imageDataUrl?: unknown
+  imageMimeType?: unknown
 }
 
 interface OpenAiChatResponse {
@@ -43,6 +46,8 @@ interface OpenAiChatResponse {
 const openAiChatCompletionsUrl = 'https://api.openai.com/v1/chat/completions'
 const defaultModel = 'gpt-4o-mini'
 const maxInputLength = 600
+const maxImageDataUrlLength = 1_200_000
+const allowedImageMimeTypes = ['image/jpeg', 'image/png', 'image/webp']
 const seonbiTypePrompts: Record<SeonbiType, string> = {
   toegye:
     '사용자의 선비유형은 퇴계형이다. 학문, 원칙, 성찰, 내면 수양을 중시하는 말투와 가치관을 담아 답한다.',
@@ -71,12 +76,22 @@ export default async function handler(
 
   const inputText = getInputText(request.body)
   const seonbiType = getSeonbiType(request.body)
-  const validationMessage = validateInput(inputText)
+  const imageInput = getImageInput(request.body)
+  const validationMessage = validateInput(inputText, Boolean(imageInput))
   if (validationMessage) {
     response.status(400).json({
       ok: false,
       emptyReason: 'invalid_input',
       message: validationMessage,
+    })
+    return
+  }
+
+  if (imageInput?.error) {
+    response.status(400).json({
+      ok: false,
+      emptyReason: 'invalid_input',
+      message: imageInput.error,
     })
     return
   }
@@ -111,16 +126,21 @@ export default async function handler(
               '너는 영주선비길의 "선비의 한마디" 조언가다.',
               '사용자 문장을 선비 말투의 유쾌하고 다정한 조언으로 바꾼다.',
               '외모비하, 혐오, 욕설, 개인정보 판단, 특정 개인 신상 추론은 하지 않는다.',
+              '사진 속 인물이 있어도 신원, 이름, 나이, 성별, 민감정보를 추정하지 않는다.',
               '의학, 법률, 금융, 안전 위기 판단은 단정하지 말고 전문가나 긴급 도움을 안내한다.',
+              imageInput?.dataUrl
+                ? '사진이 있으면 보이는 분위기와 상황만 간단히 해석하고 사용자를 비난하지 않는다.'
+                : '',
               '반드시 JSON 객체만 반환한다.',
-              '필드는 seonbiAdvice, modernTranslation, shareText 세 개만 사용한다.',
+              '필드는 seonbiAdvice, modernTranslation, shareText를 반드시 사용한다.',
+              '사진이 있으면 imageObservation 필드를 추가할 수 있다.',
               '각 필드는 한국어 문자열이어야 한다.',
               getSeonbiTypePrompt(seonbiType),
             ].join(' '),
           },
           {
             role: 'user',
-            content: `입력 문장: ${inputText}`,
+            content: createUserMessageContent(inputText, imageInput?.dataUrl),
           },
         ],
       }),
@@ -136,7 +156,9 @@ export default async function handler(
         errorPreview: errorText.slice(0, 300),
       })
 
-      response.status(502).json(createSafeFailureResponse())
+      response.status(imageInput?.dataUrl ? 200 : 502).json(
+        imageInput?.dataUrl ? createImageFallbackResponse(seonbiType) : createSafeFailureResponse(),
+      )
       return
     }
 
@@ -150,7 +172,9 @@ export default async function handler(
         contentPreview: content?.slice(0, 200) || '',
       })
 
-      response.status(502).json(createSafeFailureResponse())
+      response.status(imageInput?.dataUrl ? 200 : 502).json(
+        imageInput?.dataUrl ? createImageFallbackResponse(seonbiType) : createSafeFailureResponse(),
+      )
       return
     }
 
@@ -164,7 +188,9 @@ export default async function handler(
       message: error instanceof Error ? error.message : String(error),
     })
 
-    response.status(500).json(createSafeFailureResponse())
+    response.status(imageInput?.dataUrl ? 200 : 500).json(
+      imageInput?.dataUrl ? createImageFallbackResponse(seonbiType) : createSafeFailureResponse(),
+    )
   }
 }
 
@@ -180,6 +206,44 @@ function getSeonbiType(body: unknown): SeonbiType | undefined {
   return isSeonbiType(value) ? value : undefined
 }
 
+function getImageInput(body: unknown):
+  | {
+      dataUrl?: string
+      mimeType?: string
+      error?: string
+    }
+  | undefined {
+  const parsedBody = parseRequestBody(body)
+  const dataUrl = parsedBody?.imageDataUrl
+  const mimeType = parsedBody?.imageMimeType
+
+  if (typeof dataUrl !== 'string' || !dataUrl) return undefined
+  if (dataUrl.length > maxImageDataUrlLength) {
+    return {
+      error: '이미지 용량이 큽니다. 더 작은 이미지를 올려주세요.',
+    }
+  }
+
+  const normalizedMimeType = typeof mimeType === 'string' ? mimeType : ''
+  if (!allowedImageMimeTypes.includes(normalizedMimeType)) {
+    return {
+      error: 'JPG, PNG, WebP 이미지만 올릴 수 있습니다.',
+    }
+  }
+
+  const dataUrlPrefix = `data:${normalizedMimeType};base64,`
+  if (!dataUrl.startsWith(dataUrlPrefix)) {
+    return {
+      error: '이미지 형식을 확인할 수 없습니다.',
+    }
+  }
+
+  return {
+    dataUrl,
+    mimeType: normalizedMimeType,
+  }
+}
+
 function parseRequestBody(body: unknown): JudgeRequestBody {
   return typeof body === 'string' ? parseJsonBody(body) : (body as JudgeRequestBody)
 }
@@ -192,8 +256,8 @@ function parseJsonBody(body: string): JudgeRequestBody {
   }
 }
 
-function validateInput(text: string) {
-  if (!text) return '문장을 입력하면 선비의 한마디를 받을 수 있습니다.'
+function validateInput(text: string, hasImage: boolean) {
+  if (!text && !hasImage) return '고민을 적거나 사진을 올려주세요.'
   if (text.length > maxInputLength) {
     return '문장은 600자 이내로 입력해주세요.'
   }
@@ -204,6 +268,36 @@ function validateInput(text: string) {
     return '외모비하, 혐오, 욕설이 포함된 문장은 조언으로 바꿀 수 없습니다.'
   }
   return undefined
+}
+
+function createUserMessageContent(inputText: string, imageDataUrl: string | undefined) {
+  const promptText = [
+    inputText ? `입력 문장: ${inputText}` : '입력 문장: 없음',
+    imageDataUrl
+      ? [
+          '사진을 함께 참고해 장면의 분위기와 상황을 짧게 해석한다.',
+          '사진 속 사람의 신원, 이름, 나이, 성별, 민감정보는 추정하지 않는다.',
+          '사용자를 비난하지 말고 선비유형에 맞는 짧고 인상적인 한마디를 만든다.',
+        ].join(' ')
+      : '',
+  ]
+    .filter(Boolean)
+    .join('\n')
+
+  if (!imageDataUrl) return promptText
+
+  return [
+    {
+      type: 'text',
+      text: promptText,
+    },
+    {
+      type: 'image_url',
+      image_url: {
+        url: imageDataUrl,
+      },
+    },
+  ]
 }
 
 function isSeonbiType(value: unknown): value is SeonbiType {
@@ -261,9 +355,29 @@ function parseJudgeResult(content: string | undefined): JudgeResult | undefined 
       seonbiAdvice: parsed.seonbiAdvice,
       modernTranslation: parsed.modernTranslation,
       shareText: parsed.shareText,
+      imageObservation:
+        typeof parsed.imageObservation === 'string'
+          ? parsed.imageObservation
+          : undefined,
     }
   } catch {
     return undefined
+  }
+}
+
+function createImageFallbackResponse(seonbiType: SeonbiType | undefined): JudgeProxyResponse {
+  const typeLabel = getSeonbiTypeLabel(seonbiType)
+
+  return {
+    ok: true,
+    result: {
+      seonbiAdvice:
+        '사진 속 분위기를 정확히 읽지는 못했지만, 잠시 숨을 고르고 오늘의 마음을 바르게 세워보시게.',
+      modernTranslation:
+        '사진 분석은 잠시 어려웠지만, 지금의 상황을 차분히 바라보고 작은 실천부터 시작해보세요.',
+      shareText: `${typeLabel} 선비의 한마디: 사진 속 분위기를 정확히 읽지는 못했지만, 잠시 숨을 고르고 오늘의 마음을 바르게 세워보시게.`,
+      imageObservation: '사진의 세부 분위기를 불러오지 못했습니다.',
+    },
   }
 }
 
@@ -273,4 +387,12 @@ function createSafeFailureResponse(): JudgeProxyResponse {
     emptyReason: 'api_error',
     message: '선비의 한마디를 불러오는 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요.',
   }
+}
+
+function getSeonbiTypeLabel(seonbiType: SeonbiType | undefined) {
+  if (seonbiType === 'toegye') return '퇴계형'
+  if (seonbiType === 'yulgok') return '율곡형'
+  if (seonbiType === 'cheosa') return '처사형'
+  if (seonbiType === 'uguk') return '우국형'
+  return '선비'
 }

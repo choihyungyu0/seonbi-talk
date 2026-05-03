@@ -6,6 +6,7 @@ type AnalyticsEventType =
   | 'test_completed'
   | 'tourism_card_clicked'
   | 'judge_used'
+  | 'judge_image_used'
   | 'judge_share_clicked'
   | 'result_share_clicked'
   | 'favorite_course_added'
