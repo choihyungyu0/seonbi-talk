@@ -1,5 +1,16 @@
 import type { SeonbiType } from '../seonbi-test/types'
 
+export type JudgeMode =
+  | 'default'
+  | 'strict'
+  | 'practical'
+  | 'hermit'
+  | 'righteous'
+  | 'praise'
+  | 'roast'
+  | 'petition'
+  | 'poison'
+
 export interface JudgeResult {
   seonbiAdvice: string
   modernTranslation: string
@@ -19,6 +30,7 @@ export interface JudgeResponse {
 export interface JudgeRequestBody {
   text?: string
   seonbiType?: SeonbiType
+  judgeMode?: JudgeMode
   imageDataUrl?: string
   imageMimeType?: string
 }
@@ -26,6 +38,7 @@ export interface JudgeRequestBody {
 export interface JudgeAdviceRequest {
   text?: string
   seonbiType?: SeonbiType
+  judgeMode?: JudgeMode
   imageDataUrl?: string
   imageMimeType?: string
 }

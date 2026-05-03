@@ -21,6 +21,19 @@ create table if not exists public.judge_histories (
   advice text not null,
   modern_translation text not null,
   share_text text not null,
+  judge_mode text not null default 'default' check (
+    judge_mode in (
+      'default',
+      'strict',
+      'practical',
+      'hermit',
+      'righteous',
+      'praise',
+      'roast',
+      'petition',
+      'poison'
+    )
+  ),
   has_image boolean not null default false,
   has_text boolean not null default false,
   created_at timestamptz not null default now()
@@ -28,6 +41,32 @@ create table if not exists public.judge_histories (
 
 create index if not exists judge_histories_user_created_idx
   on public.judge_histories (user_id, created_at desc);
+```
+
+기존 테이블에는 다음 ALTER 문으로 `judge_mode`를 추가한다. 기존 기록은 `default`로 표시한다.
+
+```sql
+alter table public.judge_histories
+  add column if not exists judge_mode text not null default 'default';
+
+alter table public.judge_histories
+  drop constraint if exists judge_histories_judge_mode_check;
+
+alter table public.judge_histories
+  add constraint judge_histories_judge_mode_check
+  check (
+    judge_mode in (
+      'default',
+      'strict',
+      'practical',
+      'hermit',
+      'righteous',
+      'praise',
+      'roast',
+      'petition',
+      'poison'
+    )
+  );
 ```
 
 ## RLS Policy
@@ -63,6 +102,7 @@ create policy "Users can delete own judge histories"
 - `advice`
 - `modern_translation`
 - `share_text`
+- `judge_mode`: 없으면 클라이언트에서 `default`로 처리
 - `has_image`
 - `has_text`
 - `created_at`

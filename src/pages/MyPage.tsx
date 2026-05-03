@@ -21,6 +21,7 @@ import {
   getRecentJudgeHistories,
   type JudgeHistory,
 } from '../features/judge/judgeHistoryApi'
+import { getJudgeModeOption } from '../features/judge/judgeModes'
 import { normalizeTourApiImageUrl } from '../features/tourism/tourismImageUrl'
 import { loadTestResult } from '../lib/storage'
 
@@ -256,6 +257,9 @@ export function MyPage() {
                   <div className="mypage-history-meta">
                     <StatusBadge tone={history.has_image ? 'brown' : 'green'}>
                       {history.has_image ? '사진 기반' : '문장 기반'}
+                    </StatusBadge>
+                    <StatusBadge>
+                      {getJudgeModeOption(history.judge_mode).badge} 모드
                     </StatusBadge>
                     <span>{formatDate(history.created_at)}</span>
                   </div>

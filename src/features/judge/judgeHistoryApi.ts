@@ -1,6 +1,6 @@
 import { getStoredAccessToken, getStoredAuthUser } from '../auth/authApi'
 import type { SeonbiType } from '../seonbi-test/types'
-import type { JudgeResult } from './judgeTypes'
+import type { JudgeMode, JudgeResult } from './judgeTypes'
 import { getSupabaseConfig } from '../../lib/supabase'
 
 export interface JudgeHistory {
@@ -10,6 +10,7 @@ export interface JudgeHistory {
   advice: string
   modern_translation: string
   share_text: string
+  judge_mode?: JudgeMode
   has_image: boolean
   has_text: boolean
   created_at?: string
@@ -18,6 +19,7 @@ export interface JudgeHistory {
 export interface SaveJudgeHistoryInput {
   seonbiType: SeonbiType
   result: JudgeResult
+  judgeMode: JudgeMode
   hasImage: boolean
   hasText: boolean
 }
@@ -34,6 +36,7 @@ export async function saveJudgeHistory(input: SaveJudgeHistoryInput) {
     advice: input.result.seonbiAdvice,
     modern_translation: input.result.modernTranslation,
     share_text: input.result.shareText,
+    judge_mode: input.judgeMode,
     has_image: input.hasImage,
     has_text: input.hasText,
   }
@@ -47,6 +50,21 @@ export async function saveJudgeHistory(input: SaveJudgeHistoryInput) {
     })
     return { ok: true, skipped: false }
   } catch {
+    if (row.judge_mode) {
+      const legacyRow = { ...row }
+      delete legacyRow.judge_mode
+      try {
+        await requestJudgeHistories(createJudgeHistoryUrl(), {
+          method: 'POST',
+          accessToken: auth.accessToken,
+          body: legacyRow,
+          prefer: 'return=minimal',
+        })
+        return { ok: true, skipped: false }
+      } catch {
+        return { ok: false, skipped: false }
+      }
+    }
     return { ok: false, skipped: false }
   }
 }

@@ -2,6 +2,16 @@
 
 type JudgeEmptyReason = 'missing_api_key' | 'invalid_input' | 'api_error'
 type SeonbiType = 'toegye' | 'yulgok' | 'cheosa' | 'uguk'
+type JudgeMode =
+  | 'default'
+  | 'strict'
+  | 'practical'
+  | 'hermit'
+  | 'righteous'
+  | 'praise'
+  | 'roast'
+  | 'petition'
+  | 'poison'
 
 interface VercelRequestLike {
   method?: string
@@ -31,6 +41,7 @@ interface JudgeResult {
 interface JudgeRequestBody {
   text?: unknown
   seonbiType?: unknown
+  judgeMode?: unknown
   imageDataUrl?: unknown
   imageMimeType?: unknown
 }
@@ -58,6 +69,25 @@ const seonbiTypePrompts: Record<SeonbiType, string> = {
   uguk:
     '사용자의 선비유형은 우국형이다. 정의감, 책임감, 행동, 공동체를 중시하는 말투와 가치관을 담아 답한다.',
 }
+const judgeModePrompts: Record<JudgeMode, string> = {
+  default: '기본 선비 모드다. 앞선 선비유형 말투와 가치관을 자연스럽게 유지한다.',
+  strict:
+    '엄격한 퇴계 모드다. 절제, 수양, 도덕적 훈계를 중심으로 하되 사용자를 모욕하지 않는다.',
+  practical:
+    '현실적인 율곡 모드다. 실천, 시간 관리, 현실적 해결책을 짧고 구체적으로 제안한다.',
+  hermit:
+    '은둔 처사 모드다. 자연, 쉼, 마음 비움, 속도를 늦추는 조언을 중심으로 답한다.',
+  righteous:
+    '의병 우국 모드다. 정의감, 책임, 공동체, 작은 행동 촉구를 중심으로 답한다.',
+  praise:
+    '칭찬만 하는 선비 모드다. 따뜻한 칭찬과 격려를 중심으로 답하고 부족한 점도 부드럽게 말한다.',
+  roast:
+    '팩폭 선비 모드다. 불쾌하지 않은 선에서 웃긴 직설 조언을 하되 외모, 정체성, 혐오, 모욕 표현은 금지한다.',
+  petition:
+    '상소문 변환 모드다. 사용자의 고민을 짧은 상소문 형식으로 바꾸고, 현대어 해석에는 실천 조언을 덧붙인다.',
+  poison:
+    '사약 판정 모드다. 과장된 밈 느낌으로 가볍게 판정하되 자해, 죽음 조장, 실제 위해 표현으로 보이지 않게 "마음의 사약", "게으름 퇴치 탕약" 같은 안전한 비유만 사용한다.',
+}
 
 export default async function handler(
   request: VercelRequestLike,
@@ -76,6 +106,7 @@ export default async function handler(
 
   const inputText = getInputText(request.body)
   const seonbiType = getSeonbiType(request.body)
+  const judgeMode = getJudgeMode(request.body)
   const imageInput = getImageInput(request.body)
   const validationMessage = validateInput(inputText, Boolean(imageInput))
   if (validationMessage) {
@@ -136,6 +167,7 @@ export default async function handler(
               '사진이 있으면 imageObservation 필드를 추가할 수 있다.',
               '각 필드는 한국어 문자열이어야 한다.',
               getSeonbiTypePrompt(seonbiType),
+              getJudgeModePrompt(judgeMode),
             ].join(' '),
           },
           {
@@ -157,7 +189,9 @@ export default async function handler(
       })
 
       response.status(imageInput?.dataUrl ? 200 : 502).json(
-        imageInput?.dataUrl ? createImageFallbackResponse(seonbiType) : createSafeFailureResponse(),
+        imageInput?.dataUrl
+          ? createImageFallbackResponse(seonbiType, judgeMode)
+          : createSafeFailureResponse(),
       )
       return
     }
@@ -173,7 +207,9 @@ export default async function handler(
       })
 
       response.status(imageInput?.dataUrl ? 200 : 502).json(
-        imageInput?.dataUrl ? createImageFallbackResponse(seonbiType) : createSafeFailureResponse(),
+        imageInput?.dataUrl
+          ? createImageFallbackResponse(seonbiType, judgeMode)
+          : createSafeFailureResponse(),
       )
       return
     }
@@ -189,7 +225,9 @@ export default async function handler(
     })
 
     response.status(imageInput?.dataUrl ? 200 : 500).json(
-      imageInput?.dataUrl ? createImageFallbackResponse(seonbiType) : createSafeFailureResponse(),
+      imageInput?.dataUrl
+        ? createImageFallbackResponse(seonbiType, judgeMode)
+        : createSafeFailureResponse(),
     )
   }
 }
@@ -204,6 +242,12 @@ function getSeonbiType(body: unknown): SeonbiType | undefined {
   const parsedBody = parseRequestBody(body)
   const value = parsedBody?.seonbiType
   return isSeonbiType(value) ? value : undefined
+}
+
+function getJudgeMode(body: unknown): JudgeMode {
+  const parsedBody = parseRequestBody(body)
+  const value = parsedBody?.judgeMode
+  return isJudgeMode(value) ? value : 'default'
 }
 
 function getImageInput(body: unknown):
@@ -309,8 +353,26 @@ function isSeonbiType(value: unknown): value is SeonbiType {
   )
 }
 
+function isJudgeMode(value: unknown): value is JudgeMode {
+  return (
+    value === 'default' ||
+    value === 'strict' ||
+    value === 'practical' ||
+    value === 'hermit' ||
+    value === 'righteous' ||
+    value === 'praise' ||
+    value === 'roast' ||
+    value === 'petition' ||
+    value === 'poison'
+  )
+}
+
 function getSeonbiTypePrompt(seonbiType: SeonbiType | undefined) {
   return seonbiType ? seonbiTypePrompts[seonbiType] : ''
+}
+
+function getJudgeModePrompt(judgeMode: JudgeMode) {
+  return judgeModePrompts[judgeMode]
 }
 
 function containsPersonalInfo(text: string) {
@@ -365,17 +427,21 @@ function parseJudgeResult(content: string | undefined): JudgeResult | undefined 
   }
 }
 
-function createImageFallbackResponse(seonbiType: SeonbiType | undefined): JudgeProxyResponse {
+function createImageFallbackResponse(
+  seonbiType: SeonbiType | undefined,
+  judgeMode: JudgeMode,
+): JudgeProxyResponse {
   const typeLabel = getSeonbiTypeLabel(seonbiType)
+  const modeLabel = getJudgeModeLabel(judgeMode)
 
   return {
     ok: true,
     result: {
       seonbiAdvice:
-        '사진 속 분위기를 정확히 읽지는 못했지만, 잠시 숨을 고르고 오늘의 마음을 바르게 세워보시게.',
+        `${modeLabel}의 기운으로 살펴보니, 사진 속 분위기를 정확히 읽지는 못했지만 잠시 숨을 고르고 오늘의 마음을 바르게 세워보시게.`,
       modernTranslation:
         '사진 분석은 잠시 어려웠지만, 지금의 상황을 차분히 바라보고 작은 실천부터 시작해보세요.',
-      shareText: `${typeLabel} 선비의 한마디: 사진 속 분위기를 정확히 읽지는 못했지만, 잠시 숨을 고르고 오늘의 마음을 바르게 세워보시게.`,
+      shareText: `${typeLabel} 선비의 ${modeLabel}: 사진 속 분위기를 정확히 읽지는 못했지만, 잠시 숨을 고르고 오늘의 마음을 바르게 세워보시게.`,
       imageObservation: '사진의 세부 분위기를 불러오지 못했습니다.',
     },
   }
@@ -395,4 +461,16 @@ function getSeonbiTypeLabel(seonbiType: SeonbiType | undefined) {
   if (seonbiType === 'cheosa') return '처사형'
   if (seonbiType === 'uguk') return '우국형'
   return '선비'
+}
+
+function getJudgeModeLabel(judgeMode: JudgeMode) {
+  if (judgeMode === 'strict') return '엄격 모드'
+  if (judgeMode === 'practical') return '현실 모드'
+  if (judgeMode === 'hermit') return '은둔 모드'
+  if (judgeMode === 'righteous') return '의병 모드'
+  if (judgeMode === 'praise') return '칭찬 모드'
+  if (judgeMode === 'roast') return '팩폭 모드'
+  if (judgeMode === 'petition') return '상소문 모드'
+  if (judgeMode === 'poison') return '사약 모드'
+  return '기본 모드'
 }

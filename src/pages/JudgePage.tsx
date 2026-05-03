@@ -8,7 +8,8 @@ import { seonbiTypeInfo } from '../data/seonbiTypes'
 import { trackEvent } from '../features/analytics/trackEvent'
 import { requestSeonbiAdvice } from '../features/judge/judgeApi'
 import { saveJudgeHistory } from '../features/judge/judgeHistoryApi'
-import type { JudgeResult } from '../features/judge/judgeTypes'
+import { getJudgeModeOption, judgeModeOptions } from '../features/judge/judgeModes'
+import type { JudgeMode, JudgeResult } from '../features/judge/judgeTypes'
 import type { SeonbiTypeInfo, TestResult } from '../features/seonbi-test/types'
 import { loadTestResult } from '../lib/storage'
 
@@ -41,6 +42,8 @@ interface JudgePageContentProps {
 
 function JudgePageContent({ testResult, typeInfo }: JudgePageContentProps) {
   const [text, setText] = useState('')
+  const [judgeMode, setJudgeMode] = useState<JudgeMode>('default')
+  const [hasSeonbiImageError, setHasSeonbiImageError] = useState(false)
   const [result, setResult] = useState<JudgeResult | null>(null)
   const [message, setMessage] = useState('')
   const [shareMessage, setShareMessage] = useState('')
@@ -52,6 +55,9 @@ function JudgePageContent({ testResult, typeInfo }: JudgePageContentProps) {
   const canShareResult = Boolean(result)
   const canUseWebShare = typeof navigator.share === 'function'
   const hasImage = Boolean(imageDataUrl)
+  const selectedModeOption = getJudgeModeOption(judgeMode)
+  const seonbiImageSrc = `/images/seonbi/${testResult.type}.png`
+  const seonbiImageAlt = `${typeInfo.name} 선비 이미지`
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -70,6 +76,7 @@ function JudgePageContent({ testResult, typeInfo }: JudgePageContentProps) {
     const response = await requestSeonbiAdvice({
       text: trimmedText,
       seonbiType: testResult.type,
+      judgeMode,
       imageDataUrl: imageDataUrl || undefined,
       imageMimeType: imageMimeType || undefined,
     })
@@ -88,6 +95,7 @@ function JudgePageContent({ testResult, typeInfo }: JudgePageContentProps) {
     void saveJudgeHistory({
       seonbiType: testResult.type,
       result: response.result,
+      judgeMode,
       hasImage,
       hasText: Boolean(trimmedText),
     })
@@ -97,6 +105,7 @@ function JudgePageContent({ testResult, typeInfo }: JudgePageContentProps) {
         hasSeonbiType: true,
         hasText: Boolean(trimmedText),
         hasImage,
+        judgeMode,
       },
     })
     if (hasImage) {
@@ -105,6 +114,7 @@ function JudgePageContent({ testResult, typeInfo }: JudgePageContentProps) {
         metadata: {
           hasImage: true,
           hasText: Boolean(trimmedText),
+          judgeMode,
         },
       })
     }
@@ -190,8 +200,22 @@ function JudgePageContent({ testResult, typeInfo }: JudgePageContentProps) {
           <p>오늘의 문장을 선비 말투의 유쾌한 조언으로 바꿔드립니다.</p>
         </div>
         <div className="judge-grid">
-          <div className="wisdom-visual" aria-hidden="true">
-            書
+          <div className={`wisdom-visual wisdom-visual--${judgeMode}`}>
+            <div className="wisdom-visual-badges">
+              <StatusBadge tone="brown">{typeInfo.name}</StatusBadge>
+              <StatusBadge>{selectedModeOption.badge}</StatusBadge>
+            </div>
+            {!hasSeonbiImageError ? (
+              <img
+                src={seonbiImageSrc}
+                alt={seonbiImageAlt}
+                onError={() => setHasSeonbiImageError(true)}
+              />
+            ) : (
+              <span className="wisdom-visual-fallback" aria-hidden="true">
+                書
+              </span>
+            )}
           </div>
           <form className="surface-card judge-form" onSubmit={handleSubmit}>
             <label htmlFor="judge-text">지금 어떤 생각을 하고 계신가요?</label>
@@ -206,6 +230,23 @@ function JudgePageContent({ testResult, typeInfo }: JudgePageContentProps) {
             <p id="judge-help" className="judge-help">
               외모비하, 혐오, 욕설, 개인정보가 포함된 문장은 처리하지 않습니다.
             </p>
+            <fieldset className="judge-mode-field">
+              <legend>한마디 모드 선택</legend>
+              <div className="judge-mode-options">
+                {judgeModeOptions.map((option) => (
+                  <button
+                    key={option.id}
+                    type="button"
+                    className={option.id === judgeMode ? 'active' : ''}
+                    aria-pressed={option.id === judgeMode}
+                    title={option.description}
+                    onClick={() => setJudgeMode(option.id)}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
             <div className="judge-image-field">
               <label htmlFor="judge-image">사진으로도 한마디를 받을 수 있습니다.</label>
               <p className="judge-help">
