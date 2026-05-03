@@ -88,6 +88,9 @@ export function TopNavBar() {
         )}
         {authUser ? (
           <>
+            <Link className="nav-login-link" to="/mypage">
+              마이페이지
+            </Link>
             <span className="nav-user-label">
               {authUser.nickname || authUser.email || '로그인 사용자'}
             </span>

@@ -6,6 +6,7 @@ import { ForgotPasswordPage } from '../pages/ForgotPasswordPage'
 import { HomePage } from '../pages/HomePage'
 import { JudgePage } from '../pages/JudgePage'
 import { LoginPage } from '../pages/LoginPage'
+import { MyPage } from '../pages/MyPage'
 import { ResultPage } from '../pages/ResultPage'
 import { SignupPage } from '../pages/SignupPage'
 import { TestPage } from '../pages/TestPage'
@@ -19,6 +20,7 @@ export function AppRouter() {
         <Route path="/result" element={<ResultPage />} />
         <Route path="/course" element={<CoursePage />} />
         <Route path="/judge" element={<JudgePage />} />
+        <Route path="/mypage" element={<MyPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
