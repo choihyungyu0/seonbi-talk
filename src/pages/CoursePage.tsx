@@ -61,6 +61,7 @@ interface TourismDetailState {
 export function CoursePage() {
   const testResult = useMemo(() => loadTestResult(), [])
   const tourismCardRefs = useRef(new Map<string, HTMLElement>())
+  const detailRequestIdRef = useRef(0)
   const [activeFilter, setActiveFilter] = useState<TourismFilterId>('all')
   const [selectedContentId, setSelectedContentId] = useState<string | undefined>()
   const [favoriteContentIds, setFavoriteContentIds] = useState<Set<string>>(
@@ -134,7 +135,8 @@ export function CoursePage() {
       : null
   }, [testResult, tourismState.contents])
   const typeInfo = testResult ? seonbiTypeInfo[testResult.type] : null
-  const recommendedItems = recommendedCourse?.items ?? []
+  const recommendedItems = useMemo(() => recommendedCourse?.items ?? [], [recommendedCourse])
+  const routeItems = useMemo(() => recommendedItems.slice(0, 4), [recommendedItems])
   const shouldShowCards = tourismState.status === 'ready' && tourismState.contents.length > 0
   const shouldShowAllCards = tourismState.status === 'ready' && tourismState.contents.length > 0
   const activeSeonbiType = testResult?.type
@@ -154,6 +156,9 @@ export function CoursePage() {
   }, [selectedContentId])
 
   const openTourismDetail = useCallback(async (item: TourismContent) => {
+    const requestId = detailRequestIdRef.current + 1
+    detailRequestIdRef.current = requestId
+
     setDetailState({
       status: 'ready',
       item,
@@ -164,6 +169,8 @@ export function CoursePage() {
     })
 
     const response = await getTourismDetail(item)
+    if (detailRequestIdRef.current !== requestId) return
+
     if (response.status !== 'ready' || !response.detail) {
       setDetailState({
         status: 'error',
@@ -178,6 +185,11 @@ export function CoursePage() {
       item,
       detail: response.detail,
     })
+  }, [])
+
+  const closeTourismDetail = useCallback(() => {
+    detailRequestIdRef.current += 1
+    setDetailState({ status: 'idle' })
   }, [])
 
   const selectTourismItem = useCallback((item: TourismContent) => {
@@ -364,7 +376,7 @@ export function CoursePage() {
           <div className="course-side-panel">
             <CourseMap
               items={tourismState.contents}
-              routeItems={recommendedItems}
+              routeItems={routeItems}
               selectedContentId={selectedContentId}
               onSelectItem={selectTourismItem}
             />
@@ -380,7 +392,7 @@ export function CoursePage() {
               favoriteContentIds.has(detailState.item.contentId),
           )}
           onToggleFavorite={toggleFavoriteCourse}
-          onClose={() => setDetailState({ status: 'idle' })}
+          onClose={closeTourismDetail}
         />
       </section>
     </AppLayout>

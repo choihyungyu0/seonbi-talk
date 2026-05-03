@@ -57,12 +57,20 @@ export function CourseMap({
   }, [items])
 
   const routeCoordinateItems = useMemo(() => {
-    return routeItems
+    const uniqueItems = new Map<string, TourismContent>()
+    for (const item of routeItems) {
+      const id = item.contentId ?? `${item.title}-${item.mapX}-${item.mapY}`
+      if (!uniqueItems.has(id)) uniqueItems.set(id, item)
+    }
+
+    const coordinateItems = Array.from(uniqueItems.values())
       .filter((item) => item.mapX !== undefined && item.mapY !== undefined)
       .map((item) => ({
         lat: item.mapY as number,
         lng: item.mapX as number,
       }))
+
+    return sortByNearestNeighbor(coordinateItems)
   }, [routeItems])
 
   useEffect(() => {
@@ -165,7 +173,7 @@ export function CourseMap({
     <aside className="surface-card map-panel">
       <div className="map-panel-header">
         <h2>지도</h2>
-        <span>TourAPI 좌표 기반 마커</span>
+        <span>추천 코스 가까운 순서 연결</span>
       </div>
       <div className="course-map-shell">
         {status !== 'ready' && (
@@ -205,4 +213,40 @@ function getStatusMessage(status: CourseMapStatus) {
   }
   if (status === 'no-coordinates') return '좌표 정보가 있는 관광지가 없습니다.'
   return '지도를 불러오는 중 문제가 발생했습니다.'
+}
+
+interface RouteCoordinate {
+  lat: number
+  lng: number
+}
+
+function sortByNearestNeighbor(items: RouteCoordinate[]) {
+  if (items.length < 3) return items
+
+  const [startItem, ...remainingItems] = items
+  const sortedItems = [startItem]
+  const unvisitedItems = [...remainingItems]
+
+  while (unvisitedItems.length > 0) {
+    const currentItem = sortedItems[sortedItems.length - 1]
+    let nearestIndex = 0
+    let nearestDistance = getCoordinateDistance(currentItem, unvisitedItems[0])
+
+    for (let index = 1; index < unvisitedItems.length; index += 1) {
+      const distance = getCoordinateDistance(currentItem, unvisitedItems[index])
+      if (distance < nearestDistance) {
+        nearestDistance = distance
+        nearestIndex = index
+      }
+    }
+
+    const [nearestItem] = unvisitedItems.splice(nearestIndex, 1)
+    sortedItems.push(nearestItem)
+  }
+
+  return sortedItems
+}
+
+function getCoordinateDistance(from: RouteCoordinate, to: RouteCoordinate) {
+  return (from.lat - to.lat) ** 2 + (from.lng - to.lng) ** 2
 }
