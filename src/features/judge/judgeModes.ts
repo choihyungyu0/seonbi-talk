@@ -82,8 +82,8 @@ export function getSeonbiVisualImagePath(
   seonbiType: SeonbiType,
   judgeMode: JudgeMode,
 ) {
-  if (seonbiType === 'toegye' && judgeMode !== 'default') {
-    return `/images/seonbi/toegye-${judgeMode}.png`
+  if (hasModeSpecificSeonbiImage(seonbiType) && judgeMode !== 'default') {
+    return `/images/seonbi/${seonbiType}-${judgeMode}.png`
   }
 
   return `/images/seonbi/${seonbiType}.png`
@@ -96,4 +96,8 @@ export function getSeonbiVisualImageAlt(
   if (judgeMode === 'default') return `${seonbiTypeName} 선비 이미지`
 
   return `${seonbiTypeName} 선비 ${getJudgeModeOption(judgeMode).badge} 모드 이미지`
+}
+
+function hasModeSpecificSeonbiImage(seonbiType: SeonbiType) {
+  return seonbiType === 'toegye' || seonbiType === 'yulgok'
 }
