@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { CommonButton } from '../components/common/CommonButton'
 import { StatusBadge } from '../components/common/StatusBadge'
@@ -7,6 +7,8 @@ import { AppLayout } from '../components/layout/AppLayout'
 type AdminSessionStatus = 'checking' | 'authenticated' | 'unauthenticated'
 type DashboardStatus = 'idle' | 'loading' | 'ready' | 'error'
 type DashboardRange = 'today' | '7d' | '30d' | 'all'
+type RagSeedStatus = 'idle' | 'loading' | 'success' | 'error'
+type RagSearchStatus = 'idle' | 'loading' | 'ready' | 'error'
 
 interface AdminDashboard {
   summary: {
@@ -68,6 +70,19 @@ interface AdminDashboardResponse {
   dashboard?: AdminDashboard
 }
 
+interface RagSearchResult {
+  title: string
+  content: string
+  metadata: Record<string, unknown>
+  similarity?: number
+  source_type?: string
+}
+
+interface RagSearchResponse {
+  ok?: boolean
+  documents?: RagSearchResult[]
+}
+
 const ranges: Array<{ value: DashboardRange; label: string }> = [
   { value: 'today', label: '오늘' },
   { value: '7d', label: '7일' },
@@ -101,6 +116,11 @@ export function AdminPage() {
   const [dashboard, setDashboard] = useState<AdminDashboard | null>(null)
   const [range, setRange] = useState<DashboardRange>('30d')
   const [statusMessage, setStatusMessage] = useState('')
+  const [ragSeedStatus, setRagSeedStatus] = useState<RagSeedStatus>('idle')
+  const [ragSearchQuery, setRagSearchQuery] = useState('')
+  const [ragSearchStatus, setRagSearchStatus] = useState<RagSearchStatus>('idle')
+  const [ragSearchResults, setRagSearchResults] = useState<RagSearchResult[]>([])
+  const [ragSearchMessage, setRagSearchMessage] = useState('')
   const isCheckingSession = sessionStatus === 'checking'
   const isAuthenticated = sessionStatus === 'authenticated'
   const hasNoData = useMemo(() => {
@@ -147,12 +167,11 @@ export function AdminPage() {
     navigate('/login', { replace: true, state: { from: '/admin' } })
   }, [navigate, sessionStatus])
 
-  useEffect(() => {
-    if (!isAuthenticated) return
-    let ignore = false
-
-    async function loadDashboard() {
+  const loadDashboard = useCallback(
+    async (options: { silent?: boolean; ignore?: () => boolean } = {}) => {
+      if (!options.silent) {
       setDashboardStatus('loading')
+      }
       setStatusMessage('')
 
       try {
@@ -162,12 +181,13 @@ export function AdminPage() {
         })
 
         if (response.status === 401) {
+          if (options.ignore?.()) return
           setSessionStatus('unauthenticated')
           return
         }
 
         const data = (await response.json().catch(() => ({}))) as AdminDashboardResponse
-        if (ignore) return
+        if (options.ignore?.()) return
 
         if (!response.ok || !data.ok || !data.dashboard) {
           setDashboardStatus('error')
@@ -178,19 +198,25 @@ export function AdminPage() {
         setDashboard(data.dashboard)
         setDashboardStatus('ready')
       } catch {
-        if (!ignore) {
+        if (!options.ignore?.()) {
           setDashboardStatus('error')
           setStatusMessage('대시보드 데이터를 불러오지 못했습니다.')
         }
       }
-    }
+    },
+    [range],
+  )
 
-    void loadDashboard()
+  useEffect(() => {
+    if (!isAuthenticated) return
+    let ignore = false
+
+    void Promise.resolve().then(() => loadDashboard({ ignore: () => ignore }))
 
     return () => {
       ignore = true
     }
-  }, [isAuthenticated, range])
+  }, [isAuthenticated, loadDashboard])
 
   async function handleLogout() {
     setStatusMessage('')
@@ -206,6 +232,73 @@ export function AdminPage() {
     }
 
     navigate('/login', { replace: true })
+  }
+
+  async function handleRagSeed() {
+    setRagSeedStatus('loading')
+
+    try {
+      const response = await fetch('/api/admin/rag/seed', {
+        method: 'POST',
+        credentials: 'include',
+      })
+      const data = (await response.json().catch(() => ({}))) as { ok?: boolean }
+
+      if (!response.ok || !data.ok) {
+        setRagSeedStatus('error')
+        return
+      }
+
+      setRagSeedStatus('success')
+      await loadDashboard({ silent: true })
+    } catch {
+      setRagSeedStatus('error')
+    }
+  }
+
+  async function handleRagSearch(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const query = ragSearchQuery.trim()
+    if (!query) {
+      setRagSearchStatus('idle')
+      setRagSearchResults([])
+      setRagSearchMessage('검색어를 입력해주세요.')
+      return
+    }
+
+    setRagSearchStatus('loading')
+    setRagSearchMessage('')
+    setRagSearchResults([])
+
+    try {
+      const response = await fetch('/api/rag/search', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          query,
+          matchCount: 5,
+        }),
+      })
+      const data = (await response.json().catch(() => ({}))) as RagSearchResponse
+
+      if (!response.ok || !data.ok) {
+        setRagSearchStatus('error')
+        setRagSearchMessage('AI 참고 데이터 검색에 실패했습니다.')
+        return
+      }
+
+      const results = (data.documents ?? []).slice(0, 5)
+      setRagSearchResults(results)
+      setRagSearchStatus('ready')
+      setRagSearchMessage(
+        results.length === 0 ? '관련 참고 데이터를 찾지 못했습니다.' : '',
+      )
+    } catch {
+      setRagSearchStatus('error')
+      setRagSearchMessage('AI 참고 데이터 검색에 실패했습니다.')
+    }
   }
 
   return (
@@ -292,7 +385,17 @@ export function AdminPage() {
             <section className="admin-analytics-grid">
               <BehaviorFunnel steps={dashboard.behaviorFunnel} />
               <PublicDataStatusPanel status={dashboard.publicDataStatus} />
-              <RagStatusPanel status={dashboard.ragStatus} />
+              <RagStatusPanel
+                searchMessage={ragSearchMessage}
+                searchQuery={ragSearchQuery}
+                searchResults={ragSearchResults}
+                searchStatus={ragSearchStatus}
+                seedStatus={ragSeedStatus}
+                status={dashboard.ragStatus}
+                onSearch={handleRagSearch}
+                onSearchQueryChange={setRagSearchQuery}
+                onSeed={() => void handleRagSeed()}
+              />
               <ChartPanel
                 title="선비유형 분포"
                 rows={toChartRows(dashboard.seonbiTypeDistribution, seonbiTypeLabels)}
@@ -478,9 +581,25 @@ function PublicDataStatusPanel({
 }
 
 function RagStatusPanel({
+  searchMessage,
+  searchQuery,
+  searchResults,
+  searchStatus,
+  seedStatus,
   status,
+  onSearch,
+  onSearchQueryChange,
+  onSeed,
 }: {
+  searchMessage: string
+  searchQuery: string
+  searchResults: RagSearchResult[]
+  searchStatus: RagSearchStatus
+  seedStatus: RagSeedStatus
   status: AdminDashboard['ragStatus']
+  onSearch: (event: React.FormEvent<HTMLFormElement>) => void
+  onSearchQueryChange: (value: string) => void
+  onSeed: () => void
 }) {
   const metrics = [
     { label: 'RAG 문서 수', value: status.totalDocuments },
@@ -512,6 +631,72 @@ function RagStatusPanel({
             마지막 업데이트: {status.lastUpdatedAt ? formatDateTime(status.lastUpdatedAt) : '데이터 없음'}
           </p>
         </>
+      )}
+      <div className="admin-rag-actions">
+        <CommonButton
+          type="button"
+          disabled={seedStatus === 'loading'}
+          isLoading={seedStatus === 'loading'}
+          loadingLabel="업데이트 중..."
+          onClick={onSeed}
+        >
+          AI 참고 데이터 업데이트
+        </CommonButton>
+        {seedStatus === 'success' && (
+          <p className="success-message" role="status">
+            AI 참고 데이터가 업데이트되었습니다.
+          </p>
+        )}
+        {seedStatus === 'error' && (
+          <p className="form-error" role="status">
+            AI 참고 데이터 업데이트에 실패했습니다.
+          </p>
+        )}
+      </div>
+      <form className="admin-rag-search-form" onSubmit={onSearch}>
+        <label className="field" htmlFor="admin-rag-search">
+          <span>AI 참고 데이터 검색 테스트</span>
+          <input
+            id="admin-rag-search"
+            type="search"
+            placeholder="예: 율곡형 진로 걱정 현실적인 조언"
+            value={searchQuery}
+            onChange={(event) => onSearchQueryChange(event.target.value)}
+          />
+        </label>
+        <CommonButton
+          type="submit"
+          variant="secondary"
+          disabled={searchStatus === 'loading'}
+          isLoading={searchStatus === 'loading'}
+          loadingLabel="검색 중..."
+        >
+          검색
+        </CommonButton>
+      </form>
+      {searchMessage && (
+        <p
+          className={searchStatus === 'error' ? 'form-error' : 'admin-data-note'}
+          role="status"
+        >
+          {searchMessage}
+        </p>
+      )}
+      {searchResults.length > 0 && (
+        <div className="admin-rag-search-results">
+          {searchResults.map((result, index) => (
+            <article key={`${result.title}-${index}`}>
+              <div>
+                <strong>{result.title}</strong>
+                <span>{getRagSourceTypeLabel(result.source_type)}</span>
+                {typeof result.similarity === 'number' && (
+                  <em>{result.similarity.toFixed(3)}</em>
+                )}
+              </div>
+              <p>{createContentPreview(result.content)}</p>
+            </article>
+          ))}
+        </div>
       )}
     </article>
   )
@@ -591,4 +776,17 @@ function formatDateTime(value: string) {
     dateStyle: 'short',
     timeStyle: 'short',
   }).format(date)
+}
+
+function getRagSourceTypeLabel(value: unknown) {
+  if (value === 'tourism_place') return '관광지'
+  if (value === 'seonbi_persona') return '선비유형'
+  if (value === 'judge_mode') return '한마디 모드'
+  if (value === 'recommendation_rule') return '추천 규칙'
+  return '참고 데이터'
+}
+
+function createContentPreview(content: string) {
+  const normalized = content.replace(/\s+/g, ' ').trim()
+  return normalized.length > 140 ? `${normalized.slice(0, 140)}...` : normalized
 }

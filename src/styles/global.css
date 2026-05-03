@@ -2734,6 +2734,71 @@ a {
   font-weight: 800;
 }
 
+.admin-rag-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.admin-rag-actions .success-message,
+.admin-rag-actions .form-error {
+  flex: 1 1 240px;
+}
+
+.admin-rag-search-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 12px;
+}
+
+.admin-rag-search-results {
+  display: grid;
+  gap: 10px;
+}
+
+.admin-rag-search-results article {
+  display: grid;
+  gap: 8px;
+  border: 1px solid rgba(225, 221, 214, 0.78);
+  border-radius: 14px;
+  padding: 14px;
+  background: rgba(255, 253, 249, 0.72);
+}
+
+.admin-rag-search-results div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-rag-search-results strong {
+  color: var(--ink);
+}
+
+.admin-rag-search-results span,
+.admin-rag-search-results em {
+  border-radius: 999px;
+  padding: 3px 8px;
+  color: var(--forest);
+  background: rgba(200, 234, 216, 0.58);
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.admin-rag-search-results p {
+  display: -webkit-box;
+  overflow: hidden;
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
 .admin-top-course-list {
   display: grid;
   gap: 10px;
@@ -3314,6 +3379,12 @@ a {
 
   .admin-public-data-grid,
   .admin-rag-status-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-rag-actions,
+  .admin-rag-search-form {
+    display: grid;
     grid-template-columns: 1fr;
   }
 

@@ -49,11 +49,12 @@ export default async function handler(
     const documents = await searchRagDocuments(query.slice(0, 800), matchCount)
     response.status(200).json({
       ok: true,
-      documents: documents.map(({ title, content, metadata, similarity }) => ({
+      documents: documents.map(({ title, content, metadata, similarity, source_type }) => ({
         title,
         content,
         metadata,
         similarity,
+        source_type,
       })),
     })
   } catch (error) {
