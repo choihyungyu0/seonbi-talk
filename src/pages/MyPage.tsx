@@ -12,6 +12,11 @@ import {
   removeFavoriteCourse,
   type FavoriteCourse,
 } from '../features/favorites/favoriteApi'
+import {
+  deleteJudgeHistory,
+  getRecentJudgeHistories,
+  type JudgeHistory,
+} from '../features/judge/judgeHistoryApi'
 import { loadTestResult } from '../lib/storage'
 
 export function MyPage() {
@@ -20,30 +25,47 @@ export function MyPage() {
   const [favorites, setFavorites] = useState<FavoriteCourse[]>([])
   const [status, setStatus] = useState<'idle' | 'loading' | 'error'>('idle')
   const [message, setMessage] = useState('')
+  const [judgeHistories, setJudgeHistories] = useState<JudgeHistory[]>([])
+  const [historyStatus, setHistoryStatus] = useState<'idle' | 'loading' | 'error'>(
+    'idle',
+  )
+  const [historyMessage, setHistoryMessage] = useState('')
 
   useEffect(() => {
     if (!user) return
 
     let ignore = false
 
-    async function loadFavorites() {
+    async function loadMyPageData() {
       setStatus('loading')
+      setHistoryStatus('loading')
       setMessage('')
+      setHistoryMessage('')
 
-      try {
-        const nextFavorites = await getFavoriteCourses()
-        if (ignore) return
+      const [favoriteResult, historyResult] = await Promise.allSettled([
+        getFavoriteCourses(),
+        getRecentJudgeHistories(5),
+      ])
+      if (ignore) return
 
-        setFavorites(nextFavorites)
+      if (favoriteResult.status === 'fulfilled') {
+        setFavorites(favoriteResult.value)
         setStatus('idle')
-      } catch {
-        if (ignore) return
+      } else {
         setStatus('error')
         setMessage('저장한 관심 코스를 불러오지 못했습니다.')
       }
+
+      if (historyResult.status === 'fulfilled') {
+        setJudgeHistories(historyResult.value)
+        setHistoryStatus('idle')
+      } else {
+        setHistoryStatus('error')
+        setHistoryMessage('최근 받은 선비의 한마디를 불러오지 못했습니다.')
+      }
     }
 
-    void loadFavorites()
+    void loadMyPageData()
 
     return () => {
       ignore = true
@@ -83,6 +105,21 @@ export function MyPage() {
       setMessage('관심 코스에서 해제했습니다.')
     } catch {
       setMessage('관심 코스를 해제하지 못했습니다.')
+    }
+  }
+
+  async function handleDeleteJudgeHistory(historyId: string | undefined) {
+    if (!historyId) return
+    setHistoryMessage('')
+
+    try {
+      await deleteJudgeHistory(historyId)
+      setJudgeHistories((current) =>
+        current.filter((history) => history.id !== historyId),
+      )
+      setHistoryMessage('선비의 한마디 기록을 삭제했습니다.')
+    } catch {
+      setHistoryMessage('선비의 한마디 기록을 삭제하지 못했습니다.')
     }
   }
 
@@ -173,6 +210,75 @@ export function MyPage() {
             </p>
           )}
         </section>
+
+        <section className="mypage-section">
+          <div className="mypage-section-heading">
+            <h2>최근 받은 선비의 한마디</h2>
+            <Link className="common-button common-button--secondary" to="/judge">
+              한마디 받으러 가기
+            </Link>
+          </div>
+
+          {historyStatus === 'loading' && (
+            <article className="surface-card mypage-empty-card">
+              <p>최근 받은 선비의 한마디를 불러오고 있습니다.</p>
+            </article>
+          )}
+
+          {historyStatus === 'error' && (
+            <p className="form-error" role="status">
+              {historyMessage}
+            </p>
+          )}
+
+          {historyStatus === 'idle' && judgeHistories.length === 0 && (
+            <article className="surface-card mypage-empty-card">
+              <p>아직 받은 선비의 한마디가 없습니다.</p>
+            </article>
+          )}
+
+          {judgeHistories.length > 0 && (
+            <div className="mypage-history-list">
+              {judgeHistories.map((history) => (
+                <article className="surface-card mypage-history-card" key={history.id}>
+                  <div className="mypage-history-meta">
+                    <StatusBadge tone={history.has_image ? 'brown' : 'green'}>
+                      {history.has_image ? '사진 기반' : '문장 기반'}
+                    </StatusBadge>
+                    <span>{formatDate(history.created_at)}</span>
+                  </div>
+                  <h3>{getSeonbiTypeLabel(history.seonbi_type)} 선비의 한마디</h3>
+                  <p>{history.advice}</p>
+                  <dl className="mypage-history-detail">
+                    <div>
+                      <dt>현대어</dt>
+                      <dd>{history.modern_translation}</dd>
+                    </div>
+                    <div>
+                      <dt>공유 문구</dt>
+                      <dd>{history.share_text}</dd>
+                    </div>
+                  </dl>
+                  {history.id && (
+                    <CommonButton
+                      type="button"
+                      variant="secondary"
+                      onClick={() => void handleDeleteJudgeHistory(history.id)}
+                    >
+                      기록 삭제
+                    </CommonButton>
+                  )}
+                </article>
+              ))}
+            </div>
+          )}
+
+          {historyMessage && historyStatus !== 'error' && (
+            <p className="disabled-notice mypage-notice" role="status">
+              {historyMessage}
+            </p>
+          )}
+        </section>
       </section>
     </AppLayout>
   )
@@ -184,4 +290,25 @@ function getContentTypeLabel(contentTypeId: string | undefined) {
   if (contentTypeId === '32') return '숙박'
   if (contentTypeId === '39') return '음식점'
   return '관광 정보'
+}
+
+function getSeonbiTypeLabel(seonbiType: JudgeHistory['seonbi_type']) {
+  if (seonbiType === 'toegye') return '퇴계형'
+  if (seonbiType === 'yulgok') return '율곡형'
+  if (seonbiType === 'cheosa') return '처사형'
+  if (seonbiType === 'uguk') return '우국형'
+  return '선비'
+}
+
+function formatDate(value: string | undefined) {
+  if (!value) return '날짜 정보 없음'
+
+  try {
+    return new Intl.DateTimeFormat('ko-KR', {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    }).format(new Date(value))
+  } catch {
+    return '날짜 정보 없음'
+  }
 }

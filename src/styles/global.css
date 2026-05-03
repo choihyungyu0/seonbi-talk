@@ -1541,6 +1541,62 @@ a {
   justify-self: start;
 }
 
+.mypage-history-list {
+  display: grid;
+  gap: 16px;
+}
+
+.mypage-history-card {
+  display: grid;
+  gap: 14px;
+  padding: 22px;
+}
+
+.mypage-history-card h3 {
+  margin: 0;
+  font-family: var(--serif);
+  line-height: 1.25;
+}
+
+.mypage-history-card p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-weight: 700;
+}
+
+.mypage-history-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.mypage-history-detail {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+
+.mypage-history-detail div {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  gap: 12px;
+}
+
+.mypage-history-detail dt {
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.mypage-history-detail dd {
+  margin: 0;
+  color: var(--muted);
+}
+
 @media (max-width: 920px) {
   .top-nav {
     grid-template-columns: 1fr auto;

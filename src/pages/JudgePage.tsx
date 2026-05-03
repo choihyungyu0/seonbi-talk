@@ -7,6 +7,7 @@ import { AppLayout } from '../components/layout/AppLayout'
 import { seonbiTypeInfo } from '../data/seonbiTypes'
 import { trackEvent } from '../features/analytics/trackEvent'
 import { requestSeonbiAdvice } from '../features/judge/judgeApi'
+import { saveJudgeHistory } from '../features/judge/judgeHistoryApi'
 import type { JudgeResult } from '../features/judge/judgeTypes'
 import type { SeonbiTypeInfo, TestResult } from '../features/seonbi-test/types'
 import { loadTestResult } from '../lib/storage'
@@ -84,6 +85,12 @@ function JudgePageContent({ testResult, typeInfo }: JudgePageContentProps) {
     }
 
     setResult(response.result)
+    void saveJudgeHistory({
+      seonbiType: testResult.type,
+      result: response.result,
+      hasImage,
+      hasText: Boolean(trimmedText),
+    })
     void trackEvent('judge_used', {
       seonbiType: testResult.type,
       metadata: {
