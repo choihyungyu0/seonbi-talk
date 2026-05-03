@@ -6,7 +6,11 @@ import { StatusBadge } from '../components/common/StatusBadge'
 import { AppLayout } from '../components/layout/AppLayout'
 import { ResultCard } from '../components/result/ResultCard'
 import { seonbiTypeInfo } from '../data/seonbiTypes'
-import { getStoredAuthUser } from '../features/auth/authApi'
+import {
+  getStoredAuthUser,
+  onAuthStateChange,
+  type AuthUser,
+} from '../features/auth/authApi'
 import {
   getFavoriteCourses,
   removeFavoriteCourse,
@@ -20,7 +24,7 @@ import {
 import { loadTestResult } from '../lib/storage'
 
 export function MyPage() {
-  const user = getStoredAuthUser()
+  const [user, setUser] = useState<AuthUser | null>(() => getStoredAuthUser())
   const testResult = loadTestResult()
   const [favorites, setFavorites] = useState<FavoriteCourse[]>([])
   const [status, setStatus] = useState<'idle' | 'loading' | 'error'>('idle')
@@ -30,9 +34,12 @@ export function MyPage() {
     'idle',
   )
   const [historyMessage, setHistoryMessage] = useState('')
+  const userId = user?.id
+
+  useEffect(() => onAuthStateChange(setUser), [])
 
   useEffect(() => {
-    if (!user) return
+    if (!userId) return
 
     let ignore = false
 
@@ -70,7 +77,7 @@ export function MyPage() {
     return () => {
       ignore = true
     }
-  }, [user])
+  }, [userId])
 
   if (!user) {
     return (
