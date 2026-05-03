@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type {
   ScoreTable,
   SeonbiType,
@@ -12,11 +13,14 @@ interface ResultCardProps {
 }
 
 export function ResultCard({ typeInfo, result }: ResultCardProps) {
+  const [hasImageError, setHasImageError] = useState(false)
   const personalizedStats = getPersonalizedStats(typeInfo, result)
   const statEntries = Object.entries(personalizedStats).map(([label, value]) => ({
     label,
     score: clampScore(value),
   }))
+  const resultImageSrc = `/images/seonbi/${typeInfo.id}.png`
+  const resultImageAlt = `${typeInfo.name} 선비 이미지`
 
   return (
     <article className="result-card">
@@ -24,6 +28,14 @@ export function ResultCard({ typeInfo, result }: ResultCardProps) {
         <strong>영주선비길</strong>
         <StatusBadge>선비유형 결과</StatusBadge>
       </div>
+      {!hasImageError && (
+        <img
+          className="result-seonbi-image"
+          src={resultImageSrc}
+          alt={resultImageAlt}
+          onError={() => setHasImageError(true)}
+        />
+      )}
       <p className="result-card-kicker">나의 선비유형</p>
       <h2>{typeInfo.name} 선비</h2>
       <p className="result-summary">{typeInfo.title}</p>

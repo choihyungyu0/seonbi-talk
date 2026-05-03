@@ -667,6 +667,17 @@ a {
   font-size: 18px;
 }
 
+.result-seonbi-image {
+  justify-self: center;
+  width: clamp(92px, 22vw, 128px);
+  aspect-ratio: 1;
+  border: 1px solid rgba(201, 194, 184, 0.9);
+  border-radius: 18px;
+  object-fit: cover;
+  background: var(--surface);
+  box-shadow: 0 12px 34px rgba(47, 49, 49, 0.1);
+}
+
 .result-card-kicker {
   margin: 0;
   color: var(--forest);
