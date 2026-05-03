@@ -882,7 +882,10 @@ a {
 .course-side-panel {
   display: grid;
   gap: 16px;
+  position: sticky;
+  top: 96px;
   align-self: start;
+  height: fit-content;
 }
 
 .tourism-section-block {
@@ -1167,9 +1170,11 @@ a {
 }
 
 .map-panel {
-  position: sticky;
-  top: 96px;
   overflow: hidden;
+}
+
+.course-side-panel .map-panel {
+  max-height: calc(100vh - 120px);
 }
 
 .map-panel-header {
@@ -1852,8 +1857,12 @@ a {
     grid-template-columns: 1fr;
   }
 
-  .map-panel {
+  .course-side-panel {
     position: static;
+  }
+
+  .course-side-panel .map-panel {
+    max-height: none;
   }
 }
 

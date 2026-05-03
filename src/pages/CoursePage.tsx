@@ -69,7 +69,6 @@ interface TourismDetailState {
 
 export function CoursePage() {
   const testResult = useMemo(() => loadTestResult(), [])
-  const tourismCardRefs = useRef(new Map<string, HTMLElement>())
   const detailRequestIdRef = useRef(0)
   const routeRequestIdRef = useRef(0)
   const [activeFilter, setActiveFilter] = useState<TourismFilterId>('all')
@@ -207,20 +206,6 @@ export function CoursePage() {
   const activeSeonbiType = testResult?.type
 
   useEffect(() => {
-    if (!selectedContentId) return
-
-    const target =
-      tourismCardRefs.current.get(`recommended:${selectedContentId}`) ??
-      tourismCardRefs.current.get(`all:${selectedContentId}`)
-    if (!target || isElementComfortablyVisible(target)) return
-
-    target.scrollIntoView({
-      behavior: 'smooth',
-      block: 'center',
-    })
-  }, [selectedContentId])
-
-  useEffect(() => {
     const requestId = routeRequestIdRef.current + 1
     routeRequestIdRef.current = requestId
 
@@ -309,17 +294,6 @@ export function CoursePage() {
         </section>
       </AppLayout>
     )
-  }
-
-  function setTourismCardRef(section: 'recommended' | 'all', item: TourismContent) {
-    return (element: HTMLDivElement | null) => {
-      const refKey = `${section}:${getTourismItemKey(item)}`
-      if (element) {
-        tourismCardRefs.current.set(refKey, element)
-        return
-      }
-      tourismCardRefs.current.delete(refKey)
-    }
   }
 
   async function toggleFavoriteCourse(item: TourismContent) {
@@ -413,11 +387,7 @@ export function CoursePage() {
                   </p>
                 </div>
                 {recommendedItems.map((item) => (
-                  <div
-                    data-tourism-card-id={getTourismItemKey(item)}
-                    key={getTourismItemKey(item)}
-                    ref={setTourismCardRef('recommended', item)}
-                  >
+                  <div key={getTourismItemKey(item)}>
                     <TourismCard
                       item={item}
                       selected={selectedContentId === getTourismItemKey(item)}
@@ -450,11 +420,7 @@ export function CoursePage() {
                   ))}
                 </div>
                 {tourismState.contents.map((item) => (
-                  <div
-                    data-tourism-card-id={getTourismItemKey(item)}
-                    key={getTourismItemKey(item)}
-                    ref={setTourismCardRef('all', item)}
-                  >
+                  <div key={getTourismItemKey(item)}>
                     <TourismCard
                       item={item}
                       selected={selectedContentId === getTourismItemKey(item)}
@@ -552,14 +518,6 @@ function getHaversineDistance(from: RouteCoordinate, to: RouteCoordinate) {
 
 function toRadians(value: number) {
   return (value * Math.PI) / 180
-}
-
-function isElementComfortablyVisible(element: HTMLElement) {
-  const rect = element.getBoundingClientRect()
-  const topPadding = 96
-  const bottomPadding = 80
-
-  return rect.top >= topPadding && rect.bottom <= window.innerHeight - bottomPadding
 }
 
 interface TourismEmptyStateProps {
