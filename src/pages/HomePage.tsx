@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type CSSProperties, type PointerEvent } from 'react'
+import { useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { Link } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
 import { CommonButton } from '../components/common/CommonButton'
@@ -7,6 +7,7 @@ import { StatusBadge } from '../components/common/StatusBadge'
 import { searchYeongjuTourismByKeyword } from '../features/tourism/tourismApi'
 import { getTourismPrimaryImageUrl } from '../features/tourism/tourismImageUrl'
 import type { TourismContent } from '../features/tourism/tourismTypes'
+import { useHeroMotion } from '../hooks/useHeroMotion'
 import { useRevealOnScroll } from '../hooks/useRevealOnScroll'
 
 const featureCards = [
@@ -35,7 +36,8 @@ interface HomeHeroImage {
 export function HomePage() {
   const [heroImage, setHeroImage] = useState<HomeHeroImage | null>(null)
   const [isHeroImageLoading, setIsHeroImageLoading] = useState(true)
-  const [heroParallax, setHeroParallax] = useState({ x: 0, y: 0 })
+  const [heroRef, handleHeroPointerMove, handleHeroPointerLeave] =
+    useHeroMotion<HTMLElement>()
   const [featureRevealRef, isFeatureVisible] = useRevealOnScroll<HTMLDivElement>()
   const [keywordRevealRef, isKeywordVisible] = useRevealOnScroll<HTMLDivElement>()
   const [tourismRevealRef, isTourismVisible] = useRevealOnScroll<HTMLDivElement>()
@@ -61,37 +63,31 @@ export function HomePage() {
     }
   }, [])
 
-  function handleHeroPointerMove(event: PointerEvent<HTMLElement>) {
-    if (!window.matchMedia('(pointer: fine)').matches) return
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
-
-    const rect = event.currentTarget.getBoundingClientRect()
-    setHeroParallax({
-      x: ((event.clientX - rect.left) / rect.width - 0.5) * 2,
-      y: ((event.clientY - rect.top) / rect.height - 0.5) * 2,
-    })
-  }
-
   return (
     <AppLayout>
       <section
+        ref={heroRef}
         className="home-hero"
         onPointerMove={handleHeroPointerMove}
-        onPointerLeave={() => setHeroParallax({ x: 0, y: 0 })}
-        style={
-          {
-            '--hero-parallax-x': `${heroParallax.x * 12}px`,
-            '--hero-parallax-y': `${heroParallax.y * 12}px`,
-            '--hero-pattern-x': `${heroParallax.x * -4}px`,
-            '--hero-pattern-y': `${heroParallax.y * -4}px`,
-          } as CSSProperties
-        }
+        onPointerLeave={handleHeroPointerLeave}
       >
         <div className="hero-pattern" aria-hidden="true" />
+        <svg
+          className="home-seonbi-line"
+          viewBox="0 0 920 520"
+          preserveAspectRatio="none"
+          aria-hidden="true"
+        >
+          <path d="M18 420 C 170 280, 245 470, 386 318 S 610 115, 902 172" />
+          <path d="M92 124 C 235 30, 342 192, 498 122 S 730 48, 868 92" />
+        </svg>
         <div className="page-container hero-inner">
           <div className="hero-copy">
             <StatusBadge>영주선비길</StatusBadge>
-            <h1>나의 선비유형으로 떠나는 영주 여행길</h1>
+            <h1 className="home-hero-title" aria-label="나의 선비유형으로 떠나는 영주 여행길">
+              <span className="hero-title-line">나의 선비유형</span>
+              <span className="hero-title-line">으로 떠나는 영주 여행길</span>
+            </h1>
             <p>
               전통 선비문화의 정서를 현대적인 관광 플랫폼 경험으로 정리한
               화면입니다.
@@ -145,8 +141,12 @@ export function HomePage() {
           ref={featureRevealRef}
           className={`reveal-on-scroll ${isFeatureVisible ? 'is-visible' : ''} card-grid three-columns`}
         >
-          {featureCards.map((card) => (
-            <article className="surface-card feature-card" key={card.title}>
+          {featureCards.map((card, index) => (
+            <article
+              className="surface-card feature-card"
+              key={card.title}
+              style={{ '--reveal-delay': `${index * 140}ms` } as CSSProperties}
+            >
               <span className="card-symbol" aria-hidden="true">
                 ✦
               </span>
@@ -160,7 +160,7 @@ export function HomePage() {
       <section className="page-section page-container split-section">
         <div
           ref={keywordRevealRef}
-          className={`reveal-on-scroll ${isKeywordVisible ? 'is-visible' : ''}`}
+          className={`reveal-on-scroll reveal-from-left ${isKeywordVisible ? 'is-visible' : ''}`}
         >
           <StatusBadge tone="brown">대표 키워드</StatusBadge>
           <h2>영주의 선비길을 구성하는 주요 단서</h2>
@@ -180,7 +180,7 @@ export function HomePage() {
         </div>
         <div
           ref={tourismRevealRef}
-          className={`reveal-on-scroll ${isTourismVisible ? 'is-visible' : ''}`}
+          className={`reveal-on-scroll reveal-from-right ${isTourismVisible ? 'is-visible' : ''}`}
         >
           {heroImage ? (
             <figure className="hero-tourism-image">

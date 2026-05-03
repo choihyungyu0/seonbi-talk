@@ -272,6 +272,13 @@ a {
   place-items: center;
   overflow: hidden;
   border-bottom: 1px solid var(--line);
+  --hero-pointer-x: 0px;
+  --hero-pointer-y: 0px;
+  --hero-pattern-x: 0px;
+  --hero-pattern-y: 0px;
+  --hero-pattern-scroll-y: 0px;
+  --hero-scroll-y: 0px;
+  --hero-scroll-scale: 1;
   background:
     radial-gradient(circle at 18% 18%, rgba(180, 139, 74, 0.12), transparent 32%),
     linear-gradient(180deg, #f7f1e6 0%, #eef3ea 100%);
@@ -287,8 +294,36 @@ a {
     repeating-linear-gradient(45deg, transparent 0 18px, rgba(255, 255, 255, 0.2) 18px 19px);
   background-size: auto, auto, 28px 28px, auto;
   opacity: 0.86;
-  transform: translate3d(var(--hero-pattern-x, 0px), var(--hero-pattern-y, 0px), 0);
+  transform: translate3d(
+    var(--hero-pattern-x),
+    calc(var(--hero-pattern-y) + var(--hero-pattern-scroll-y)),
+    0
+  );
   animation: homePatternDrift 18s ease-in-out infinite alternate;
+}
+
+.home-seonbi-line {
+  position: absolute;
+  inset: 8% 0 auto;
+  width: 100%;
+  height: 64%;
+  pointer-events: none;
+  transform: translate3d(0, calc(var(--hero-pattern-scroll-y) * -0.45), 0);
+}
+
+.home-seonbi-line path {
+  fill: none;
+  stroke: rgba(95, 72, 42, 0.2);
+  stroke-width: 1.2;
+  stroke-linecap: round;
+  stroke-dasharray: 980;
+  stroke-dashoffset: 980;
+  animation: homeLineDraw 2.4s ease-out 0.35s forwards;
+}
+
+.home-seonbi-line path + path {
+  stroke: rgba(45, 75, 62, 0.16);
+  animation-delay: 0.7s;
 }
 
 .hero-inner {
@@ -302,6 +337,12 @@ a {
 
 .hero-copy {
   max-width: 720px;
+}
+
+.hero-copy .status-badge {
+  opacity: 0;
+  transform: translateY(22px);
+  animation: homeHeroTextIn 720ms ease forwards;
 }
 
 .hero-inner h1,
@@ -321,6 +362,22 @@ a {
   font-size: clamp(48px, 8vw, 92px);
 }
 
+.home-hero-title {
+  display: grid;
+  gap: 2px;
+}
+
+.hero-title-line {
+  display: block;
+  opacity: 0;
+  transform: translateY(48px);
+  animation: homeHeroTextIn 900ms cubic-bezier(0.2, 0.72, 0.18, 1) forwards;
+}
+
+.hero-title-line:nth-child(2) {
+  animation-delay: 160ms;
+}
+
 .hero-inner p,
 .section-heading p,
 .auth-intro p,
@@ -333,16 +390,27 @@ a {
 
 .hero-inner p {
   margin-inline: 0;
+  opacity: 0;
+  transform: translateY(28px);
+  animation: homeHeroTextIn 760ms ease 340ms forwards;
 }
 
 .hero-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
+  opacity: 0;
+  transform: translateY(30px);
+  animation: homeHeroTextIn 760ms ease 540ms forwards;
 }
 
 .home-hero-visual {
-  transform: translate3d(var(--hero-parallax-x, 0px), var(--hero-parallax-y, 0px), 0);
+  transform: translate3d(
+      var(--hero-pointer-x),
+      calc(var(--hero-pointer-y) + var(--hero-scroll-y)),
+      0
+    )
+    scale(var(--hero-scroll-scale));
   transition: transform 180ms ease-out;
 }
 
@@ -355,12 +423,15 @@ a {
     linear-gradient(rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0)),
     var(--surface);
   box-shadow: 0 28px 80px rgba(35, 47, 37, 0.18);
-  animation: homeFloat 9.5s ease-in-out infinite;
+  clip-path: inset(0 100% 0 0 round 22px);
+  opacity: 0;
+  animation: homeImageOpen 1.15s cubic-bezier(0.24, 0.78, 0.22, 1) 420ms forwards;
 }
 
 .home-floating-image,
 .home-hero-image-placeholder {
   min-height: 420px;
+  animation: homeFloat 8.5s ease-in-out 1.2s infinite;
 }
 
 .home-floating-image {
@@ -373,6 +444,12 @@ a {
   min-height: 420px;
   max-height: 560px;
   object-fit: cover;
+  transition: transform 620ms ease;
+}
+
+.home-hero-visual-frame:hover .home-floating-image img,
+.home-hero-visual-frame:hover .home-hero-image-placeholder {
+  transform: scale(1.045);
 }
 
 .home-floating-image figcaption {
@@ -391,27 +468,32 @@ a {
 .home-keyword-marquee {
   overflow: hidden;
   border-block: 1px solid var(--line);
-  padding: 18px 0;
+  padding: 22px 0;
   background: rgba(250, 246, 238, 0.72);
 }
 
 .home-keyword-track {
   display: flex;
   width: max-content;
-  gap: 14px;
-  animation: homeKeywordMarquee 24s linear infinite;
+  gap: 18px;
+  animation: homeKeywordMarquee 16s linear infinite;
+}
+
+.home-keyword-marquee:hover .home-keyword-track {
+  animation-duration: 32s;
 }
 
 .home-keyword-track span {
   flex: 0 0 auto;
   border: 1px solid rgba(89, 72, 49, 0.18);
   border-radius: 999px;
-  padding: 10px 18px;
+  padding: 12px 22px;
   color: var(--forest);
   background: var(--surface);
   font-family: var(--serif);
-  font-size: clamp(18px, 3vw, 30px);
+  font-size: clamp(24px, 4vw, 44px);
   font-weight: 700;
+  box-shadow: 0 10px 28px rgba(35, 47, 37, 0.08);
 }
 
 .reveal-on-scroll {
@@ -422,21 +504,87 @@ a {
     transform 720ms ease;
 }
 
+.reveal-from-left {
+  transform: translateX(-40px);
+}
+
+.reveal-from-right {
+  transform: translateX(40px);
+}
+
 .reveal-on-scroll.is-visible {
   opacity: 1;
   transform: translateY(0);
 }
 
+.reveal-from-left.is-visible,
+.reveal-from-right.is-visible {
+  transform: translateX(0);
+}
+
+.reveal-on-scroll .feature-card {
+  opacity: 0;
+  transform: translateY(42px);
+  transition:
+    opacity 780ms ease var(--reveal-delay, 0ms),
+    transform 780ms cubic-bezier(0.2, 0.72, 0.18, 1) var(--reveal-delay, 0ms),
+    box-shadow 220ms ease;
+}
+
+.reveal-on-scroll.is-visible .feature-card {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.feature-card:hover {
+  transition-delay: 0ms;
+  transform: translateY(-8px);
+  box-shadow: 0 24px 54px rgba(35, 47, 37, 0.16);
+}
+
+.hero-actions .common-button:hover:not(:disabled),
+.inline-actions .common-button:hover:not(:disabled) {
+  box-shadow: 0 14px 34px rgba(45, 75, 62, 0.18);
+}
+
+@keyframes homeHeroTextIn {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes homeImageOpen {
+  0% {
+    clip-path: inset(0 100% 0 0 round 22px);
+    opacity: 0;
+    transform: scale(0.96);
+  }
+
+  100% {
+    clip-path: inset(0 0 0 0 round 22px);
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
 @keyframes homeFloat {
   0%,
   100% {
-    transform: translateY(0) rotate(-0.4deg);
+    transform: translateY(0) rotate(-0.8deg);
   }
 
   50% {
-    transform: translateY(-14px) rotate(0.35deg);
+    transform: translateY(-24px) rotate(1.5deg);
   }
 }
+
+@keyframes homeLineDraw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
 
 @keyframes homePatternDrift {
   from {
@@ -2013,6 +2161,10 @@ a {
     transform: none;
   }
 
+  .home-seonbi-line {
+    height: 42%;
+  }
+
   .home-floating-image,
   .home-floating-image img,
   .home-hero-image-placeholder {
@@ -2059,7 +2211,13 @@ a {
   }
 
   .home-keyword-track {
-    animation-duration: 30s;
+    gap: 12px;
+    animation-duration: 22s;
+  }
+
+  .home-keyword-track span {
+    padding: 9px 14px;
+    font-size: clamp(18px, 8vw, 28px);
   }
 
   .tourism-card {
@@ -2159,11 +2317,21 @@ a {
 
   .home-hero-visual,
   .hero-pattern,
+  .home-seonbi-line,
   .reveal-on-scroll {
     transform: none !important;
   }
 
+  .home-seonbi-line path {
+    stroke-dashoffset: 0;
+  }
+
   .reveal-on-scroll {
     opacity: 1;
+  }
+
+  .reveal-on-scroll .feature-card {
+    opacity: 1;
+    transform: none;
   }
 }
