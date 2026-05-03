@@ -198,9 +198,14 @@ export function CoursePage() {
   }, [routePoints])
   const routePath = routeState.key === routePointsKey ? routeState.path : []
   const routeSource = routeState.key === routePointsKey ? routeState.source : 'straight-line'
+  const activeFilterLabel = getTourismFilterLabel(activeFilter)
+  const selectedDataTitle = getTourismDataTitle(activeFilter)
+  const selectedEmptyTitle = getTourismEmptyTitle(activeFilter)
+  const selectedRecommendationDescription = getRecommendationDescription(activeFilter)
   const locationMessage = isLocationFallback
-    ? '위치 권한이 없어 영주 중심 기준으로 추천합니다.'
-    : '현재 위치 기준 가까운 추천 코스 3곳'
+    ? `위치 권한이 없어 영주 중심 기준으로 가까운 ${activeFilterLabel} 추천 코스 3곳을 표시합니다.`
+    : `현재 위치 기준 가까운 ${activeFilterLabel} 추천 코스 3곳`
+  const routeLabel = `현재 위치 기준 ${activeFilterLabel} 추천 경로`
   const shouldShowCards = tourismState.status === 'ready' && tourismState.contents.length > 0
   const shouldShowAllCards = tourismState.status === 'ready' && tourismState.contents.length > 0
   const activeSeonbiType = testResult?.type
@@ -353,6 +358,33 @@ export function CoursePage() {
             <span key={keyword}>{keyword}</span>
           ))}
         </div>
+
+        <section className="surface-card course-category-panel" aria-labelledby="course-category-title">
+          <div>
+            <StatusBadge tone="brown">유형 선택</StatusBadge>
+            <h2 id="course-category-title">코스 유형 선택</h2>
+            <p>
+              관광지, 문화시설, 숙박, 음식점 중 원하는 유형을 골라 추천 코스를 확인하세요.
+            </p>
+          </div>
+          <div className="course-category-tabs" aria-label="추천 코스 유형">
+            {tourismFilters.map((filter) => {
+              const isActive = activeFilter === filter.id
+              return (
+                <button
+                  key={filter.id}
+                  type="button"
+                  className={isActive ? 'active' : ''}
+                  onClick={() => setActiveFilter(filter.id)}
+                  aria-pressed={isActive}
+                >
+                  {filter.label}
+                </button>
+              )
+            })}
+          </div>
+        </section>
+
         {favoriteMessage && (
           <p className="disabled-notice course-favorite-notice" role="status">
             {favoriteMessage}{' '}
@@ -375,15 +407,16 @@ export function CoursePage() {
               />
             )}
             {tourismState.status === 'empty' && testResult && (
-              <TourismEmptyState title="조건에 맞는 영주 관광 정보가 없습니다." />
+              <TourismEmptyState title={selectedEmptyTitle} />
             )}
             {shouldShowCards && (
               <section className="tourism-section-block">
                 <div className="tourism-section-heading">
                   <StatusBadge>추천 코스</StatusBadge>
                   <h2>내 선비유형에 맞는 영주 추천 코스</h2>
+                  <p>현재 선택한 유형: {activeFilterLabel}</p>
                   <p>
-                    실제 영주 관광 공공데이터 중 유형 성향과 가까운 장소를 우선 추천합니다.
+                    {selectedRecommendationDescription}
                   </p>
                 </div>
                 {recommendedItems.map((item) => (
@@ -405,19 +438,7 @@ export function CoursePage() {
               <section className="tourism-section-block">
                 <div className="tourism-section-heading">
                   <StatusBadge tone="brown">공공데이터</StatusBadge>
-                  <h2>전체 영주 관광 데이터 보기</h2>
-                </div>
-                <div className="filter-tabs" aria-label="관광 데이터 필터">
-                  {tourismFilters.map((filter) => (
-                    <button
-                      key={filter.id}
-                      type="button"
-                      className={activeFilter === filter.id ? 'active' : ''}
-                      onClick={() => setActiveFilter(filter.id)}
-                    >
-                      {filter.label}
-                    </button>
-                  ))}
+                  <h2>{selectedDataTitle}</h2>
                 </div>
                 {tourismState.contents.map((item) => (
                   <div key={getTourismItemKey(item)}>
@@ -444,6 +465,7 @@ export function CoursePage() {
               currentLocation={currentLocation}
               currentLocationLabel={isLocationFallback ? '영주 중심' : '내 위치'}
               locationMessage={locationMessage}
+              routeLabel={routeLabel}
               selectedContentId={selectedContentId}
               onSelectItem={selectTourismItem}
             />
@@ -472,6 +494,32 @@ function getTourismResponse(filterId: TourismFilterId) {
   if (filterId === 'accommodation') return getYeongjuAccommodations()
   if (filterId === 'restaurant') return getYeongjuRestaurants()
   return getYeongjuTourismContents()
+}
+
+function getTourismFilterLabel(filterId: TourismFilterId) {
+  return tourismFilters.find((filter) => filter.id === filterId)?.label ?? '전체'
+}
+
+function getTourismDataTitle(filterId: TourismFilterId) {
+  if (filterId === 'attraction') return '영주 관광지 데이터 보기'
+  if (filterId === 'culture') return '영주 문화시설 데이터 보기'
+  if (filterId === 'accommodation') return '영주 숙박 데이터 보기'
+  if (filterId === 'restaurant') return '영주 음식점 데이터 보기'
+  return '전체 영주 관광 데이터 보기'
+}
+
+function getTourismEmptyTitle(filterId: TourismFilterId) {
+  if (filterId === 'all') return '조건에 맞는 영주 관광 정보가 없습니다.'
+  return '선택한 유형의 영주 공공데이터를 찾지 못했습니다.'
+}
+
+function getRecommendationDescription(filterId: TourismFilterId) {
+  const label = getTourismFilterLabel(filterId)
+  if (filterId === 'all') {
+    return '실제 영주 관광 공공데이터 중 선비유형 성향과 가까운 장소를 우선 추천합니다.'
+  }
+
+  return `실제 영주 ${label} 공공데이터 중 선비유형 성향과 가까운 장소를 우선 추천합니다.`
 }
 
 function getTourismItemKey(item: TourismContent) {

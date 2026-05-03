@@ -18,6 +18,7 @@ interface CourseMapProps {
   currentLocation?: RouteCoordinate
   currentLocationLabel?: string
   locationMessage?: string
+  routeLabel?: string
   selectedContentId?: string
   onSelectItem?: (item: TourismContent) => void
 }
@@ -45,6 +46,7 @@ export function CourseMap({
   currentLocation,
   currentLocationLabel = '내 위치',
   locationMessage,
+  routeLabel = '현재 위치 기준 추천 경로',
   selectedContentId,
   onSelectItem,
 }: CourseMapProps) {
@@ -210,7 +212,7 @@ export function CourseMap({
     <aside className="surface-card map-panel">
       <div className="map-panel-header">
         <h2>지도</h2>
-        <span>현재 위치 기준 추천 경로</span>
+        <span>{routeLabel}</span>
       </div>
       <p className="map-panel-note">
         {locationMessage ?? '현재 위치 기준 가까운 추천 코스 3곳'}
