@@ -28,10 +28,19 @@ import type {
   TourismDetail,
   TourismEmptyStateReason,
 } from '../features/tourism/tourismTypes'
+import {
+  requestRoutePath,
+  type RouteCoordinate,
+  type RoutePathSource,
+} from '../features/tourism/routeApi'
 import { trackEvent } from '../features/analytics/trackEvent'
 import { loadTestResult } from '../lib/storage'
 
 const yeongjuKeywords = ['소수서원', '선비세상', '무섬마을', '부석사', '풍기인삼']
+const yeongjuCenterLocation: RouteCoordinate = {
+  lat: 36.8057,
+  lng: 128.624,
+}
 const tourismFilters = [
   { id: 'all', label: '전체', contentTypeId: undefined },
   { id: 'attraction', label: '관광지', contentTypeId: '12' },
@@ -62,8 +71,20 @@ export function CoursePage() {
   const testResult = useMemo(() => loadTestResult(), [])
   const tourismCardRefs = useRef(new Map<string, HTMLElement>())
   const detailRequestIdRef = useRef(0)
+  const routeRequestIdRef = useRef(0)
   const [activeFilter, setActiveFilter] = useState<TourismFilterId>('all')
   const [selectedContentId, setSelectedContentId] = useState<string | undefined>()
+  const [currentLocation, setCurrentLocation] = useState<RouteCoordinate>(yeongjuCenterLocation)
+  const [isLocationFallback, setIsLocationFallback] = useState(true)
+  const [routeState, setRouteState] = useState<{
+    key: string
+    path: RouteCoordinate[]
+    source: RoutePathSource
+  }>({
+    key: '',
+    path: [],
+    source: 'straight-line',
+  })
   const [favoriteContentIds, setFavoriteContentIds] = useState<Set<string>>(
     () => new Set(),
   )
@@ -129,6 +150,31 @@ export function CoursePage() {
     }
   }, [])
 
+  useEffect(() => {
+    if (!navigator.geolocation) {
+      return
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setCurrentLocation({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        })
+        setIsLocationFallback(false)
+      },
+      () => {
+        setCurrentLocation(yeongjuCenterLocation)
+        setIsLocationFallback(true)
+      },
+      {
+        enableHighAccuracy: false,
+        maximumAge: 300000,
+        timeout: 7000,
+      },
+    )
+  }, [])
+
   const recommendedCourse = useMemo(() => {
     return testResult
       ? recommendCourseForSeonbiType(testResult.type, tourismState.contents)
@@ -136,7 +182,26 @@ export function CoursePage() {
   }, [testResult, tourismState.contents])
   const typeInfo = testResult ? seonbiTypeInfo[testResult.type] : null
   const recommendedItems = useMemo(() => recommendedCourse?.items ?? [], [recommendedCourse])
-  const routeItems = useMemo(() => recommendedItems.slice(0, 4), [recommendedItems])
+  const routeItems = useMemo(() => {
+    return getNearestTourismItems(currentLocation, recommendedItems, 3)
+  }, [currentLocation, recommendedItems])
+  const routePoints = useMemo(() => {
+    return [
+      currentLocation,
+      ...routeItems.map((item) => ({
+        lat: item.mapY as number,
+        lng: item.mapX as number,
+      })),
+    ]
+  }, [currentLocation, routeItems])
+  const routePointsKey = useMemo(() => {
+    return routePoints.map((point) => `${point.lat},${point.lng}`).join('|')
+  }, [routePoints])
+  const routePath = routeState.key === routePointsKey ? routeState.path : []
+  const routeSource = routeState.key === routePointsKey ? routeState.source : 'straight-line'
+  const locationMessage = isLocationFallback
+    ? '위치 권한이 없어 영주 중심 기준으로 추천합니다.'
+    : '현재 위치 기준 가까운 추천 코스 3곳'
   const shouldShowCards = tourismState.status === 'ready' && tourismState.contents.length > 0
   const shouldShowAllCards = tourismState.status === 'ready' && tourismState.contents.length > 0
   const activeSeonbiType = testResult?.type
@@ -154,6 +219,37 @@ export function CoursePage() {
       block: 'center',
     })
   }, [selectedContentId])
+
+  useEffect(() => {
+    const requestId = routeRequestIdRef.current + 1
+    routeRequestIdRef.current = requestId
+
+    if (routePoints.length < 2) {
+      return
+    }
+
+    async function loadRoutePath() {
+      const routeResult = await requestRoutePath(routePoints)
+      if (routeRequestIdRef.current !== requestId) return
+
+      if (routeResult?.path.length) {
+        setRouteState({
+          key: routePointsKey,
+          path: routeResult.path,
+          source: routeResult.source,
+        })
+        return
+      }
+
+      setRouteState({
+        key: routePointsKey,
+        path: [],
+        source: 'straight-line',
+      })
+    }
+
+    void loadRoutePath()
+  }, [routePoints, routePointsKey])
 
   const openTourismDetail = useCallback(async (item: TourismContent) => {
     const requestId = detailRequestIdRef.current + 1
@@ -377,6 +473,11 @@ export function CoursePage() {
             <CourseMap
               items={tourismState.contents}
               routeItems={routeItems}
+              routePath={routePath}
+              routeSource={routeSource}
+              currentLocation={currentLocation}
+              currentLocationLabel={isLocationFallback ? '영주 중심' : '내 위치'}
+              locationMessage={locationMessage}
               selectedContentId={selectedContentId}
               onSelectItem={selectTourismItem}
             />
@@ -409,6 +510,48 @@ function getTourismResponse(filterId: TourismFilterId) {
 
 function getTourismItemKey(item: TourismContent) {
   return item.contentId ?? `${item.title}-${item.mapX}-${item.mapY}`
+}
+
+function getNearestTourismItems(
+  currentLocation: RouteCoordinate,
+  items: TourismContent[],
+  limit: number,
+) {
+  const uniqueItems = new Map<string, TourismContent>()
+  for (const item of items) {
+    if (item.mapX === undefined || item.mapY === undefined) continue
+    const id = getTourismItemKey(item)
+    if (!uniqueItems.has(id)) uniqueItems.set(id, item)
+  }
+
+  return Array.from(uniqueItems.values())
+    .map((item) => ({
+      item,
+      distance: getHaversineDistance(currentLocation, {
+        lat: item.mapY as number,
+        lng: item.mapX as number,
+      }),
+    }))
+    .sort((a, b) => a.distance - b.distance)
+    .slice(0, limit)
+    .map(({ item }) => item)
+}
+
+function getHaversineDistance(from: RouteCoordinate, to: RouteCoordinate) {
+  const earthRadiusKm = 6371
+  const latDistance = toRadians(to.lat - from.lat)
+  const lngDistance = toRadians(to.lng - from.lng)
+  const fromLat = toRadians(from.lat)
+  const toLat = toRadians(to.lat)
+  const haversine =
+    Math.sin(latDistance / 2) ** 2 +
+    Math.cos(fromLat) * Math.cos(toLat) * Math.sin(lngDistance / 2) ** 2
+
+  return 2 * earthRadiusKm * Math.atan2(Math.sqrt(haversine), Math.sqrt(1 - haversine))
+}
+
+function toRadians(value: number) {
+  return (value * Math.PI) / 180
 }
 
 function isElementComfortablyVisible(element: HTMLElement) {

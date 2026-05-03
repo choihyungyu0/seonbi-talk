@@ -1189,6 +1189,13 @@ a {
   color: var(--muted);
 }
 
+.map-panel-note {
+  margin: 0;
+  padding: 0 22px 18px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
 .map-empty {
   display: grid;
   min-height: 430px;

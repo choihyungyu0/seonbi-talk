@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { TourismContent } from '../../features/tourism/tourismTypes'
+import type { RouteCoordinate, RoutePathSource } from '../../features/tourism/routeApi'
 import {
   getKakaoMapAppKey,
   type KakaoMap,
@@ -12,6 +13,11 @@ import {
 interface CourseMapProps {
   items: TourismContent[]
   routeItems?: TourismContent[]
+  routePath?: RouteCoordinate[]
+  routeSource?: RoutePathSource
+  currentLocation?: RouteCoordinate
+  currentLocationLabel?: string
+  locationMessage?: string
   selectedContentId?: string
   onSelectItem?: (item: TourismContent) => void
 }
@@ -34,12 +40,18 @@ interface MarkerRef {
 export function CourseMap({
   items,
   routeItems = [],
+  routePath = [],
+  routeSource = 'straight-line',
+  currentLocation,
+  currentLocationLabel = '내 위치',
+  locationMessage,
   selectedContentId,
   onSelectItem,
 }: CourseMapProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<KakaoMap | null>(null)
   const markerRefs = useRef<MarkerRef[]>([])
+  const currentLocationMarkerRef = useRef<KakaoMarker | null>(null)
   const polylineRef = useRef<KakaoPolyline | null>(null)
   const [loadStatus, setLoadStatus] = useState<'loading' | 'ready' | 'error'>('loading')
   const appKey = getKakaoMapAppKey()
@@ -63,20 +75,26 @@ export function CourseMap({
       if (!uniqueItems.has(id)) uniqueItems.set(id, item)
     }
 
-    const coordinateItems = Array.from(uniqueItems.values())
+    return Array.from(uniqueItems.values())
       .filter((item) => item.mapX !== undefined && item.mapY !== undefined)
       .map((item) => ({
         lat: item.mapY as number,
         lng: item.mapX as number,
       }))
-
-    return sortByNearestNeighbor(coordinateItems)
   }, [routeItems])
+
+  const routeLinePath = useMemo(() => {
+    if (routePath.length >= 2) return routePath
+    if (!currentLocation) return routeCoordinateItems
+    return [currentLocation, ...routeCoordinateItems]
+  }, [currentLocation, routeCoordinateItems, routePath])
 
   useEffect(() => {
     if (coordinateItems.length === 0) {
       markerRefs.current.forEach(({ marker }) => marker.setMap(null))
       markerRefs.current = []
+      currentLocationMarkerRef.current?.setMap(null)
+      currentLocationMarkerRef.current = null
       polylineRef.current?.setMap(null)
       polylineRef.current = null
       return
@@ -124,15 +142,27 @@ export function CourseMap({
           }
         })
 
+        currentLocationMarkerRef.current?.setMap(null)
+        currentLocationMarkerRef.current = null
+        if (currentLocation) {
+          const currentLocationMarker = new maps.Marker({
+            map,
+            position: new maps.LatLng(currentLocation.lat, currentLocation.lng),
+            title: currentLocationLabel,
+          })
+          currentLocationMarker.setZIndex(30)
+          currentLocationMarkerRef.current = currentLocationMarker
+        }
+
         polylineRef.current?.setMap(null)
         polylineRef.current = null
-        if (routeCoordinateItems.length >= 2) {
+        if (routeLinePath.length >= 2) {
           polylineRef.current = new maps.Polyline({
             map,
-            path: routeCoordinateItems.map((item) => new maps.LatLng(item.lat, item.lng)),
-            strokeWeight: 4,
-            strokeColor: '#2d654c',
-            strokeOpacity: 0.82,
+            path: routeLinePath.map((item) => new maps.LatLng(item.lat, item.lng)),
+            strokeWeight: 5,
+            strokeColor: '#2386FF',
+            strokeOpacity: 0.85,
             strokeStyle: 'solid',
           })
         }
@@ -148,7 +178,14 @@ export function CourseMap({
     return () => {
       ignore = true
     }
-  }, [appKey, coordinateItems, onSelectItem, routeCoordinateItems])
+  }, [
+    appKey,
+    coordinateItems,
+    currentLocation,
+    currentLocationLabel,
+    onSelectItem,
+    routeLinePath,
+  ])
 
   useEffect(() => {
     if (!selectedContentId || !mapRef.current) return
@@ -173,8 +210,12 @@ export function CourseMap({
     <aside className="surface-card map-panel">
       <div className="map-panel-header">
         <h2>지도</h2>
-        <span>추천 코스 가까운 순서 연결</span>
+        <span>현재 위치 기준 추천 경로</span>
       </div>
+      <p className="map-panel-note">
+        {locationMessage ?? '현재 위치 기준 가까운 추천 코스 3곳'}
+        {routeSource === 'straight-line' && ' · 길찾기 API 미설정 시 직선 경로로 표시됩니다.'}
+      </p>
       <div className="course-map-shell">
         {status !== 'ready' && (
           <div className="map-empty">
@@ -213,40 +254,4 @@ function getStatusMessage(status: CourseMapStatus) {
   }
   if (status === 'no-coordinates') return '좌표 정보가 있는 관광지가 없습니다.'
   return '지도를 불러오는 중 문제가 발생했습니다.'
-}
-
-interface RouteCoordinate {
-  lat: number
-  lng: number
-}
-
-function sortByNearestNeighbor(items: RouteCoordinate[]) {
-  if (items.length < 3) return items
-
-  const [startItem, ...remainingItems] = items
-  const sortedItems = [startItem]
-  const unvisitedItems = [...remainingItems]
-
-  while (unvisitedItems.length > 0) {
-    const currentItem = sortedItems[sortedItems.length - 1]
-    let nearestIndex = 0
-    let nearestDistance = getCoordinateDistance(currentItem, unvisitedItems[0])
-
-    for (let index = 1; index < unvisitedItems.length; index += 1) {
-      const distance = getCoordinateDistance(currentItem, unvisitedItems[index])
-      if (distance < nearestDistance) {
-        nearestDistance = distance
-        nearestIndex = index
-      }
-    }
-
-    const [nearestItem] = unvisitedItems.splice(nearestIndex, 1)
-    sortedItems.push(nearestItem)
-  }
-
-  return sortedItems
-}
-
-function getCoordinateDistance(from: RouteCoordinate, to: RouteCoordinate) {
-  return (from.lat - to.lat) ** 2 + (from.lng - to.lng) ** 2
 }
