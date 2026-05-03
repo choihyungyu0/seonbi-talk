@@ -30,6 +30,24 @@ interface AdminDashboard {
     }>
     contentTypeCounts: Record<string, number>
   }
+  behaviorFunnel: Array<{
+    key: string
+    label: string
+    count: number
+    conversionRate: number | null
+  }>
+  publicDataStatus: {
+    basis: string
+    periodSensitive: boolean
+    attractionCount: number
+    cultureCount: number
+    accommodationCount: number
+    restaurantCount: number
+    missingCoordinateCount: number
+    missingImageCount: number
+    lastSyncedAt: string | null
+    unavailableMetrics: string[]
+  }
   recentActivities: Array<{
     eventType: string
     createdAt: string
@@ -264,6 +282,8 @@ export function AdminPage() {
             </section>
 
             <section className="admin-analytics-grid">
+              <BehaviorFunnel steps={dashboard.behaviorFunnel} />
+              <PublicDataStatusPanel status={dashboard.publicDataStatus} />
               <ChartPanel
                 title="선비유형 분포"
                 rows={toChartRows(dashboard.seonbiTypeDistribution, seonbiTypeLabels)}
@@ -363,6 +383,86 @@ function TopCourses({
             </li>
           ))}
         </ol>
+      )}
+    </article>
+  )
+}
+
+function BehaviorFunnel({
+  steps,
+}: {
+  steps: AdminDashboard['behaviorFunnel']
+}) {
+  const maxCount = Math.max(...steps.map((step) => step.count), 0)
+
+  return (
+    <article className="surface-card admin-chart-panel admin-funnel-panel">
+      <div className="admin-panel-heading">
+        <h2>사용자 행동 퍼널</h2>
+        <span>선택 기간 기준</span>
+      </div>
+      <div className="admin-funnel-list">
+        {steps.map((step, index) => {
+          const width = maxCount > 0 ? (step.count / maxCount) * 100 : 0
+          return (
+            <div className="admin-funnel-step" key={step.key}>
+              <span>{index + 1}</span>
+              <div>
+                <strong>{step.label}</strong>
+                <div className="admin-funnel-track">
+                  <i style={{ width: `${Math.max(width, step.count > 0 ? 5 : 0)}%` }} />
+                </div>
+              </div>
+              <em>{formatNumber(step.count)}</em>
+              <small>
+                {step.conversionRate === null
+                  ? '기준 단계'
+                  : `${step.conversionRate.toFixed(1)}%`}
+              </small>
+            </div>
+          )
+        })}
+      </div>
+    </article>
+  )
+}
+
+function PublicDataStatusPanel({
+  status,
+}: {
+  status: AdminDashboard['publicDataStatus']
+}) {
+  const metrics = [
+    { label: '관광지 데이터 수', value: status.attractionCount },
+    { label: '문화시설 데이터 수', value: status.cultureCount },
+    { label: '숙박 데이터 수', value: status.accommodationCount },
+    { label: '음식점 데이터 수', value: status.restaurantCount },
+    { label: '좌표 누락 데이터 수', value: status.missingCoordinateCount },
+    { label: '이미지 누락 데이터 수', value: status.missingImageCount },
+  ]
+
+  return (
+    <article className="surface-card admin-chart-panel admin-public-data-panel">
+      <div className="admin-panel-heading">
+        <h2>공공데이터 연동 상태</h2>
+        <span>{status.periodSensitive ? status.basis : '전체 기준'}</span>
+      </div>
+      <dl className="admin-public-data-grid">
+        {metrics.map((metric) => (
+          <div key={metric.label}>
+            <dt>{metric.label}</dt>
+            <dd>{formatNumber(metric.value)}</dd>
+          </div>
+        ))}
+        <div>
+          <dt>최종 조회/동기화 시각</dt>
+          <dd>{status.lastSyncedAt ? formatDateTime(status.lastSyncedAt) : '데이터 없음'}</dd>
+        </div>
+      </dl>
+      {status.unavailableMetrics.length > 0 && (
+        <p className="admin-data-note">
+          {status.unavailableMetrics.join(', ')}은 수집 예정입니다.
+        </p>
       )}
     </article>
   )

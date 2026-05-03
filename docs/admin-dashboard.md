@@ -28,11 +28,18 @@ The dashboard may display:
 - Judge text/image usage counts
 - Favorite course TOP 5 by saved count
 - Content type counts for recommendation and favorite activity
+- User behavior funnel counts and step conversion rates
+- Public data integration status based on observed favorite and analytics rows
 - Recent event type, timestamp, and a safe summary label
 
 Favorite course rows are reduced to `title`, `contentType`, and aggregate
 `count`. Recent activity rows are reduced to event type labels such as
 `선비유형 테스트 완료` or `관심 코스 저장`.
+
+The public data status section does not claim full TourAPI inventory when there
+is no dedicated sync table. It uses only observed `favorite_courses` and
+`analytics_events` rows for the selected period, and labels the basis as
+`저장/이벤트 관측 기준`.
 
 ## Data Not Collected Or Displayed
 
@@ -122,6 +129,24 @@ Response shape:
       }>,
       contentTypeCounts: Record<string, number>
     },
+    behaviorFunnel: Array<{
+      key: string,
+      label: string,
+      count: number,
+      conversionRate: number | null
+    }>,
+    publicDataStatus: {
+      basis: string,
+      periodSensitive: boolean,
+      attractionCount: number,
+      cultureCount: number,
+      accommodationCount: number,
+      restaurantCount: number,
+      missingCoordinateCount: number,
+      missingImageCount: number,
+      lastSyncedAt: string | null,
+      unavailableMetrics: string[]
+    },
     recentActivities: Array<{
       eventType: string,
       createdAt: string,
@@ -130,6 +155,35 @@ Response shape:
   }
 }
 ```
+
+## Behavior Funnel
+
+The funnel is computed from `analytics_events.event_type` for the selected
+range:
+
+- `home_viewed` or `page_view_home`: 홈 방문
+- `test_completed`: 선비유형 테스트 완료
+- `tourism_card_clicked` or `course_viewed`: 추천 코스 조회
+- `favorite_course_added` or `favorite_course_saved`: 관심 코스 저장
+- `judge_used`: 선비의 한마디 생성
+- `result_share_clicked` or `judge_share_clicked`: 결과 공유
+
+Missing event types are returned as `0`. Conversion rate is calculated against
+the previous funnel step when the previous step has data.
+
+## Public Data Status
+
+Until a dedicated TourAPI sync table exists, the dashboard shows public data
+status from observed rows only:
+
+- Content type counts from favorite and analytics rows
+- Missing coordinate count from `favorite_courses.map_x` and `map_y`
+- Missing image count from `favorite_courses.first_image`
+- Last observed lookup/save timestamp from favorite and analytics rows
+
+The API does not return exact coordinates, addresses, phone numbers, image URLs,
+or raw payloads. Unavailable metrics are explicitly marked as `수집 예정` or
+`데이터 없음`.
 
 ## Future Metrics
 

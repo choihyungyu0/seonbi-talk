@@ -34,6 +34,9 @@ interface FavoriteCourseRow {
   content_id?: string | null
   content_type_id?: string | null
   title?: string | null
+  first_image?: string | null
+  map_x?: number | null
+  map_y?: number | null
   created_at?: string
 }
 
@@ -101,7 +104,7 @@ export default async function handler(
       fetchSupabaseRows<FavoriteCourseRow>(
         supabase,
         'favorite_courses',
-        'content_id,content_type_id,title,created_at',
+        'content_id,content_type_id,title,first_image,map_x,map_y,created_at',
         dateFilter,
         1000,
       ),
@@ -143,6 +146,8 @@ function createDashboard(input: {
     seonbiTypeDistribution: createSeonbiTypeDistribution(input.analyticsEvents),
     judgeStats: createJudgeStats(input.judgeHistories, input.analyticsEvents),
     courseStats: createCourseStats(input.favoriteCourses, input.analyticsEvents),
+    behaviorFunnel: createBehaviorFunnel(input.analyticsEvents),
+    publicDataStatus: createPublicDataStatus(input.favoriteCourses, input.analyticsEvents),
     recentActivities: createRecentActivities(input.analyticsEvents),
   }
 }
@@ -233,6 +238,136 @@ function createCourseStats(
       .slice(0, 5),
     contentTypeCounts,
   }
+}
+
+function createBehaviorFunnel(rows: AnalyticsEventRow[]) {
+  const steps = [
+    {
+      key: 'home',
+      label: '홈 방문',
+      eventTypes: ['home_viewed', 'page_view_home'],
+    },
+    {
+      key: 'test',
+      label: '선비유형 테스트 완료',
+      eventTypes: ['test_completed'],
+    },
+    {
+      key: 'course',
+      label: '추천 코스 조회',
+      eventTypes: ['tourism_card_clicked', 'course_viewed'],
+    },
+    {
+      key: 'favorite',
+      label: '관심 코스 저장',
+      eventTypes: ['favorite_course_added', 'favorite_course_saved'],
+    },
+    {
+      key: 'judge',
+      label: '선비의 한마디 생성',
+      eventTypes: ['judge_used'],
+    },
+    {
+      key: 'share',
+      label: '결과 공유',
+      eventTypes: ['result_share_clicked', 'judge_share_clicked'],
+    },
+  ]
+
+  return steps.map((step, index) => {
+    const count = rows.filter((row) => step.eventTypes.includes(row.event_type ?? ''))
+      .length
+    const previousStep = index > 0 ? steps[index - 1] : null
+    const previousCount = previousStep
+      ? rows.filter((row) => previousStep.eventTypes.includes(row.event_type ?? ''))
+          .length
+      : count
+
+    return {
+      key: step.key,
+      label: step.label,
+      count,
+      conversionRate:
+        index === 0 || previousCount === 0
+          ? null
+          : Math.round((count / previousCount) * 1000) / 10,
+    }
+  })
+}
+
+function createPublicDataStatus(
+  favoriteCourses: FavoriteCourseRow[],
+  analyticsEvents: AnalyticsEventRow[],
+) {
+  const observedRows = [
+    ...favoriteCourses.map((row) => ({
+      contentTypeId: row.content_type_id,
+      contentId: row.content_id,
+      hasCoordinates: row.map_x !== undefined && row.map_x !== null && row.map_y !== undefined && row.map_y !== null,
+      hasImage: Boolean(normalizeText(row.first_image)),
+      createdAt: row.created_at,
+    })),
+    ...analyticsEvents
+      .filter((row) => normalizeText(row.content_id) || normalizeText(row.content_type_id))
+      .map((row) => ({
+        contentTypeId: row.content_type_id,
+        contentId: row.content_id,
+        hasCoordinates: null,
+        hasImage: null,
+        createdAt: row.created_at,
+      })),
+  ]
+  const uniqueRows = dedupeObservedPublicData(observedRows)
+  const contentTypeCounts = countBy(uniqueRows, (row) => getContentTypeLabel(row.contentTypeId))
+  const latestDate = uniqueRows
+    .map((row) => normalizeText(row.createdAt))
+    .filter(Boolean)
+    .sort((first, second) => String(second).localeCompare(String(first)))[0]
+
+  return {
+    basis: '저장/이벤트 관측 기준',
+    periodSensitive: true,
+    attractionCount: contentTypeCounts['관광지'] ?? 0,
+    cultureCount: contentTypeCounts['문화시설'] ?? 0,
+    accommodationCount: contentTypeCounts['숙박'] ?? 0,
+    restaurantCount: contentTypeCounts['음식점'] ?? 0,
+    missingCoordinateCount: uniqueRows.filter((row) => row.hasCoordinates === false)
+      .length,
+    missingImageCount: uniqueRows.filter((row) => row.hasImage === false).length,
+    lastSyncedAt: latestDate ?? null,
+    unavailableMetrics: uniqueRows.length === 0 ? ['TourAPI 전체 동기화 총량'] : [],
+  }
+}
+
+function dedupeObservedPublicData(
+  rows: Array<{
+    contentTypeId?: string | null
+    contentId?: string | null
+    hasCoordinates: boolean | null
+    hasImage: boolean | null
+    createdAt?: string
+  }>,
+) {
+  const rowMap = new Map<string, (typeof rows)[number]>()
+
+  rows.forEach((row) => {
+    const key =
+      normalizeText(row.contentId) ??
+      [normalizeText(row.contentTypeId), normalizeText(row.createdAt)]
+        .filter(Boolean)
+        .join(':')
+    if (!key) return
+
+    const current = rowMap.get(key)
+    rowMap.set(key, {
+      ...current,
+      ...row,
+      hasCoordinates: current?.hasCoordinates ?? row.hasCoordinates,
+      hasImage: current?.hasImage ?? row.hasImage,
+    })
+  })
+
+  return Array.from(rowMap.values())
 }
 
 function createRecentActivities(rows: AnalyticsEventRow[]) {
