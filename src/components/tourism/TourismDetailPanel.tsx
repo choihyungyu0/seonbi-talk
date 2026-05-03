@@ -1,4 +1,8 @@
 import { useEffect } from 'react'
+import {
+  getTourismPrimaryImageUrl,
+  normalizeTourApiImageUrl,
+} from '../../features/tourism/tourismImageUrl'
 import type { TourismContent, TourismDetail } from '../../features/tourism/tourismTypes'
 import { ImagePlaceholder } from '../common/ImagePlaceholder'
 import { StatusBadge } from '../common/StatusBadge'
@@ -161,21 +165,19 @@ function DetailRow({ label, value, fallback }: DetailRowProps) {
 function getDetailImages(item: TourismContent, images: TourismContent[]) {
   const imageCandidates = [
     {
-      url: item.firstImage || item.firstImage2 || '',
+      url: getTourismPrimaryImageUrl(item),
       name: cleanText(item.title) || '대표 이미지',
     },
     ...images.map((image) => ({
-      url: image.originImage || image.smallImage || image.firstImage || '',
+      url: normalizeTourApiImageUrl(
+        image.originImage || image.smallImage || image.firstImage || '',
+      ),
       name: cleanText(image.imageName) || cleanText(item.title) || '추가 이미지',
     })),
   ]
 
   const uniqueUrls = new Set<string>()
   return imageCandidates
-    .map((image) => ({
-      ...image,
-      url: toHttpsUrl(image.url),
-    }))
     .filter((image) => {
       if (!image.url || uniqueUrls.has(image.url)) return false
       uniqueUrls.add(image.url)
@@ -201,9 +203,5 @@ function cleanText(value?: string) {
 function getHomepageLink(value?: string) {
   const cleaned = cleanText(value)
   const match = cleaned.match(/https?:\/\/[^\s"]+/)
-  return match ? toHttpsUrl(match[0]) : ''
-}
-
-function toHttpsUrl(url: string) {
-  return url.replace(/^http:\/\//, 'https://')
+  return match ? match[0] : ''
 }

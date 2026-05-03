@@ -1,4 +1,5 @@
 import type { TourismContent } from '../../features/tourism/tourismTypes'
+import { getTourismPrimaryImageUrl } from '../../features/tourism/tourismImageUrl'
 import { ImagePlaceholder } from '../common/ImagePlaceholder'
 import { StatusBadge } from '../common/StatusBadge'
 
@@ -17,6 +18,8 @@ export function TourismCard({
   onSelect,
   onToggleFavorite,
 }: TourismCardProps) {
+  const imageUrl = getTourismPrimaryImageUrl(item)
+
   return (
     <article
       className={selected ? 'tourism-card selected' : 'tourism-card'}
@@ -30,8 +33,8 @@ export function TourismCard({
         }
       }}
     >
-      {item.firstImage ? (
-        <img className="tourism-image" src={item.firstImage} alt="" />
+      {imageUrl ? (
+        <img className="tourism-image" src={imageUrl} alt="" />
       ) : (
         <ImagePlaceholder label="이미지 정보 없음" />
       )}

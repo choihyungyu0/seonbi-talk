@@ -21,6 +21,7 @@ import {
   getRecentJudgeHistories,
   type JudgeHistory,
 } from '../features/judge/judgeHistoryApi'
+import { normalizeTourApiImageUrl } from '../features/tourism/tourismImageUrl'
 import { loadTestResult } from '../lib/storage'
 
 export function MyPage() {
@@ -185,29 +186,33 @@ export function MyPage() {
 
           {favorites.length > 0 && (
             <div className="mypage-favorite-grid">
-              {favorites.map((favorite) => (
-                <article className="surface-card mypage-favorite-card" key={favorite.content_id}>
-                  {favorite.first_image ? (
-                    <img src={favorite.first_image} alt="" />
-                  ) : (
-                    <ImagePlaceholder label="이미지 정보 없음" />
-                  )}
-                  <div>
-                    <StatusBadge tone="brown">
-                      {getContentTypeLabel(favorite.content_type_id)}
-                    </StatusBadge>
-                    <h3>{favorite.title ?? '관광지명 정보 없음'}</h3>
-                    <p>{favorite.address ?? '주소 정보 없음'}</p>
-                    <CommonButton
-                      type="button"
-                      variant="secondary"
-                      onClick={() => void handleRemoveFavorite(favorite.content_id)}
-                    >
-                      저장 해제
-                    </CommonButton>
-                  </div>
-                </article>
-              ))}
+              {favorites.map((favorite) => {
+                const favoriteImageUrl = normalizeTourApiImageUrl(favorite.first_image)
+
+                return (
+                  <article className="surface-card mypage-favorite-card" key={favorite.content_id}>
+                    {favoriteImageUrl ? (
+                      <img src={favoriteImageUrl} alt="" />
+                    ) : (
+                      <ImagePlaceholder label="이미지 정보 없음" />
+                    )}
+                    <div>
+                      <StatusBadge tone="brown">
+                        {getContentTypeLabel(favorite.content_type_id)}
+                      </StatusBadge>
+                      <h3>{favorite.title ?? '관광지명 정보 없음'}</h3>
+                      <p>{favorite.address ?? '주소 정보 없음'}</p>
+                      <CommonButton
+                        type="button"
+                        variant="secondary"
+                        onClick={() => void handleRemoveFavorite(favorite.content_id)}
+                      >
+                        저장 해제
+                      </CommonButton>
+                    </div>
+                  </article>
+                )
+              })}
             </div>
           )}
 

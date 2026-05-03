@@ -5,6 +5,7 @@ import { CommonButton } from '../components/common/CommonButton'
 import { ImagePlaceholder } from '../components/common/ImagePlaceholder'
 import { StatusBadge } from '../components/common/StatusBadge'
 import { searchYeongjuTourismByKeyword } from '../features/tourism/tourismApi'
+import { getTourismPrimaryImageUrl } from '../features/tourism/tourismImageUrl'
 import type { TourismContent } from '../features/tourism/tourismTypes'
 
 const featureCards = [
@@ -131,7 +132,7 @@ async function findHeroTourismImage(): Promise<HomeHeroImage | null> {
     const imageItem = response.contents.find((item) => getTourismImageUrl(item))
     if (imageItem) {
       return {
-        src: toHttpsUrl(getTourismImageUrl(imageItem)),
+        src: getTourismImageUrl(imageItem),
         title: imageItem.title ?? keyword,
       }
     }
@@ -141,9 +142,5 @@ async function findHeroTourismImage(): Promise<HomeHeroImage | null> {
 }
 
 function getTourismImageUrl(item: TourismContent) {
-  return item.firstImage || item.firstImage2 || ''
-}
-
-function toHttpsUrl(url: string) {
-  return url.replace(/^http:\/\//, 'https://')
+  return getTourismPrimaryImageUrl(item)
 }
