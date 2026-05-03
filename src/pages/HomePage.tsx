@@ -26,16 +26,21 @@ const featureCards = [
 ]
 
 const yeongjuKeywords = ['소수서원', '선비세상', '무섬마을', '부석사', '풍기인삼']
-const heroImageKeywords = ['소수서원', '부석사', '무섬마을', '선비세상']
+const homeImageKeywords = ['소수서원', '부석사', '무섬마을', '선비세상']
+const heroImageCacheKey = 'yeongju-home-hero-image'
+const secondaryImageCacheKey = 'yeongju-home-secondary-image'
 
 interface HomeHeroImage {
   src: string
   title: string
+  contentId?: string
 }
 
 export function HomePage() {
   const [heroImage, setHeroImage] = useState<HomeHeroImage | null>(null)
+  const [secondaryImage, setSecondaryImage] = useState<HomeHeroImage | null>(null)
   const [isHeroImageLoading, setIsHeroImageLoading] = useState(true)
+  const [isSecondaryImageLoading, setIsSecondaryImageLoading] = useState(true)
   const [heroRef, handleHeroPointerMove, handleHeroPointerLeave] =
     useHeroMotion<HTMLElement>()
   const [featureRevealRef, isFeatureVisible] = useRevealOnScroll<HTMLDivElement>()
@@ -48,12 +53,33 @@ export function HomePage() {
 
     async function loadHeroImage() {
       setIsHeroImageLoading(true)
+      setIsSecondaryImageLoading(true)
 
-      const image = await findHeroTourismImage()
+      const cachedHeroImage = getCachedHomeImage(heroImageCacheKey)
+      const cachedSecondaryImage = getCachedHomeImage(secondaryImageCacheKey)
+      if (cachedHeroImage) {
+        setHeroImage(cachedHeroImage)
+        setIsHeroImageLoading(false)
+      }
+      if (
+        cachedHeroImage &&
+        cachedSecondaryImage &&
+        !isSameHomeImage(cachedHeroImage, cachedSecondaryImage)
+      ) {
+        setSecondaryImage(cachedSecondaryImage)
+        setIsSecondaryImageLoading(false)
+      }
+
+      const images = await findHomeTourismImages(cachedHeroImage)
       if (ignore) return
 
-      setHeroImage(image)
+      setHeroImage(images.heroImage)
+      setSecondaryImage(images.secondaryImage)
       setIsHeroImageLoading(false)
+      setIsSecondaryImageLoading(false)
+
+      setCachedHomeImage(heroImageCacheKey, images.heroImage)
+      setCachedHomeImage(secondaryImageCacheKey, images.secondaryImage)
     }
 
     void loadHeroImage()
@@ -85,8 +111,8 @@ export function HomePage() {
           <div className="hero-copy">
             <StatusBadge>영주선비길</StatusBadge>
             <h1 className="home-hero-title" aria-label="나의 선비유형으로 떠나는 영주 여행길">
-              <span className="hero-title-line">나의 선비유형</span>
-              <span className="hero-title-line">으로 떠나는 영주 여행길</span>
+              <span className="hero-title-line">나의 선비유형으로</span>
+              <span className="hero-title-line">떠나는 영주 여행길</span>
             </h1>
             <p>
               전통 선비문화의 정서를 현대적인 관광 플랫폼 경험으로 정리한
@@ -105,7 +131,12 @@ export function HomePage() {
             <div className="home-hero-visual-frame">
               {heroImage ? (
                 <figure className="home-floating-image">
-                  <img src={heroImage.src} alt={heroImage.title} />
+                  <img
+                    src={heroImage.src}
+                    alt={heroImage.title}
+                    loading="eager"
+                    decoding="async"
+                  />
                   <figcaption>{heroImage.title}</figcaption>
                 </figure>
               ) : (
@@ -182,20 +213,26 @@ export function HomePage() {
           ref={tourismRevealRef}
           className={`reveal-on-scroll reveal-from-right ${isTourismVisible ? 'is-visible' : ''}`}
         >
-          {heroImage ? (
+          {secondaryImage ? (
             <figure className="hero-tourism-image">
-              <img src={heroImage.src} alt={heroImage.title} />
-              <figcaption>{heroImage.title}</figcaption>
+              <img
+                src={secondaryImage.src}
+                alt={secondaryImage.title}
+                loading="lazy"
+                decoding="async"
+              />
+              <figcaption>{secondaryImage.title}</figcaption>
             </figure>
           ) : (
-            <ImagePlaceholder
-              className="hero-image-placeholder"
-              label={
-                isHeroImageLoading
-                  ? '공공데이터 이미지를 불러오고 있습니다.'
-                  : '공공데이터 이미지 연동 예정'
-              }
-            />
+            <article className="surface-card home-path-card">
+              <StatusBadge tone="neutral">선비길 안내</StatusBadge>
+              <h3>반복되는 사진 대신 길의 맥락을 보여줍니다</h3>
+              <p>
+                {isSecondaryImageLoading
+                  ? '다른 영주 관광 이미지를 찾고 있습니다.'
+                  : '다른 대표 이미지를 찾지 못하면 키워드와 코스 안내를 중심으로 홈 화면을 유지합니다.'}
+              </p>
+            </article>
           )}
         </div>
       </section>
@@ -203,21 +240,94 @@ export function HomePage() {
   )
 }
 
-async function findHeroTourismImage(): Promise<HomeHeroImage | null> {
-  for (const keyword of heroImageKeywords) {
-    const response = await searchYeongjuTourismByKeyword(keyword)
-    if (response.status !== 'ready') continue
+async function findHomeTourismImages(cachedHeroImage: HomeHeroImage | null) {
+  const foundImages: HomeHeroImage[] = []
 
-    const imageItem = response.contents.find((item) => getTourismImageUrl(item))
-    if (imageItem) {
-      return {
-        src: getTourismImageUrl(imageItem),
-        title: imageItem.title ?? keyword,
+  if (cachedHeroImage) foundImages.push(cachedHeroImage)
+
+  for (const keyword of homeImageKeywords) {
+    if (foundImages.length >= 2) break
+
+    try {
+      const response = await searchYeongjuTourismByKeyword(keyword)
+      if (response.status !== 'ready') continue
+
+      for (const item of response.contents) {
+        const image = getHomeTourismImage(item, keyword)
+        if (!image) continue
+        if (foundImages.some((foundImage) => isSameHomeImage(foundImage, image))) {
+          continue
+        }
+
+        foundImages.push(image)
+        if (foundImages.length >= 2) break
       }
+    } catch {
+      // 홈 화면은 관광 이미지 검색 실패 시 조용히 fallback UI를 사용한다.
     }
   }
 
-  return null
+  return {
+    heroImage: foundImages[0] ?? null,
+    secondaryImage:
+      foundImages[0] && foundImages[1] && !isSameHomeImage(foundImages[0], foundImages[1])
+        ? foundImages[1]
+        : null,
+  }
+}
+
+function getHomeTourismImage(item: TourismContent, fallbackTitle: string) {
+  const src = getTourismImageUrl(item)
+  if (!src) return null
+
+  return {
+    src,
+    title: item.title ?? fallbackTitle,
+    contentId: item.contentId,
+  }
+}
+
+function getCachedHomeImage(key: string) {
+  if (typeof window === 'undefined') return null
+
+  try {
+    const rawImage = window.sessionStorage.getItem(key)
+    if (!rawImage) return null
+
+    const image = JSON.parse(rawImage) as Partial<HomeHeroImage>
+    if (!image.src || !image.title) return null
+
+    return {
+      src: image.src,
+      title: image.title,
+      contentId: image.contentId,
+    }
+  } catch {
+    return null
+  }
+}
+
+function setCachedHomeImage(key: string, image: HomeHeroImage | null) {
+  if (typeof window === 'undefined') return
+
+  try {
+    if (!image) {
+      window.sessionStorage.removeItem(key)
+      return
+    }
+
+    window.sessionStorage.setItem(key, JSON.stringify(image))
+  } catch {
+    // 캐시 저장 실패는 홈 렌더링에 영향을 주지 않는다.
+  }
+}
+
+function isSameHomeImage(firstImage: HomeHeroImage, secondImage: HomeHeroImage) {
+  if (firstImage.contentId && secondImage.contentId) {
+    return firstImage.contentId === secondImage.contentId
+  }
+
+  return firstImage.src === secondImage.src || firstImage.title === secondImage.title
 }
 
 function getTourismImageUrl(item: TourismContent) {
