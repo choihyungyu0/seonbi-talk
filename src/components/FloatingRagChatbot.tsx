@@ -9,13 +9,18 @@ interface ChatMessage {
   id: string
   role: ChatRole
   text: string
+  references?: RagChatReference[]
+}
+
+interface RagChatReference {
+  title: string
 }
 
 interface RagChatResponse {
   ok?: boolean
   answer?: string
   message?: string
-  references?: string[]
+  references?: RagChatReference[]
 }
 
 const suggestedQuestions = [
@@ -79,12 +84,10 @@ export function FloatingRagChatbot() {
         throw new Error(data.message ?? 'chat_failed')
       }
 
-      const referenceText = data.references?.length
-        ? `\n\n참고한 영주 이야기: ${data.references.join(', ')}`
-        : ''
+      const answer = data.answer
       setMessages((current) => [
         ...current,
-        createMessage('assistant', `${data.answer}${referenceText}`),
+        createMessage('assistant', answer, getPublicReferences(data.references)),
       ])
       setStatus('idle')
     } catch {
@@ -120,16 +123,34 @@ export function FloatingRagChatbot() {
 
           <div className="rag-chat-messages" aria-live="polite">
             {messages.map((message) => (
-              <p
+              <div
                 className={
                   message.role === 'user'
-                    ? 'rag-chat-message rag-chat-message--user'
-                    : 'rag-chat-message'
+                    ? 'rag-chat-message-group rag-chat-message-group--user'
+                    : 'rag-chat-message-group'
                 }
                 key={message.id}
               >
-                {message.text}
-              </p>
+                <p
+                  className={
+                    message.role === 'user'
+                      ? 'rag-chat-message rag-chat-message--user'
+                      : 'rag-chat-message'
+                  }
+                >
+                  {message.text}
+                </p>
+                {message.role === 'assistant' && Boolean(message.references?.length) && (
+                  <div className="rag-chat-references" aria-label="참고한 영주 데이터">
+                    <strong>참고한 영주 데이터</strong>
+                    <ul>
+                      {message.references?.map((reference) => (
+                        <li key={reference.title}>{reference.title}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
             ))}
             {status === 'loading' && (
               <p className="rag-chat-message">답변을 준비하고 있습니다.</p>
@@ -188,12 +209,35 @@ export function FloatingRagChatbot() {
   )
 }
 
-function createMessage(role: ChatRole, text: string): ChatMessage {
+function createMessage(
+  role: ChatRole,
+  text: string,
+  references: RagChatReference[] = [],
+): ChatMessage {
   return {
     id: `${role}-${Date.now()}-${Math.random().toString(16).slice(2)}`,
     role,
     text,
+    references,
   }
+}
+
+function getPublicReferences(references: RagChatReference[] | undefined) {
+  if (!references?.length) return []
+
+  const seenTitles = new Set<string>()
+  const publicReferences: RagChatReference[] = []
+
+  for (const reference of references) {
+    const title = reference.title.replace(/\s+/g, ' ').trim()
+    if (!title || seenTitles.has(title)) continue
+
+    seenTitles.add(title)
+    publicReferences.push({ title })
+    if (publicReferences.length >= 3) break
+  }
+
+  return publicReferences
 }
 
 function getChatContext() {

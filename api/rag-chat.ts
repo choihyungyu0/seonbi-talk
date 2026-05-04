@@ -257,10 +257,19 @@ function createFallbackAnswer(
 }
 
 function createPublicReferences(documents: Array<{ title: string }>) {
-  return documents
-    .map((document) => document.title)
-    .filter(Boolean)
-    .slice(0, 3)
+  const seenTitles = new Set<string>()
+  const references: Array<{ title: string }> = []
+
+  for (const document of documents) {
+    const title = document.title.replace(/\s+/g, ' ').trim()
+    if (!title || seenTitles.has(title)) continue
+
+    seenTitles.add(title)
+    references.push({ title })
+    if (references.length >= 3) break
+  }
+
+  return references
 }
 
 function isInScopeQuestion(message: string) {

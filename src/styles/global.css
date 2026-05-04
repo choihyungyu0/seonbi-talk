@@ -2379,6 +2379,16 @@ a {
   padding: 16px;
 }
 
+.rag-chat-message-group {
+  display: grid;
+  justify-items: start;
+  gap: 7px;
+}
+
+.rag-chat-message-group--user {
+  justify-items: end;
+}
+
 .rag-chat-message {
   width: fit-content;
   max-width: 88%;
@@ -2396,6 +2406,45 @@ a {
   justify-self: end;
   color: #fff;
   background: var(--forest);
+}
+
+.rag-chat-references {
+  display: grid;
+  max-width: 88%;
+  gap: 7px;
+  border: 1px solid rgba(45, 75, 62, 0.12);
+  border-radius: 14px;
+  padding: 10px;
+  background: rgba(255, 253, 249, 0.86);
+}
+
+.rag-chat-references strong {
+  color: var(--forest-dark);
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1.2;
+}
+
+.rag-chat-references ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rag-chat-references li {
+  max-width: 100%;
+  border: 1px solid rgba(137, 111, 72, 0.22);
+  border-radius: 999px;
+  padding: 6px 9px;
+  color: var(--forest);
+  background: rgba(200, 234, 216, 0.42);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
 }
 
 .rag-chat-suggestions {
