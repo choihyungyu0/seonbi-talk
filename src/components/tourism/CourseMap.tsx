@@ -252,8 +252,10 @@ function getDisplayStatus({
 function getStatusMessage(status: CourseMapStatus) {
   if (status === 'loading') return '지도를 불러오고 있습니다.'
   if (status === 'missing-key') {
-    return '카카오 지도 키 설정 후 지도를 표시할 수 있습니다.'
+    return '지도 설정이 완료되면 위치를 함께 볼 수 있습니다. 지금은 카드 목록으로 코스를 확인해주세요.'
   }
-  if (status === 'no-coordinates') return '좌표 정보가 있는 관광지가 없습니다.'
-  return '지도를 불러오는 중 문제가 발생했습니다.'
+  if (status === 'no-coordinates') {
+    return '지도에 표시할 좌표가 있는 관광지가 없습니다. 카드의 주소 정보를 참고해주세요.'
+  }
+  return '지도를 불러오지 못했습니다. 잠시 후 다시 시도하거나 카드 목록을 이용해주세요.'
 }

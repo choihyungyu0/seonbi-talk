@@ -748,7 +748,9 @@ a {
 
 .common-button {
   display: inline-flex;
+  max-width: 100%;
   min-height: 46px;
+  min-width: 0;
   align-items: center;
   justify-content: center;
   gap: 8px;
@@ -756,7 +758,10 @@ a {
   padding: 0 22px;
   border: 1px solid var(--forest);
   font-weight: 800;
+  line-height: 1.25;
+  text-align: center;
   text-decoration: none;
+  white-space: normal;
   cursor: pointer;
   transition:
     transform 0.18s ease,
@@ -904,6 +909,12 @@ a {
 
 .page-actions.spread {
   justify-content: space-between;
+}
+
+.page-actions .common-button,
+.inline-actions .common-button,
+.modal-actions .common-button {
+  min-width: 0;
 }
 
 .image-placeholder {
@@ -1513,6 +1524,7 @@ a {
 
 .tourism-card-body {
   align-self: center;
+  min-width: 0;
 }
 
 .tourism-detail-list {
@@ -1536,6 +1548,7 @@ a {
 .tourism-detail-list dd {
   margin: 0;
   color: var(--ink-soft);
+  overflow-wrap: anywhere;
 }
 
 .tourism-recommendation-reason {
@@ -1577,6 +1590,7 @@ a {
 .tourism-detail-overlay {
   position: fixed;
   inset: 0;
+  min-height: 100dvh;
   z-index: 80;
   display: grid;
   place-items: center;
@@ -1587,9 +1601,10 @@ a {
 .tourism-detail-panel {
   display: grid;
   width: min(720px, 100%);
-  max-height: min(780px, calc(100vh - 48px));
+  max-height: min(780px, calc(100dvh - 48px));
   gap: 16px;
   overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 22px;
 }
 
@@ -1611,6 +1626,7 @@ a {
   margin: 12px 0 0;
   font-family: var(--serif);
   line-height: 1.25;
+  overflow-wrap: anywhere;
 }
 
 .detail-close-button {
@@ -1646,6 +1662,7 @@ a {
 .tourism-detail-overview {
   margin: 0;
   color: var(--ink-soft);
+  overflow-wrap: anywhere;
   white-space: pre-line;
 }
 
@@ -1712,6 +1729,7 @@ a {
   place-items: center;
   align-content: center;
   gap: 14px;
+  padding: 22px;
   color: var(--forest);
   background:
     linear-gradient(rgba(246, 243, 238, 0.78), rgba(246, 243, 238, 0.78)),
@@ -1720,6 +1738,15 @@ a {
 
 .map-empty span {
   font-size: 56px;
+}
+
+.map-empty p {
+  max-width: 340px;
+  margin: 0;
+  color: var(--forest-dark);
+  font-weight: 800;
+  line-height: 1.55;
+  text-align: center;
 }
 
 .course-map-shell {
@@ -3067,6 +3094,8 @@ a {
 
 .auth-required-modal {
   width: min(460px, 100%);
+  max-height: calc(100dvh - 40px);
+  overflow-y: auto;
   border: 1px solid var(--line);
   border-radius: 20px;
   padding: 28px;
@@ -3125,6 +3154,11 @@ a {
 .mypage-empty-card p {
   margin: 0;
   color: var(--muted);
+}
+
+.mypage-empty-card p + p {
+  margin-top: 8px;
+  color: var(--ink-soft);
 }
 
 .mypage-favorite-grid {
@@ -3423,6 +3457,22 @@ a {
     padding: 0 10px;
   }
 
+  .common-button,
+  .course-category-tabs button,
+  .favorite-toggle-button,
+  .social-login-button {
+    width: 100%;
+  }
+
+  .hero-actions,
+  .inline-actions,
+  .page-actions,
+  .modal-actions,
+  .auth-links,
+  .course-category-tabs {
+    align-items: stretch;
+  }
+
   .admin-summary-card {
     min-height: 112px;
   }
@@ -3488,6 +3538,40 @@ a {
   .admin-rag-search-form {
     display: grid;
     grid-template-columns: 1fr;
+  }
+
+  .map-panel-header {
+    display: grid;
+  }
+
+  .course-side-panel .map-panel {
+    max-height: none;
+  }
+
+  .course-map-shell,
+  .course-map-canvas,
+  .map-empty {
+    min-height: 320px;
+  }
+
+  .tourism-detail-overlay {
+    align-items: end;
+    padding: 10px;
+  }
+
+  .tourism-detail-panel {
+    max-height: calc(100dvh - 20px);
+    padding: 16px;
+  }
+
+  .tourism-detail-header {
+    top: -16px;
+    margin: -16px -16px 0;
+    padding: 16px;
+  }
+
+  .tourism-detail-image-list {
+    grid-template-columns: repeat(2, 1fr);
   }
 
   .mypage-section-heading,

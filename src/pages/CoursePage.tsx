@@ -399,19 +399,31 @@ export function CoursePage() {
         <div className="course-layout">
           <div className="tourism-list">
             {tourismState.status === 'loading' && (
-              <TourismEmptyState title="영주 관광 공공데이터를 불러오고 있습니다." />
+              <TourismEmptyState
+                title="영주 관광 공공데이터를 불러오고 있습니다."
+                description="잠시만 기다려주세요. 불러오기가 길어지면 다른 유형을 선택해 다시 확인할 수 있습니다."
+              />
             )}
             {tourismState.status === 'missing-api-key' && (
-              <TourismEmptyState title="공공데이터 서비스키 설정 후 관광 정보를 불러올 수 있습니다." />
+              <TourismEmptyState
+                title="관광 정보를 불러올 준비가 아직 완료되지 않았습니다."
+                description="관리자 설정이 완료되면 실제 영주 공공데이터 추천 코스를 확인할 수 있습니다."
+              />
             )}
             {tourismState.status === 'error' && (
               <TourismEmptyState
                 title="공공데이터를 불러오는 중 문제가 발생했습니다."
-                description={tourismState.message}
+                description={
+                  tourismState.message ??
+                  '잠시 후 다시 시도하거나 다른 코스 유형을 선택해보세요.'
+                }
               />
             )}
             {tourismState.status === 'empty' && testResult && (
-              <TourismEmptyState title={selectedEmptyTitle} />
+              <TourismEmptyState
+                title={selectedEmptyTitle}
+                description="현재 조건에서 표시할 관광 정보가 없습니다. 전체 또는 다른 유형을 선택해보세요."
+              />
             )}
             {shouldShowCards && (
               <section className="tourism-section-block">
@@ -598,8 +610,8 @@ function TourismEmptyState({ title, description }: TourismEmptyStateProps) {
     <article className="surface-card tourism-empty-state">
       <StatusBadge tone="neutral">공공데이터</StatusBadge>
       <h2>{title}</h2>
-      <p>{description ?? '관광지 정보는 실제 공공데이터 연동 후 표시됩니다.'}</p>
-      <p>가짜 관광지 데이터는 사용하지 않습니다.</p>
+      <p>{description ?? '실제 공공데이터 안에서 표시할 수 있는 정보를 확인하고 있습니다.'}</p>
+      <p>가짜 관광지 데이터는 사용하지 않으며, 사용 가능한 정보만 보여드립니다.</p>
     </article>
   )
 }

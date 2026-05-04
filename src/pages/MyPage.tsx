@@ -87,6 +87,7 @@ export function MyPage() {
         <section className="page-section page-container">
           <article className="surface-card empty-result-card protected-feature-card">
             <h1>로그인 후 마이페이지를 이용할 수 있습니다.</h1>
+            <p>저장한 관심 코스와 최근 받은 선비의 한마디는 로그인한 사용자에게만 표시됩니다.</p>
             <div className="page-actions center">
               <Link className="common-button common-button--primary" to="/login">
                 로그인하기
@@ -155,6 +156,7 @@ export function MyPage() {
           ) : (
             <article className="surface-card mypage-empty-card">
               <p>아직 선비유형 테스트 결과가 없습니다.</p>
+              <p>테스트를 완료하면 내 유형과 추천 코스를 이곳에서 다시 볼 수 있습니다.</p>
             </article>
           )}
         </section>
@@ -175,13 +177,14 @@ export function MyPage() {
 
           {status === 'error' && (
             <p className="form-error" role="status">
-              {message}
+              {message} 잠시 후 다시 열어보거나 추천 코스에서 새 관심 코스를 저장해보세요.
             </p>
           )}
 
           {status === 'idle' && favorites.length === 0 && (
             <article className="surface-card mypage-empty-card">
               <p>아직 저장한 관심 코스가 없습니다.</p>
+              <p>추천 코스에서 마음에 드는 장소를 저장하면 이곳에 모입니다.</p>
             </article>
           )}
 
@@ -240,13 +243,14 @@ export function MyPage() {
 
           {historyStatus === 'error' && (
             <p className="form-error" role="status">
-              {historyMessage}
+              {historyMessage} 잠시 후 다시 확인하거나 새 한마디를 받아보세요.
             </p>
           )}
 
           {historyStatus === 'idle' && judgeHistories.length === 0 && (
             <article className="surface-card mypage-empty-card">
               <p>아직 받은 선비의 한마디가 없습니다.</p>
+              <p>문장이나 사진으로 한마디를 받으면 최근 기록이 이곳에 표시됩니다.</p>
             </article>
           )}
 

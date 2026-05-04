@@ -21,11 +21,11 @@ const featureCards = [
   },
   {
     title: '영주 관광 코스 추천',
-    description: '공공데이터 연동 후 유형별 코스가 표시됩니다.',
+    description: '공공데이터 기반으로 나에게 맞는 영주 코스를 확인합니다.',
   },
   {
     title: '선비의 한마디',
-    description: '문장을 입력하면 한마디를 받는 UI를 준비합니다.',
+    description: '문장이나 사진을 바탕으로 짧은 한국어 조언을 받습니다.',
   },
 ]
 
@@ -221,7 +221,7 @@ export function HomePage() {
                   label={
                     isHeroImageLoading
                       ? '공공데이터 이미지를 불러오고 있습니다.'
-                      : '공공데이터 이미지 연동 예정'
+                      : '이미지를 불러오지 못했습니다. 추천 코스에서 영주 관광 정보를 확인해보세요.'
                   }
                 />
               )}
@@ -316,7 +316,7 @@ export function HomePage() {
               <p>
                 {isCultureImageLoading
                   ? '영주 문화시설 이미지를 찾고 있습니다.'
-                  : '문화시설 이미지가 부족하면 키워드와 코스 안내를 중심으로 홈 화면을 유지합니다.'}
+                  : '문화시설 이미지가 부족해도 추천 코스와 키워드 안내는 계속 이용할 수 있습니다.'}
               </p>
             </article>
           )}
