@@ -1,8 +1,8 @@
 import { useState } from 'react'
 
-export const seonbiLogoSymbolPath = '/images/brand/logo-symbol.png'
-export const seonbiLogoFullPath = '/images/brand/logo-full.png'
-export const seonbiLogoMarkPath = '/images/brand/logo-mark-96.png'
+export const seonbiLogoSymbolPath = '/images/brand/logo-symbol.webp'
+export const seonbiLogoFullPath = '/images/brand/logo-full.webp'
+export const seonbiLogoMarkPath = '/images/brand/logo-mark.webp'
 
 interface BrandLogoProps {
   variant?: 'symbol' | 'full' | 'mark'
