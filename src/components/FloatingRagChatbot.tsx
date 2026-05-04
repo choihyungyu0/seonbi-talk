@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import seonbiAiAvatar from '../assets/seonbi-ai-avatar.png'
+import { SeonbiChatbotButton } from './chat/SeonbiChatbotButton'
 import { BrandLoading } from './common/BrandLoading'
 import { loadLatestMindTags } from '../features/judge/latestMindTagsStorage'
 import { loadTestResult } from '../lib/storage'
@@ -108,10 +110,13 @@ export function FloatingRagChatbot() {
       {isOpen && (
         <section className="rag-chat-panel" aria-label="선비길 AI 길잡이">
           <div className="rag-chat-header">
-            <div>
-              <span>AI</span>
-              <h2>선비길 AI 길잡이</h2>
-              <p>영주 관광과 선비유형에 대해 물어보세요.</p>
+            <div className="rag-chat-header-profile">
+              <img src={seonbiAiAvatar} alt="영주 선비 AI 챗봇" />
+              <div>
+                <span>선비 AI</span>
+                <h2>영주 선비 AI</h2>
+                <p>영주 여행이 궁금하신가요?</p>
+              </div>
             </div>
             <button
               type="button"
@@ -120,6 +125,13 @@ export function FloatingRagChatbot() {
             >
               닫기
             </button>
+          </div>
+          <div className="rag-chat-subtitle">
+            <div>
+              <span aria-hidden="true">AI</span>
+              <h2>선비길 AI 길잡이</h2>
+              <p>영주 관광과 선비유형에 대해 물어보세요.</p>
+            </div>
           </div>
 
           <div className="rag-chat-messages" aria-live="polite">
@@ -199,15 +211,7 @@ export function FloatingRagChatbot() {
         </section>
       )}
       {!isOpen && (
-        <button
-          type="button"
-          className="rag-chat-toggle"
-          aria-expanded={isOpen}
-          aria-label="선비길 AI 길잡이 열기"
-          onClick={() => setIsOpen(true)}
-        >
-          AI
-        </button>
+        <SeonbiChatbotButton isOpen={isOpen} onClick={() => setIsOpen(true)} />
       )}
     </div>
   )
