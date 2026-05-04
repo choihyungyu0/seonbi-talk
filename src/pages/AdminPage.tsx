@@ -37,6 +37,7 @@ interface AdminDashboard {
     label: string
     count: number
     conversionRate: number | null
+    hasDirectEntry?: boolean
   }>
   publicDataStatus: {
     basis: string
@@ -553,16 +554,27 @@ function BehaviorFunnel({
               </div>
               <em>{formatNumber(step.count)}</em>
               <small>
-                {step.conversionRate === null
-                  ? '기준 단계'
-                  : `${step.conversionRate.toFixed(1)}%`}
+                {getFunnelRateLabel(step, index)}
               </small>
+              {step.hasDirectEntry && (
+                <b className="admin-funnel-overflow-chip">직접 진입 포함</b>
+              )}
             </div>
           )
         })}
       </div>
     </article>
   )
+}
+
+function getFunnelRateLabel(
+  step: AdminDashboard['behaviorFunnel'][number],
+  index: number,
+) {
+  if (index === 0) return '기준 단계'
+  if (step.hasDirectEntry) return '100%+'
+  if (step.conversionRate === null) return '전 단계 0'
+  return `${step.conversionRate.toFixed(1)}%`
 }
 
 function PublicDataStatusPanel({

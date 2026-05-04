@@ -3,6 +3,7 @@ import { getStoredAuthUser } from '../auth/authApi'
 import { insertSupabaseRow } from '../../lib/supabase'
 
 type AnalyticsEventType =
+  | 'home_visit'
   | 'test_completed'
   | 'tourism_card_clicked'
   | 'judge_used'

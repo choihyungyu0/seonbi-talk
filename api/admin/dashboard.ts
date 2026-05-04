@@ -61,6 +61,22 @@ const contentTypeLabels: Record<string, string> = {
   '38': '쇼핑',
   '39': '음식점',
 }
+const funnelEventAliases = {
+  homeVisit: ['home_visit', 'home_viewed', 'page_view_home', 'page_home_view'],
+  testCompleted: ['test_completed', 'seonbi_test_completed'],
+  courseViewed: [
+    'tourism_card_clicked',
+    'course_viewed',
+    'course_recommendation_viewed',
+  ],
+  favoriteSaved: [
+    'favorite_course_added',
+    'favorite_course_saved',
+    'favorite_course_created',
+  ],
+  judgeCreated: ['judge_used', 'judge_created'],
+  resultShared: ['result_share_clicked', 'judge_share_clicked', 'result_shared'],
+} as const
 
 export default async function handler(
   request: AdminDashboardRequest,
@@ -267,54 +283,61 @@ function createBehaviorFunnel(rows: AnalyticsEventRow[]) {
     {
       key: 'home',
       label: '홈 방문',
-      eventTypes: ['home_viewed', 'page_view_home'],
+      eventTypes: funnelEventAliases.homeVisit,
     },
     {
       key: 'test',
       label: '선비유형 테스트 완료',
-      eventTypes: ['test_completed'],
+      eventTypes: funnelEventAliases.testCompleted,
     },
     {
       key: 'course',
       label: '추천 코스 조회',
-      eventTypes: ['tourism_card_clicked', 'course_viewed'],
+      eventTypes: funnelEventAliases.courseViewed,
     },
     {
       key: 'favorite',
       label: '관심 코스 저장',
-      eventTypes: ['favorite_course_added', 'favorite_course_saved'],
+      eventTypes: funnelEventAliases.favoriteSaved,
     },
     {
       key: 'judge',
       label: '선비의 한마디 생성',
-      eventTypes: ['judge_used'],
+      eventTypes: funnelEventAliases.judgeCreated,
     },
     {
       key: 'share',
       label: '결과 공유',
-      eventTypes: ['result_share_clicked', 'judge_share_clicked'],
+      eventTypes: funnelEventAliases.resultShared,
     },
   ]
 
   return steps.map((step, index) => {
-    const count = rows.filter((row) => step.eventTypes.includes(row.event_type ?? ''))
-      .length
+    const count = countEventsByAliases(rows, step.eventTypes)
     const previousStep = index > 0 ? steps[index - 1] : null
-    const previousCount = previousStep
-      ? rows.filter((row) => previousStep.eventTypes.includes(row.event_type ?? ''))
-          .length
-      : count
+    const previousCount = previousStep ? countEventsByAliases(rows, previousStep.eventTypes) : count
+    const rawConversionRate =
+      index === 0 || previousCount === 0
+        ? null
+        : Math.round((count / previousCount) * 1000) / 10
+    const hasDirectEntry = Boolean(rawConversionRate && rawConversionRate > 100)
 
     return {
       key: step.key,
       label: step.label,
       count,
       conversionRate:
-        index === 0 || previousCount === 0
-          ? null
-          : Math.round((count / previousCount) * 1000) / 10,
+        rawConversionRate === null ? null : Math.min(rawConversionRate, 100),
+      hasDirectEntry,
     }
   })
+}
+
+function countEventsByAliases(
+  rows: AnalyticsEventRow[],
+  eventTypes: readonly string[],
+) {
+  return rows.filter((row) => eventTypes.includes(row.event_type ?? '')).length
 }
 
 function createDashboardInsights(input: {
@@ -476,6 +499,7 @@ function createRecentActivities(rows: AnalyticsEventRow[]) {
 }
 
 function getActivitySummary(row: AnalyticsEventRow) {
+  if (row.event_type === 'home_visit') return '홈 방문'
   if (row.event_type === 'test_completed') return '선비유형 테스트 완료'
   if (row.event_type === 'tourism_card_clicked') return '관광지 카드 클릭'
   if (row.event_type === 'judge_image_used') return '사진 기반 한마디 생성'

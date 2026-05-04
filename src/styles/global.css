@@ -2747,7 +2747,7 @@ a {
 
 .admin-funnel-step {
   display: grid;
-  grid-template-columns: 34px minmax(0, 1fr) 72px 82px;
+  grid-template-columns: 34px minmax(0, 1fr) 72px 82px auto;
   align-items: center;
   gap: 12px;
   border: 1px solid rgba(225, 221, 214, 0.78);
@@ -2790,6 +2790,16 @@ a {
   color: var(--forest);
   background: rgba(200, 234, 216, 0.58);
   font-weight: 900;
+  text-align: center;
+}
+
+.admin-funnel-overflow-chip {
+  border-radius: 999px;
+  padding: 4px 9px;
+  color: var(--chestnut);
+  background: rgba(185, 154, 87, 0.22);
+  font-size: 12px;
+  line-height: 1.2;
   text-align: center;
 }
 
@@ -3524,9 +3534,14 @@ a {
   }
 
   .admin-funnel-step em,
-  .admin-funnel-step small {
+  .admin-funnel-step small,
+  .admin-funnel-overflow-chip {
     grid-column: 2 / 3;
     text-align: left;
+  }
+
+  .admin-funnel-overflow-chip {
+    width: fit-content;
   }
 
   .admin-public-data-grid,

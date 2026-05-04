@@ -4,6 +4,7 @@ import { AppLayout } from '../components/layout/AppLayout'
 import { CommonButton } from '../components/common/CommonButton'
 import { ImagePlaceholder } from '../components/common/ImagePlaceholder'
 import { StatusBadge } from '../components/common/StatusBadge'
+import { trackEvent } from '../features/analytics/trackEvent'
 import {
   getYeongjuCultureFacilities,
   getYeongjuTouristAttractions,
@@ -61,6 +62,10 @@ export function HomePage() {
   const [keywordRevealRef, isKeywordVisible] = useRevealOnScroll<HTMLDivElement>()
   const [tourismRevealRef, isTourismVisible] = useRevealOnScroll<HTMLDivElement>()
   const marqueeKeywords = useMemo(() => [...yeongjuKeywords, ...yeongjuKeywords], [])
+
+  useEffect(() => {
+    void trackEvent('home_visit')
+  }, [])
 
   useEffect(() => {
     let ignore = false
