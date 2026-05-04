@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { loadLatestMindTags } from '../features/judge/latestMindTagsStorage'
 import { loadTestResult } from '../lib/storage'
 
@@ -38,6 +38,17 @@ export function FloatingRagChatbot() {
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages)
   const [input, setInput] = useState('')
   const [status, setStatus] = useState<ChatStatus>('idle')
+
+  useEffect(() => {
+    if (!isOpen) return undefined
+
+    function closeOnEscape(event: KeyboardEvent) {
+      if (event.key === 'Escape') setIsOpen(false)
+    }
+
+    window.addEventListener('keydown', closeOnEscape)
+    return () => window.removeEventListener('keydown', closeOnEscape)
+  }, [isOpen])
 
   async function submitMessage(message: string) {
     const trimmedMessage = message.trim()
@@ -98,7 +109,11 @@ export function FloatingRagChatbot() {
               <h2>선비길 AI 길잡이</h2>
               <p>영주 관광과 선비유형에 대해 물어보세요.</p>
             </div>
-            <button type="button" onClick={() => setIsOpen(false)}>
+            <button
+              type="button"
+              aria-label="선비길 AI 길잡이 닫기"
+              onClick={() => setIsOpen(false)}
+            >
               닫기
             </button>
           </div>
@@ -158,15 +173,17 @@ export function FloatingRagChatbot() {
           </form>
         </section>
       )}
-      <button
-        type="button"
-        className="rag-chat-toggle"
-        aria-expanded={isOpen}
-        aria-label="선비길 AI 길잡이 열기"
-        onClick={() => setIsOpen((current) => !current)}
-      >
-        {isOpen ? '×' : 'AI'}
-      </button>
+      {!isOpen && (
+        <button
+          type="button"
+          className="rag-chat-toggle"
+          aria-expanded={isOpen}
+          aria-label="선비길 AI 길잡이 열기"
+          onClick={() => setIsOpen(true)}
+        >
+          AI
+        </button>
+      )}
     </div>
   )
 }
