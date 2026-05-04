@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { ChangeEvent, FormEvent } from 'react'
 import { CommonButton } from '../components/common/CommonButton'
 import { BrandLoading } from '../components/common/BrandLoading'
@@ -12,6 +12,7 @@ import { saveJudgeHistory } from '../features/judge/judgeHistoryApi'
 import { saveLatestMindTags } from '../features/judge/latestMindTagsStorage'
 import {
   getJudgeModeOption,
+  getSeonbiVisualImagePreloadPaths,
   getSeonbiVisualImageAlt,
   getSeonbiVisualImagePath,
   judgeModeOptions,
@@ -56,6 +57,7 @@ function JudgePageContent({ testResult, typeInfo }: JudgePageContentProps) {
   const [text, setText] = useState('')
   const [judgeMode, setJudgeMode] = useState<JudgeMode>('default')
   const [failedSeonbiImageSrc, setFailedSeonbiImageSrc] = useState('')
+  const [isSeonbiImageLoaded, setIsSeonbiImageLoaded] = useState(false)
   const [result, setResult] = useState<JudgeResult | null>(null)
   const [ragReferences, setRagReferences] = useState<JudgeRagReference[]>([])
   const [message, setMessage] = useState('')
@@ -74,6 +76,24 @@ function JudgePageContent({ testResult, typeInfo }: JudgePageContentProps) {
   const hasSeonbiImageError = failedSeonbiImageSrc === seonbiImageSrc
   const modeDescription = selectedModeOption.description
   const analysisTags = getAnalysisTags(result?.analysis)
+
+  useEffect(() => {
+    const preloadedImages = getSeonbiVisualImagePreloadPaths(testResult.type).map(
+      (imagePath) => {
+        const image = new Image()
+        image.decoding = 'async'
+        image.src = imagePath
+        return image
+      },
+    )
+
+    return () => {
+      preloadedImages.forEach((image) => {
+        image.onload = null
+        image.onerror = null
+      })
+    }
+  }, [testResult.type])
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -172,6 +192,7 @@ function JudgePageContent({ testResult, typeInfo }: JudgePageContentProps) {
   }
 
   function handleJudgeModeChange(nextJudgeMode: JudgeMode) {
+    setIsSeonbiImageLoaded(false)
     setFailedSeonbiImageSrc('')
     setJudgeMode(nextJudgeMode)
   }
@@ -231,12 +252,29 @@ function JudgePageContent({ testResult, typeInfo }: JudgePageContentProps) {
               <StatusBadge>{selectedModeOption.badge}</StatusBadge>
             </div>
             {!hasSeonbiImageError ? (
-              <img
-                key={seonbiImageSrc}
-                src={seonbiImageSrc}
-                alt={seonbiImageAlt}
-                onError={() => setFailedSeonbiImageSrc(seonbiImageSrc)}
-              />
+              <>
+                {!isSeonbiImageLoaded && (
+                  <span className="wisdom-visual-loading" aria-hidden="true">
+                    書
+                  </span>
+                )}
+                <img
+                  key={seonbiImageSrc}
+                  className={isSeonbiImageLoaded ? 'is-loaded' : ''}
+                  src={seonbiImageSrc}
+                  alt={seonbiImageAlt}
+                  width="720"
+                  height="880"
+                  loading="eager"
+                  fetchPriority="high"
+                  decoding="async"
+                  onLoad={() => setIsSeonbiImageLoaded(true)}
+                  onError={() => {
+                    setIsSeonbiImageLoaded(false)
+                    setFailedSeonbiImageSrc(seonbiImageSrc)
+                  }}
+                />
+              </>
             ) : (
               <span className="wisdom-visual-fallback" aria-hidden="true">
                 書

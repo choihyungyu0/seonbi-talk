@@ -609,6 +609,7 @@ a {
   border-block: 1px solid var(--line);
   padding: 12px 0;
   background: rgba(250, 246, 238, 0.72);
+  pointer-events: none;
 }
 
 .home-keyword-track {
@@ -617,10 +618,6 @@ a {
   gap: 12px;
   animation: homeKeywordMarquee 19s linear infinite;
   will-change: transform;
-}
-
-.home-keyword-marquee:hover .home-keyword-track {
-  animation-duration: 32s;
 }
 
 .home-keyword-track span {
@@ -1957,6 +1954,7 @@ a {
 .wisdom-visual {
   position: relative;
   display: grid;
+  aspect-ratio: 9 / 11;
   min-height: 420px;
   max-height: 560px;
   align-content: end;
@@ -2008,7 +2006,14 @@ a {
   height: 100%;
   min-height: 420px;
   max-height: 560px;
+  aspect-ratio: 9 / 11;
   object-fit: cover;
+  opacity: 0;
+  transition: opacity 180ms ease;
+}
+
+.wisdom-visual img.is-loaded {
+  opacity: 1;
 }
 
 .wisdom-visual-badges {
@@ -2027,6 +2032,18 @@ a {
   align-self: center;
   justify-self: center;
   font-size: 96px;
+}
+
+.wisdom-visual-loading {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: grid;
+  place-items: center;
+  color: rgba(249, 246, 239, 0.72);
+  font-family: var(--serif);
+  font-size: 92px;
+  background: rgba(31, 53, 43, 0.12);
 }
 
 .wisdom-visual-info {
@@ -4251,6 +4268,7 @@ a {
     transform: none;
   }
 
+  .home-keyword-track,
   .home-culture-track {
     animation: none;
     transform: none;

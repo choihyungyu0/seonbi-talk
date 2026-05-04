@@ -89,6 +89,12 @@ export function getSeonbiVisualImagePath(
   return `/images/seonbi/${seonbiType}.png`
 }
 
+export function getSeonbiVisualImagePreloadPaths(seonbiType: SeonbiType) {
+  return judgeModeOptions.map((option) =>
+    getSeonbiVisualImagePath(seonbiType, option.id),
+  )
+}
+
 export function getSeonbiVisualImageAlt(
   seonbiTypeName: SeonbiTypeName,
   judgeMode: JudgeMode,
