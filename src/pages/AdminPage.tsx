@@ -42,12 +42,20 @@ interface AdminDashboard {
   publicDataStatus: {
     basis: string
     periodSensitive: boolean
+    totalPlaceCount: number
     attractionCount: number
     cultureCount: number
     accommodationCount: number
     restaurantCount: number
+    categoryCounts: Record<string, number>
     missingCoordinateCount: number
     missingImageCount: number
+    missingPhoneCount: number
+    missingAddressCount: number
+    phoneMetricStatus: string
+    duplicateTitleCount: number
+    duplicateTitleAddressCount: number
+    mapUnavailableCount: number
     lastSyncedAt: string | null
     unavailableMetrics: string[]
   }
@@ -388,14 +396,14 @@ export function AdminPage() {
 
             <section className="admin-analytics-grid">
               <BehaviorFunnel steps={dashboard.behaviorFunnel} />
-              <PublicDataStatusPanel status={dashboard.publicDataStatus} />
-              <RagStatusPanel
+              <AiPublicDataQualityPanel
                 searchMessage={ragSearchMessage}
                 searchQuery={ragSearchQuery}
                 searchResults={ragSearchResults}
                 searchStatus={ragSearchStatus}
                 seedStatus={ragSeedStatus}
-                status={dashboard.ragStatus}
+                publicDataStatus={dashboard.publicDataStatus}
+                ragStatus={dashboard.ragStatus}
                 onSearch={handleRagSearch}
                 onSearchQueryChange={setRagSearchQuery}
                 onSeed={() => void handleRagSeed()}
@@ -577,54 +585,14 @@ function getFunnelRateLabel(
   return `${step.conversionRate.toFixed(1)}%`
 }
 
-function PublicDataStatusPanel({
-  status,
-}: {
-  status: AdminDashboard['publicDataStatus']
-}) {
-  const metrics = [
-    { label: '관광지 데이터 수', value: status.attractionCount },
-    { label: '문화시설 데이터 수', value: status.cultureCount },
-    { label: '숙박 데이터 수', value: status.accommodationCount },
-    { label: '음식점 데이터 수', value: status.restaurantCount },
-    { label: '좌표 누락 데이터 수', value: status.missingCoordinateCount },
-    { label: '이미지 누락 데이터 수', value: status.missingImageCount },
-  ]
-
-  return (
-    <article className="surface-card admin-chart-panel admin-public-data-panel">
-      <div className="admin-panel-heading">
-        <h2>공공데이터 연동 상태</h2>
-        <span>{status.periodSensitive ? status.basis : '전체 기준'}</span>
-      </div>
-      <dl className="admin-public-data-grid">
-        {metrics.map((metric) => (
-          <div key={metric.label}>
-            <dt>{metric.label}</dt>
-            <dd>{formatNumber(metric.value)}</dd>
-          </div>
-        ))}
-        <div>
-          <dt>최종 조회/동기화 시각</dt>
-          <dd>{status.lastSyncedAt ? formatDateTime(status.lastSyncedAt) : '데이터 없음'}</dd>
-        </div>
-      </dl>
-      {status.unavailableMetrics.length > 0 && (
-        <p className="admin-data-note">
-          {status.unavailableMetrics.join(', ')}은 수집 예정입니다.
-        </p>
-      )}
-    </article>
-  )
-}
-
-function RagStatusPanel({
+function AiPublicDataQualityPanel({
   searchMessage,
   searchQuery,
   searchResults,
   searchStatus,
   seedStatus,
-  status,
+  publicDataStatus,
+  ragStatus,
   onSearch,
   onSearchQueryChange,
   onSeed,
@@ -634,110 +602,282 @@ function RagStatusPanel({
   searchResults: RagSearchResult[]
   searchStatus: RagSearchStatus
   seedStatus: RagSeedStatus
-  status: AdminDashboard['ragStatus']
+  publicDataStatus: AdminDashboard['publicDataStatus']
+  ragStatus: AdminDashboard['ragStatus']
   onSearch: (event: React.FormEvent<HTMLFormElement>) => void
   onSearchQueryChange: (value: string) => void
   onSeed: () => void
 }) {
-  const metrics = [
-    { label: 'RAG 문서 수', value: status.totalDocuments },
-    { label: '관광지 문서 수', value: status.tourismPlaceDocuments },
-    { label: '선비유형 문서 수', value: status.seonbiPersonaDocuments },
-    { label: '모드 문서 수', value: status.judgeModeDocuments },
-    { label: '추천 규칙 문서 수', value: status.recommendationRuleDocuments },
+  const ragDocumentMetrics = [
+    { label: '전체 문서', value: ragStatus.totalDocuments },
+    { label: '관광지', value: ragStatus.tourismPlaceDocuments },
+    { label: '선비유형', value: ragStatus.seonbiPersonaDocuments },
+    { label: '한마디 모드', value: ragStatus.judgeModeDocuments },
+    { label: '추천 규칙', value: ragStatus.recommendationRuleDocuments },
   ]
+  const publicDataMetrics = [
+    { label: '전체 장소', value: publicDataStatus.totalPlaceCount },
+    { label: '좌표 누락', value: publicDataStatus.missingCoordinateCount },
+    { label: '이미지 누락', value: publicDataStatus.missingImageCount },
+    { label: '전화번호 누락', value: publicDataStatus.phoneMetricStatus },
+    { label: '주소 누락', value: publicDataStatus.missingAddressCount },
+    { label: '지도 표시 어려움', value: publicDataStatus.mapUnavailableCount },
+    { label: '동일 title 의심', value: publicDataStatus.duplicateTitleCount },
+    {
+      label: '동일 title+주소 의심',
+      value: publicDataStatus.duplicateTitleAddressCount,
+    },
+  ]
+  const ragSearchQuality = createRagSearchQuality(searchStatus, searchResults)
+  const enrichmentItems = createEnrichmentItems(publicDataStatus, ragStatus)
 
   return (
-    <article className="surface-card admin-chart-panel admin-rag-status-panel">
+    <article className="surface-card admin-chart-panel admin-ai-quality-panel">
       <div className="admin-panel-heading">
-        <h2>AI 참고 데이터 상태</h2>
-        <span>전체 기준</span>
+        <h2>AI/공공데이터 품질 관리</h2>
+        <span>{publicDataStatus.periodSensitive ? publicDataStatus.basis : '전체 기준'}</span>
       </div>
-      {status.totalDocuments === 0 ? (
-        <p className="admin-empty-panel">아직 등록된 AI 참고 데이터가 없습니다.</p>
-      ) : (
-        <>
-          <dl className="admin-rag-status-grid">
-            {metrics.map((metric) => (
-              <div key={metric.label}>
-                <dt>{metric.label}</dt>
-                <dd>{formatNumber(metric.value)}</dd>
+
+      <div className="admin-quality-card-grid">
+        <section className="admin-quality-card">
+          <h3>AI 참고 데이터 상태</h3>
+          {ragStatus.totalDocuments === 0 ? (
+            <p className="admin-empty-panel">아직 등록된 AI 참고 데이터가 없습니다.</p>
+          ) : (
+            <>
+              <MetricGrid metrics={ragDocumentMetrics} />
+              <div className="admin-bar-list">
+                {toChartRows(
+                  Object.fromEntries(
+                    ragDocumentMetrics.slice(1).map((metric) => [
+                      metric.label,
+                      Number(metric.value),
+                    ]),
+                  ),
+                ).map((row) => (
+                  <div className="admin-bar-row" key={row.label}>
+                    <span>{row.label}</span>
+                    <div className="admin-bar-track">
+                      <i style={{ width: `${Math.max(row.percent, 4)}%` }} />
+                    </div>
+                    <strong>{formatNumber(row.value)}</strong>
+                  </div>
+                ))}
               </div>
-            ))}
-          </dl>
-          <p className="admin-data-note">
-            마지막 업데이트: {status.lastUpdatedAt ? formatDateTime(status.lastUpdatedAt) : '데이터 없음'}
-          </p>
-        </>
-      )}
-      <div className="admin-rag-actions">
-        <CommonButton
-          type="button"
-          disabled={seedStatus === 'loading'}
-          isLoading={seedStatus === 'loading'}
-          loadingLabel="업데이트 중..."
-          onClick={onSeed}
-        >
-          AI 참고 데이터 업데이트
-        </CommonButton>
-        {seedStatus === 'success' && (
-          <p className="success-message" role="status">
-            AI 참고 데이터가 업데이트되었습니다.
-          </p>
-        )}
-        {seedStatus === 'error' && (
-          <p className="form-error" role="status">
-            AI 참고 데이터 업데이트에 실패했습니다.
-          </p>
-        )}
-      </div>
-      <form className="admin-rag-search-form" onSubmit={onSearch}>
-        <label className="field" htmlFor="admin-rag-search">
-          <span>AI 참고 데이터 검색 테스트</span>
-          <input
-            id="admin-rag-search"
-            type="search"
-            placeholder="예: 율곡형 진로 걱정 현실적인 조언"
-            value={searchQuery}
-            onChange={(event) => onSearchQueryChange(event.target.value)}
+              <p className="admin-data-note">
+                마지막 업데이트: {ragStatus.lastUpdatedAt ? formatDateTime(ragStatus.lastUpdatedAt) : '데이터 없음'}
+              </p>
+            </>
+          )}
+          <div className="admin-rag-actions">
+            <CommonButton
+              type="button"
+              disabled={seedStatus === 'loading'}
+              isLoading={seedStatus === 'loading'}
+              loadingLabel="업데이트 중..."
+              onClick={onSeed}
+            >
+              AI 참고 데이터 업데이트
+            </CommonButton>
+            {seedStatus === 'success' && (
+              <p className="success-message" role="status">
+                AI 참고 데이터가 업데이트되었습니다.
+              </p>
+            )}
+            {seedStatus === 'error' && (
+              <p className="form-error" role="status">
+                AI 참고 데이터 업데이트에 실패했습니다.
+              </p>
+            )}
+          </div>
+        </section>
+
+        <section className="admin-quality-card">
+          <h3>RAG 검색 품질</h3>
+          <MetricGrid
+            metrics={[
+              { label: '최근 검색 테스트 결과 수', value: ragSearchQuality.resultCount },
+              { label: '검색 결과 없음 비율', value: ragSearchQuality.noResultRate },
+              { label: '평균 similarity', value: ragSearchQuality.averageSimilarity },
+            ]}
           />
-        </label>
-        <CommonButton
-          type="submit"
-          variant="secondary"
-          disabled={searchStatus === 'loading'}
-          isLoading={searchStatus === 'loading'}
-          loadingLabel="검색 중..."
-        >
-          검색
-        </CommonButton>
-      </form>
-      {searchMessage && (
-        <p
-          className={searchStatus === 'error' ? 'form-error' : 'admin-data-note'}
-          role="status"
-        >
-          {searchMessage}
-        </p>
-      )}
-      {searchResults.length > 0 && (
-        <div className="admin-rag-search-results">
-          {searchResults.map((result, index) => (
-            <article key={`${result.title}-${index}`}>
-              <div>
-                <strong>{result.title}</strong>
-                <span>{getRagSourceTypeLabel(result.source_type)}</span>
-                {typeof result.similarity === 'number' && (
-                  <em>{result.similarity.toFixed(3)}</em>
-                )}
+          <p className="admin-data-note">{ragSearchQuality.basis}</p>
+          <form className="admin-rag-search-form" onSubmit={onSearch}>
+            <label className="field" htmlFor="admin-rag-search">
+              <span>AI 참고 데이터 검색 테스트</span>
+              <input
+                id="admin-rag-search"
+                type="search"
+                placeholder="예: 율곡형 진로 걱정 현실적인 조언"
+                value={searchQuery}
+                onChange={(event) => onSearchQueryChange(event.target.value)}
+              />
+            </label>
+            <CommonButton
+              type="submit"
+              variant="secondary"
+              disabled={searchStatus === 'loading'}
+              isLoading={searchStatus === 'loading'}
+              loadingLabel="검색 중..."
+            >
+              검색
+            </CommonButton>
+          </form>
+          {searchMessage && (
+            <p
+              className={searchStatus === 'error' ? 'form-error' : 'admin-data-note'}
+              role="status"
+            >
+              {searchMessage}
+            </p>
+          )}
+          {searchResults.length > 0 && (
+            <div className="admin-rag-search-results">
+              {searchResults.map((result, index) => (
+                <article key={`${result.title}-${index}`}>
+                  <div>
+                    <strong>{result.title}</strong>
+                    <span>{getRagSourceTypeLabel(result.source_type)}</span>
+                    {typeof result.similarity === 'number' && (
+                      <em>{result.similarity.toFixed(3)}</em>
+                    )}
+                  </div>
+                  <p>{createContentPreview(result.content)}</p>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section className="admin-quality-card">
+          <h3>공공데이터 품질</h3>
+          <MetricGrid metrics={publicDataMetrics} />
+          <div className="admin-quality-subchart">
+            <strong>카테고리별 데이터 수</strong>
+            {toChartRows(publicDataStatus.categoryCounts).length === 0 ? (
+              <p className="admin-empty-panel">아직 수집된 분석 데이터가 없습니다.</p>
+            ) : (
+              <div className="admin-bar-list">
+                {toChartRows(publicDataStatus.categoryCounts).map((row) => (
+                  <div className="admin-bar-row" key={row.label}>
+                    <span>{row.label}</span>
+                    <div className="admin-bar-track">
+                      <i style={{ width: `${Math.max(row.percent, 4)}%` }} />
+                    </div>
+                    <strong>{formatNumber(row.value)}</strong>
+                  </div>
+                ))}
               </div>
-              <p>{createContentPreview(result.content)}</p>
-            </article>
-          ))}
-        </div>
-      )}
+            )}
+          </div>
+          <p className="admin-data-note">
+            최종 조회/동기화 시각: {publicDataStatus.lastSyncedAt ? formatDateTime(publicDataStatus.lastSyncedAt) : '데이터 없음'}
+          </p>
+          {publicDataStatus.unavailableMetrics.length > 0 && (
+            <p className="admin-data-note">
+              {publicDataStatus.unavailableMetrics.join(', ')}은 수집 예정입니다.
+            </p>
+          )}
+        </section>
+
+        <section className="admin-quality-card">
+          <h3>보강 필요 항목</h3>
+          <ul className="admin-quality-action-list">
+            {enrichmentItems.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </section>
+      </div>
     </article>
   )
+}
+
+function MetricGrid({
+  metrics,
+}: {
+  metrics: Array<{ label: string; value: number | string }>
+}) {
+  return (
+    <dl className="admin-quality-metric-grid">
+      {metrics.map((metric) => (
+        <div key={metric.label}>
+          <dt>{metric.label}</dt>
+          <dd>
+            {typeof metric.value === 'number' ? formatNumber(metric.value) : metric.value}
+          </dd>
+        </div>
+      ))}
+    </dl>
+  )
+}
+
+function createRagSearchQuality(
+  searchStatus: RagSearchStatus,
+  searchResults: RagSearchResult[],
+) {
+  if (searchStatus !== 'ready') {
+    return {
+      resultCount: '수집 전',
+      noResultRate: '수집 전',
+      averageSimilarity: '수집 전',
+      basis: '관리자 검색 테스트를 실행하면 검색 테스트 기준으로 표시됩니다.',
+    }
+  }
+
+  const similarities = searchResults
+    .map((result) => result.similarity)
+    .filter((similarity): similarity is number => typeof similarity === 'number')
+  const averageSimilarity =
+    similarities.length > 0
+      ? similarities.reduce((sum, value) => sum + value, 0) / similarities.length
+      : null
+
+  return {
+    resultCount: searchResults.length,
+    noResultRate: searchResults.length === 0 ? '100%' : '0%',
+    averageSimilarity:
+      averageSimilarity === null ? '검색 테스트 기준' : averageSimilarity.toFixed(3),
+    basis: '검색 테스트 기준입니다. 사용자 질문 원문은 저장하거나 표시하지 않습니다.',
+  }
+}
+
+function createEnrichmentItems(
+  publicDataStatus: AdminDashboard['publicDataStatus'],
+  ragStatus: AdminDashboard['ragStatus'],
+) {
+  const items: string[] = []
+
+  if (publicDataStatus.missingImageCount > 0) {
+    items.push('이미지가 없는 관광지가 있습니다.')
+  }
+  if (publicDataStatus.missingCoordinateCount > 0) {
+    items.push('좌표가 없는 장소는 지도 추천에서 제외될 수 있습니다.')
+  }
+  if (publicDataStatus.phoneMetricStatus === '수집 전' || publicDataStatus.missingPhoneCount > 0) {
+    items.push('전화번호가 없는 장소는 상세 안내 품질이 낮을 수 있습니다.')
+  }
+  if (
+    Math.min(
+      ragStatus.tourismPlaceDocuments,
+      ragStatus.seonbiPersonaDocuments,
+      ragStatus.judgeModeDocuments,
+      ragStatus.recommendationRuleDocuments,
+    ) < 3
+  ) {
+    items.push('RAG 문서가 적은 유형은 AI 답변 품질이 낮을 수 있습니다.')
+  }
+  if (publicDataStatus.missingAddressCount > 0) {
+    items.push('주소가 없는 장소는 상세 안내와 동선 설명 품질이 낮을 수 있습니다.')
+  }
+  if (
+    publicDataStatus.duplicateTitleCount > 0 ||
+    publicDataStatus.duplicateTitleAddressCount > 0
+  ) {
+    items.push('중복 의심 장소는 관리자 확인 후 정리하는 것이 좋습니다.')
+  }
+
+  return items.length > 0 ? items : ['현재 관측 기준으로 즉시 보강할 항목이 없습니다.']
 }
 
 function RecentActivities({

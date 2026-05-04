@@ -30,6 +30,7 @@ The dashboard may display:
 - Content type counts for recommendation and favorite activity
 - User behavior funnel counts and step conversion rates
 - Public data integration status based on observed favorite and analytics rows
+- AI/public-data quality status with aggregate missing-field and duplicate-suspect counts
 - Recent event type, timestamp, and a safe summary label
 
 Favorite course rows are reduced to `title`, `contentType`, and aggregate
@@ -59,8 +60,9 @@ flow, but the admin dashboard API does not select or return `advice`,
 `modern_translation`, or `share_text`.
 
 `favorite_courses` can contain address, image, and map coordinate fields for the
-user-facing favorite list, but the admin dashboard API does not select or return
-those fields.
+user-facing favorite list. The admin dashboard may read those fields only to
+calculate aggregate quality counts, but it does not return raw addresses, image
+URLs, or exact coordinates.
 
 ## Privacy Principles
 
@@ -138,12 +140,20 @@ Response shape:
     publicDataStatus: {
       basis: string,
       periodSensitive: boolean,
+      totalPlaceCount: number,
       attractionCount: number,
       cultureCount: number,
       accommodationCount: number,
       restaurantCount: number,
+      categoryCounts: Record<string, number>,
       missingCoordinateCount: number,
       missingImageCount: number,
+      missingPhoneCount: number,
+      missingAddressCount: number,
+      phoneMetricStatus: string,
+      duplicateTitleCount: number,
+      duplicateTitleAddressCount: number,
+      mapUnavailableCount: number,
       lastSyncedAt: string | null,
       unavailableMetrics: string[]
     },
@@ -179,11 +189,15 @@ status from observed rows only:
 - Content type counts from favorite and analytics rows
 - Missing coordinate count from `favorite_courses.map_x` and `map_y`
 - Missing image count from `favorite_courses.first_image`
+- Missing address count from `favorite_courses.address`
+- Duplicate-suspect counts based on normalized title and title/address pairs
+- Map-unavailable count based on missing coordinates
 - Last observed lookup/save timestamp from favorite and analytics rows
 
 The API does not return exact coordinates, addresses, phone numbers, image URLs,
-or raw payloads. Unavailable metrics are explicitly marked as `수집 예정` or
-`데이터 없음`.
+or raw payloads. Phone-number quality is marked as `수집 전` until a safe
+aggregate source exists. Unavailable metrics are explicitly marked as `수집 예정`
+or `데이터 없음`.
 
 ## Future Metrics
 

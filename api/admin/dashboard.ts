@@ -35,6 +35,7 @@ interface FavoriteCourseRow {
   content_id?: string | null
   content_type_id?: string | null
   title?: string | null
+  address?: string | null
   first_image?: string | null
   map_x?: number | null
   map_y?: number | null
@@ -121,7 +122,7 @@ export default async function handler(
       fetchSupabaseRows<FavoriteCourseRow>(
         supabase,
         'favorite_courses',
-        'content_id,content_type_id,title,first_image,map_x,map_y,created_at',
+        'content_id,content_type_id,title,address,first_image,map_x,map_y,created_at',
         dateFilter,
         1000,
       ),
@@ -418,8 +419,16 @@ function createPublicDataStatus(
     ...favoriteCourses.map((row) => ({
       contentTypeId: row.content_type_id,
       contentId: row.content_id,
-      hasCoordinates: row.map_x !== undefined && row.map_x !== null && row.map_y !== undefined && row.map_y !== null,
+      title: row.title,
+      address: row.address,
+      hasCoordinates:
+        row.map_x !== undefined &&
+        row.map_x !== null &&
+        row.map_y !== undefined &&
+        row.map_y !== null,
       hasImage: Boolean(normalizeText(row.first_image)),
+      hasAddress: Boolean(normalizeText(row.address)),
+      hasPhone: null,
       createdAt: row.created_at,
     })),
     ...analyticsEvents
@@ -427,8 +436,12 @@ function createPublicDataStatus(
       .map((row) => ({
         contentTypeId: row.content_type_id,
         contentId: row.content_id,
+        title: row.content_title,
+        address: null,
         hasCoordinates: null,
         hasImage: null,
+        hasAddress: null,
+        hasPhone: null,
         createdAt: row.created_at,
       })),
   ]
@@ -442,15 +455,29 @@ function createPublicDataStatus(
   return {
     basis: '저장/이벤트 관측 기준',
     periodSensitive: true,
+    totalPlaceCount: uniqueRows.length,
     attractionCount: contentTypeCounts['관광지'] ?? 0,
     cultureCount: contentTypeCounts['문화시설'] ?? 0,
     accommodationCount: contentTypeCounts['숙박'] ?? 0,
     restaurantCount: contentTypeCounts['음식점'] ?? 0,
+    categoryCounts: contentTypeCounts,
     missingCoordinateCount: uniqueRows.filter((row) => row.hasCoordinates === false)
       .length,
     missingImageCount: uniqueRows.filter((row) => row.hasImage === false).length,
+    missingAddressCount: uniqueRows.filter((row) => row.hasAddress === false).length,
+    missingPhoneCount: 0,
+    phoneMetricStatus: '수집 전',
+    duplicateTitleCount: countDuplicateGroups(uniqueRows, (row) => row.title),
+    duplicateTitleAddressCount: countDuplicateGroups(uniqueRows, (row) =>
+      row.title && row.address ? `${row.title}|${row.address}` : null,
+    ),
+    mapUnavailableCount: uniqueRows.filter((row) => row.hasCoordinates === false)
+      .length,
     lastSyncedAt: latestDate ?? null,
-    unavailableMetrics: uniqueRows.length === 0 ? ['TourAPI 전체 동기화 총량'] : [],
+    unavailableMetrics:
+      uniqueRows.length === 0
+        ? ['TourAPI 전체 동기화 총량', '전화번호 누락 수']
+        : ['전화번호 누락 수'],
   }
 }
 
@@ -458,8 +485,12 @@ function dedupeObservedPublicData(
   rows: Array<{
     contentTypeId?: string | null
     contentId?: string | null
+    title?: string | null
+    address?: string | null
     hasCoordinates: boolean | null
     hasImage: boolean | null
+    hasAddress: boolean | null
+    hasPhone: boolean | null
     createdAt?: string
   }>,
 ) {
@@ -477,12 +508,20 @@ function dedupeObservedPublicData(
     rowMap.set(key, {
       ...current,
       ...row,
+      title: current?.title ?? row.title,
+      address: current?.address ?? row.address,
       hasCoordinates: current?.hasCoordinates ?? row.hasCoordinates,
       hasImage: current?.hasImage ?? row.hasImage,
+      hasAddress: current?.hasAddress ?? row.hasAddress,
+      hasPhone: current?.hasPhone ?? row.hasPhone,
     })
   })
 
   return Array.from(rowMap.values())
+}
+
+function countDuplicateGroups<T>(items: T[], getKey: (item: T) => string | null | undefined) {
+  return Object.values(countBy(items, getKey)).filter((count) => count > 1).length
 }
 
 function createRecentActivities(rows: AnalyticsEventRow[]) {
