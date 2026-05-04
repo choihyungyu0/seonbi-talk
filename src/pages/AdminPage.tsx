@@ -58,6 +58,7 @@ interface AdminDashboard {
     recommendationRuleDocuments: number
     lastUpdatedAt: string | null
   }
+  insights: string[]
   recentActivities: Array<{
     eventType: string
     createdAt: string
@@ -382,6 +383,8 @@ export function AdminPage() {
               />
             </section>
 
+            <InsightPanel insights={dashboard.insights} />
+
             <section className="admin-analytics-grid">
               <BehaviorFunnel steps={dashboard.behaviorFunnel} />
               <PublicDataStatusPanel status={dashboard.publicDataStatus} />
@@ -422,6 +425,29 @@ export function AdminPage() {
         )}
       </section>
     </AppLayout>
+  )
+}
+
+function InsightPanel({ insights }: { insights: string[] }) {
+  const items =
+    insights.length > 0 ? insights : ['아직 충분한 분석 데이터가 없습니다.']
+
+  return (
+    <article className="surface-card admin-weekly-insight-panel">
+      <div className="admin-panel-heading">
+        <div>
+          <StatusBadge>인사이트</StatusBadge>
+          <h2>이번 주 인사이트</h2>
+        </div>
+        <span>선택 기간 기준</span>
+      </div>
+      <p>비식별 행동 데이터를 바탕으로 개선 포인트를 요약합니다.</p>
+      <ul>
+        {items.map((insight) => (
+          <li key={insight}>{insight}</li>
+        ))}
+      </ul>
+    </article>
   )
 }
 

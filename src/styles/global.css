@@ -2581,6 +2581,61 @@ a {
   padding: 24px;
 }
 
+.admin-weekly-insight-panel {
+  display: grid;
+  gap: 16px;
+  margin-bottom: 18px;
+  padding: 24px;
+  background:
+    linear-gradient(135deg, rgba(200, 234, 216, 0.24), transparent 48%),
+    var(--surface);
+}
+
+.admin-weekly-insight-panel h2,
+.admin-weekly-insight-panel p {
+  margin: 0;
+}
+
+.admin-weekly-insight-panel h2 {
+  margin-top: 10px;
+  font-family: var(--serif);
+  font-size: 24px;
+}
+
+.admin-weekly-insight-panel p {
+  color: var(--muted);
+}
+
+.admin-weekly-insight-panel ul {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.admin-weekly-insight-panel li {
+  position: relative;
+  border: 1px solid rgba(45, 75, 62, 0.1);
+  border-radius: 14px;
+  padding: 12px 14px 12px 40px;
+  color: var(--ink-soft);
+  background: rgba(200, 234, 216, 0.32);
+  font-weight: 800;
+  line-height: 1.55;
+}
+
+.admin-weekly-insight-panel li::before {
+  position: absolute;
+  top: 14px;
+  left: 16px;
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--forest);
+  content: '';
+}
+
 .admin-chart-panel h2,
 .admin-privacy-panel h2 {
   margin: 0;

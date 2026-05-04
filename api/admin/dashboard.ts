@@ -140,6 +140,14 @@ function createDashboard(input: {
   totalUsers: number
   ragStatus: ReturnType<typeof createEmptyRagStatus>
 }) {
+  const judgeStats = createJudgeStats(input.judgeHistories, input.analyticsEvents)
+  const courseStats = createCourseStats(input.favoriteCourses, input.analyticsEvents)
+  const behaviorFunnel = createBehaviorFunnel(input.analyticsEvents)
+  const publicDataStatus = createPublicDataStatus(
+    input.favoriteCourses,
+    input.analyticsEvents,
+  )
+
   return {
     summary: {
       totalUsers: input.totalUsers,
@@ -148,11 +156,19 @@ function createDashboard(input: {
       totalJudgeHistories: input.judgeHistories.length,
     },
     seonbiTypeDistribution: createSeonbiTypeDistribution(input.analyticsEvents),
-    judgeStats: createJudgeStats(input.judgeHistories, input.analyticsEvents),
-    courseStats: createCourseStats(input.favoriteCourses, input.analyticsEvents),
-    behaviorFunnel: createBehaviorFunnel(input.analyticsEvents),
-    publicDataStatus: createPublicDataStatus(input.favoriteCourses, input.analyticsEvents),
+    judgeStats,
+    courseStats,
+    behaviorFunnel,
+    publicDataStatus,
     ragStatus: input.ragStatus,
+    insights: createDashboardInsights({
+      analyticsEvents: input.analyticsEvents,
+      favoriteCourses: input.favoriteCourses,
+      judgeHistories: input.judgeHistories,
+      behaviorFunnel,
+      courseStats,
+      ragStatus: input.ragStatus,
+    }),
     recentActivities: createRecentActivities(input.analyticsEvents),
   }
 }
@@ -299,6 +315,76 @@ function createBehaviorFunnel(rows: AnalyticsEventRow[]) {
           : Math.round((count / previousCount) * 1000) / 10,
     }
   })
+}
+
+function createDashboardInsights(input: {
+  analyticsEvents: AnalyticsEventRow[]
+  favoriteCourses: FavoriteCourseRow[]
+  judgeHistories: JudgeHistoryRow[]
+  behaviorFunnel: ReturnType<typeof createBehaviorFunnel>
+  courseStats: ReturnType<typeof createCourseStats>
+  ragStatus: ReturnType<typeof createEmptyRagStatus>
+}) {
+  const insights: string[] = []
+  const totalBehaviorSignals =
+    input.analyticsEvents.length +
+    input.favoriteCourses.length +
+    input.judgeHistories.length
+
+  if (totalBehaviorSignals < 3) {
+    return ['아직 충분한 분석 데이터가 없습니다.']
+  }
+
+  const strongestFunnelStep = input.behaviorFunnel
+    .filter((step) => step.count > 0)
+    .sort((first, second) => second.count - first.count)[0]
+
+  if (strongestFunnelStep?.key === 'course') {
+    insights.push('추천 코스 조회가 가장 활발합니다.')
+  } else if (strongestFunnelStep?.key === 'test') {
+    insights.push('선비유형 테스트 완료가 활발하게 일어나고 있습니다.')
+  } else if (strongestFunnelStep?.key === 'judge') {
+    insights.push('선비의 한마디 생성이 증가하고 있어 AI 상호작용 기능의 활용도가 있습니다.')
+  }
+
+  const testStep = input.behaviorFunnel.find((step) => step.key === 'test')
+  const courseStep = input.behaviorFunnel.find((step) => step.key === 'course')
+  if (testStep && courseStep && testStep.count > 0 && courseStep.count > 0) {
+    insights.push('선비유형 테스트 완료 후 추천 코스로 이어지는 흐름이 확인됩니다.')
+  }
+
+  const favoriteStep = input.behaviorFunnel.find((step) => step.key === 'favorite')
+  if (
+    courseStep &&
+    favoriteStep &&
+    courseStep.count >= 5 &&
+    favoriteStep.count / courseStep.count < 0.2
+  ) {
+    insights.push('관심 코스 저장률이 낮아 저장 버튼 노출 개선 여지가 있습니다.')
+  }
+
+  if (input.judgeHistories.length > 0) {
+    insights.push('선비의 한마디 생성이 확인되어 AI 상호작용 기능이 사용되고 있습니다.')
+  }
+
+  if (input.ragStatus.totalDocuments > 0) {
+    insights.push(`AI 참고 데이터 ${input.ragStatus.totalDocuments}개가 등록되어 있습니다.`)
+  }
+
+  if (Object.keys(input.courseStats.contentTypeCounts).length > 0) {
+    const topContentType = Object.entries(input.courseStats.contentTypeCounts).sort(
+      (first, second) => second[1] - first[1],
+    )[0]
+    if (topContentType) {
+      insights.push(`${topContentType[0]} 카테고리 반응이 가장 많이 관측되었습니다.`)
+    }
+  }
+
+  return dedupeInsights(insights).slice(0, 5)
+}
+
+function dedupeInsights(insights: string[]) {
+  return Array.from(new Set(insights))
 }
 
 function createPublicDataStatus(
