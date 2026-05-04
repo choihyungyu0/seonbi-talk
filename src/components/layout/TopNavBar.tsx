@@ -42,8 +42,8 @@ export function TopNavBar() {
   return (
     <header className="top-nav">
       <Link className="brand-link" to="/">
-        <span className="brand-mark" aria-hidden="true">
-          <BrandLogo decorative />
+        <span className="brand-mark">
+          <BrandLogo variant="mark" />
         </span>
         <span>
           <strong>영주선비길</strong>

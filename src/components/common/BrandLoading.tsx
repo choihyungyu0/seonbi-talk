@@ -17,7 +17,7 @@ export function BrandLoading({
       role="status"
       aria-live="polite"
     >
-      <BrandLogo className="brand-loading-logo" decorative />
+      <BrandLogo className="brand-loading-logo" />
       {!compact && <p>{message}</p>}
       <span className="visually-hidden">{message}</span>
     </div>

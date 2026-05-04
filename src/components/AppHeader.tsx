@@ -6,8 +6,8 @@ export function AppHeader() {
   return (
     <header className="site-header">
       <a className="brand" href="#top" aria-label="영주선비길 홈">
-        <span className="brand-mark" aria-hidden="true">
-          <BrandLogo decorative />
+        <span className="brand-mark">
+          <BrandLogo variant="mark" />
         </span>
         <span>
           <strong>영주선비길</strong>

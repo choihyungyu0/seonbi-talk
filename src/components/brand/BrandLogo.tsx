@@ -1,10 +1,11 @@
 import { useState } from 'react'
 
-export const seonbiLogoSymbolPath = '/images/brand/seonbi-logo-symbol.png'
-export const seonbiLogoFullPath = '/images/brand/seonbi-logo-full.png'
+export const seonbiLogoSymbolPath = '/images/brand/logo-symbol.png'
+export const seonbiLogoFullPath = '/images/brand/logo-full.png'
+export const seonbiLogoMarkPath = '/images/brand/logo-mark-96.png'
 
 interface BrandLogoProps {
-  variant?: 'symbol' | 'full'
+  variant?: 'symbol' | 'full' | 'mark'
   className?: string
   decorative?: boolean
 }
@@ -15,7 +16,12 @@ export function BrandLogo({
   decorative = false,
 }: BrandLogoProps) {
   const [hasImageError, setHasImageError] = useState(false)
-  const src = variant === 'full' ? seonbiLogoFullPath : seonbiLogoSymbolPath
+  const src =
+    variant === 'full'
+      ? seonbiLogoFullPath
+      : variant === 'mark'
+        ? seonbiLogoMarkPath
+        : seonbiLogoSymbolPath
 
   if (hasImageError) {
     return (
