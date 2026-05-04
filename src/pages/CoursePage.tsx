@@ -20,7 +20,10 @@ import {
   removeFavoriteCourse,
 } from '../features/favorites/favoriteApi'
 import { getStoredAuthUser } from '../features/auth/authApi'
-import { recommendCourseForSeonbiType } from '../features/tourism/recommendation'
+import {
+  createTourismRecommendationReason,
+  recommendCourseForSeonbiType,
+} from '../features/tourism/recommendation'
 import type {
   TourismApiResponse,
   TourismContent,
@@ -428,6 +431,10 @@ export function CoursePage() {
                       isFavorite={Boolean(
                         item.contentId && favoriteContentIds.has(item.contentId),
                       )}
+                      recommendationReason={createTourismRecommendationReason(
+                        activeSeonbiType,
+                        item,
+                      )}
                       onSelect={selectTourismItem}
                       onToggleFavorite={toggleFavoriteCourse}
                     />
@@ -448,6 +455,10 @@ export function CoursePage() {
                       selected={selectedContentId === getTourismItemKey(item)}
                       isFavorite={Boolean(
                         item.contentId && favoriteContentIds.has(item.contentId),
+                      )}
+                      recommendationReason={createTourismRecommendationReason(
+                        activeSeonbiType,
+                        item,
                       )}
                       onSelect={selectTourismItem}
                       onToggleFavorite={toggleFavoriteCourse}

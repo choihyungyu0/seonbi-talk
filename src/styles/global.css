@@ -1538,6 +1538,29 @@ a {
   color: var(--ink-soft);
 }
 
+.tourism-recommendation-reason {
+  display: grid;
+  gap: 5px;
+  margin: 14px 0 0;
+  border-left: 3px solid rgba(137, 111, 72, 0.34);
+  padding: 2px 0 2px 10px;
+}
+
+.tourism-recommendation-reason span {
+  color: var(--chestnut);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.tourism-recommendation-reason p {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  color: var(--ink-soft);
+  line-height: 1.55;
+}
+
 .tourism-detail-list.expanded {
   gap: 12px;
 }
