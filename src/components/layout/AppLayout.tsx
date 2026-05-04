@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { FloatingRagChatbot } from '../FloatingRagChatbot'
 import { BottomNavigation } from './BottomNavigation'
 import { TopNavBar } from './TopNavBar'
 
@@ -17,6 +18,7 @@ export function AppLayout({
     <div className={adminMode ? 'app-shell app-shell--admin' : 'app-shell'}>
       {!hideNavigation && <TopNavBar />}
       <main>{children}</main>
+      <FloatingRagChatbot />
       {!hideNavigation && !adminMode && <BottomNavigation />}
     </div>
   )

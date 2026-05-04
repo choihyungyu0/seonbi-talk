@@ -2279,6 +2279,177 @@ a {
   white-space: nowrap;
 }
 
+.floating-rag-chatbot {
+  position: fixed;
+  right: 18px;
+  bottom: 88px;
+  z-index: 120;
+  display: grid;
+  justify-items: end;
+  gap: 12px;
+  pointer-events: none;
+}
+
+.rag-chat-toggle,
+.rag-chat-panel {
+  pointer-events: auto;
+}
+
+.rag-chat-toggle {
+  display: grid;
+  width: 58px;
+  height: 58px;
+  place-items: center;
+  border: 1px solid rgba(45, 75, 62, 0.24);
+  border-radius: 999px;
+  color: #fff;
+  background: var(--forest);
+  box-shadow: 0 18px 38px rgba(45, 75, 62, 0.26);
+  cursor: pointer;
+  font-family: var(--serif);
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.rag-chat-panel {
+  display: grid;
+  width: min(380px, calc(100vw - 24px));
+  max-height: min(640px, calc(100dvh - 132px));
+  overflow: hidden;
+  border: 1px solid rgba(45, 75, 62, 0.16);
+  border-radius: 20px;
+  background: var(--surface);
+  box-shadow: 0 24px 60px rgba(35, 47, 37, 0.24);
+}
+
+.rag-chat-header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid var(--line);
+  padding: 18px;
+  background:
+    linear-gradient(135deg, rgba(200, 234, 216, 0.5), transparent 62%),
+    var(--surface);
+}
+
+.rag-chat-header span {
+  display: inline-grid;
+  min-width: 34px;
+  min-height: 28px;
+  place-items: center;
+  border-radius: 999px;
+  color: var(--forest);
+  background: var(--mint);
+  font-weight: 900;
+}
+
+.rag-chat-header h2,
+.rag-chat-header p {
+  margin: 0;
+}
+
+.rag-chat-header h2 {
+  margin-top: 8px;
+  font-family: var(--serif);
+  font-size: 22px;
+}
+
+.rag-chat-header p {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.rag-chat-header button {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 7px 10px;
+  color: var(--ink-soft);
+  background: var(--surface);
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.rag-chat-messages {
+  display: grid;
+  max-height: 270px;
+  gap: 10px;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+.rag-chat-message {
+  width: fit-content;
+  max-width: 88%;
+  margin: 0;
+  border-radius: 16px;
+  padding: 11px 13px;
+  color: var(--ink-soft);
+  background: rgba(246, 243, 242, 0.84);
+  font-size: 14px;
+  line-height: 1.55;
+  white-space: pre-line;
+}
+
+.rag-chat-message--user {
+  justify-self: end;
+  color: #fff;
+  background: var(--forest);
+}
+
+.rag-chat-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  border-top: 1px solid rgba(225, 221, 214, 0.68);
+  padding: 12px 16px 0;
+}
+
+.rag-chat-suggestions button {
+  border: 1px solid rgba(45, 75, 62, 0.16);
+  border-radius: 999px;
+  padding: 7px 10px;
+  color: var(--forest);
+  background: rgba(200, 234, 216, 0.38);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.rag-chat-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  padding: 14px 16px 16px;
+}
+
+.rag-chat-form input {
+  min-width: 0;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  padding: 0 14px;
+  color: var(--ink);
+  background: var(--surface);
+}
+
+.rag-chat-form button {
+  min-height: 42px;
+  border: 1px solid var(--forest);
+  border-radius: 999px;
+  padding: 0 14px;
+  color: #fff;
+  background: var(--forest);
+  cursor: pointer;
+  font-weight: 900;
+}
+
+.rag-chat-form button:disabled,
+.rag-chat-suggestions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.56;
+}
+
 .auth-page {
   display: grid;
   grid-template-columns: minmax(0, 0.9fr) minmax(360px, 520px);
@@ -3734,6 +3905,25 @@ a {
 
   .tourism-detail-image-list {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  .floating-rag-chatbot {
+    right: 12px;
+    bottom: 76px;
+  }
+
+  .rag-chat-panel {
+    width: calc(100vw - 24px);
+    max-height: calc(100dvh - 104px);
+    border-radius: 18px;
+  }
+
+  .rag-chat-messages {
+    max-height: 34dvh;
+  }
+
+  .rag-chat-form {
+    grid-template-columns: 1fr;
   }
 
   .mypage-section-heading,
