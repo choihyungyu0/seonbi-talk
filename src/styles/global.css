@@ -758,8 +758,32 @@ a {
 }
 
 .feature-card {
-  min-height: 210px;
-  padding: 28px;
+  min-height: 320px;
+  overflow: hidden;
+  padding: 0;
+}
+
+.feature-card-image {
+  display: grid;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  place-items: center;
+  border-bottom: 1px solid var(--line);
+  background:
+    radial-gradient(circle at top, rgba(200, 234, 216, 0.28), transparent 62%),
+    rgba(255, 253, 249, 0.86);
+}
+
+.feature-card-image img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 16px;
+  object-fit: contain;
+}
+
+.feature-card-content {
+  padding: 24px 28px 28px;
 }
 
 .feature-card h2,
@@ -780,6 +804,14 @@ a {
 .admin-stat-card span {
   margin: 0;
   color: var(--muted);
+}
+
+.feature-card-content h2 {
+  margin: 0 0 10px;
+}
+
+.feature-card-content p {
+  margin: 0;
 }
 
 .card-symbol {
@@ -2514,21 +2546,7 @@ a {
   gap: 12px;
 }
 
-.rag-chat-header-profile img {
-  width: 48px;
-  height: 48px;
-  flex: 0 0 auto;
-  border: 2px solid rgba(45, 75, 62, 0.14);
-  border-radius: 50%;
-  object-fit: cover;
-  background: var(--surface);
-  box-shadow: 0 10px 22px rgba(45, 75, 62, 0.12);
-  transform: scale(1.22);
-  transform-origin: center;
-}
-
-.rag-chat-header-profile span,
-.rag-chat-subtitle span {
+.rag-chat-header-profile span {
   display: inline-grid;
   width: fit-content;
   min-width: 34px;
@@ -2541,19 +2559,17 @@ a {
 }
 
 .rag-chat-header h2,
-.rag-chat-header p,
-.rag-chat-subtitle h2,
-.rag-chat-subtitle p {
+.rag-chat-header p {
   margin: 0;
 }
 
 .rag-chat-header h2 {
+  margin-top: 8px;
   font-family: var(--serif);
   font-size: 22px;
 }
 
-.rag-chat-header p,
-.rag-chat-subtitle p {
+.rag-chat-header p {
   color: var(--muted);
   font-size: 13px;
 }
@@ -2566,20 +2582,6 @@ a {
   background: var(--surface);
   cursor: pointer;
   font-weight: 800;
-}
-
-.rag-chat-subtitle {
-  display: grid;
-  gap: 8px;
-  border-bottom: 1px solid var(--line);
-  padding: 14px 18px;
-  background: rgba(246, 243, 242, 0.46);
-}
-
-.rag-chat-subtitle h2 {
-  margin-top: 8px;
-  font-family: var(--serif);
-  font-size: 20px;
 }
 
 .rag-chat-messages {
@@ -3458,10 +3460,6 @@ a {
   line-height: 1.25;
 }
 
-.feature-card-content h2 {
-  margin: 0 0 10px;
-}
-
 .admin-quality-metric-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -3816,10 +3814,6 @@ a {
 .auth-required-modal p {
   margin: 0 0 22px;
   color: var(--muted);
-}
-
-.feature-card-content p {
-  margin: 0;
 }
 
 .mypage {
@@ -4351,6 +4345,22 @@ a {
 
   .rag-chat-form {
     grid-template-columns: 1fr;
+  }
+
+  .feature-card {
+    min-height: auto;
+  }
+
+  .feature-card-image {
+    aspect-ratio: 16 / 11;
+  }
+
+  .feature-card-image img {
+    padding: 12px;
+  }
+
+  .feature-card-content {
+    padding: 20px;
   }
 
   .mypage-section-heading,
