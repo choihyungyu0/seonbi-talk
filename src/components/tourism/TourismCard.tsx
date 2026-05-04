@@ -63,7 +63,7 @@ export function TourismCard({
         </dl>
         {recommendationReason && (
           <div className="tourism-recommendation-reason">
-            <span>추천 이유</span>
+            <span>AI 추천 이유</span>
             <p>{recommendationReason}</p>
           </div>
         )}

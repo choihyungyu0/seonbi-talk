@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AppLayout } from '../components/layout/AppLayout'
 import { StatusBadge } from '../components/common/StatusBadge'
+import { CommonButton } from '../components/common/CommonButton'
 import { ProtectedFeaturePrompt } from '../components/common/ProtectedFeaturePrompt'
 import { TourismCard } from '../components/tourism/TourismCard'
 import { CourseMap } from '../components/tourism/CourseMap'
@@ -73,6 +74,12 @@ interface TourismDetailState {
   message?: string
 }
 
+interface AiItinerary {
+  summary: string
+  steps: string[]
+  closingMessage: string
+}
+
 export function CoursePage() {
   const testResult = useMemo(() => loadTestResult(), [])
   const detailRequestIdRef = useRef(0)
@@ -95,6 +102,7 @@ export function CoursePage() {
   )
   const [favoriteMessage, setFavoriteMessage] = useState('')
   const [mindTags, setMindTags] = useState<CourseMindTags | null>(null)
+  const [aiItinerary, setAiItinerary] = useState<AiItinerary | null>(null)
   const [detailState, setDetailState] = useState<TourismDetailState>({
     status: 'idle',
   })
@@ -368,6 +376,10 @@ export function CoursePage() {
     }
   }
 
+  function handleCreateAiItinerary() {
+    setAiItinerary(createAiItinerary(routeItems, mindTagFlow, activeFilterLabel))
+  }
+
   return (
     <AppLayout>
       <section className="page-section page-container">
@@ -425,6 +437,43 @@ export function CoursePage() {
               )
             })}
           </div>
+        </section>
+
+        <section className="surface-card course-ai-panel" aria-labelledby="course-ai-title">
+          <div>
+            <StatusBadge>AI 추천</StatusBadge>
+            <h2 id="course-ai-title">AI 추천 기준</h2>
+            <p>
+              {mindTagFlow
+                ? `최근 읽어낸 마음인 '${mindTagFlow}'을 반영해 추천 순서를 조정했습니다.`
+                : '선비유형과 관광 공공데이터를 기준으로 추천합니다.'}
+            </p>
+          </div>
+          <div className="course-ai-itinerary">
+            <div>
+              <h3>AI 선비길 일정</h3>
+              <p>추천 장소 3곳을 바탕으로 오늘의 여행 흐름을 만들어드립니다.</p>
+            </div>
+            <CommonButton
+              type="button"
+              variant="primary"
+              disabled={routeItems.length === 0}
+              onClick={handleCreateAiItinerary}
+            >
+              AI 일정 만들기
+            </CommonButton>
+          </div>
+          {aiItinerary && (
+            <div className="course-ai-itinerary-result" aria-live="polite">
+              <strong>{aiItinerary.summary}</strong>
+              <ol>
+                {aiItinerary.steps.map((step) => (
+                  <li key={step}>{step}</li>
+                ))}
+              </ol>
+              <p>{aiItinerary.closingMessage}</p>
+            </div>
+          )}
         </section>
 
         {favoriteMessage && (
@@ -638,6 +687,34 @@ function getHaversineDistance(from: RouteCoordinate, to: RouteCoordinate) {
 
 function toRadians(value: number) {
   return (value * Math.PI) / 180
+}
+
+function createAiItinerary(
+  items: TourismContent[],
+  mindTagFlow: string,
+  filterLabel: string,
+): AiItinerary {
+  const itineraryItems = items.slice(0, 3)
+  if (itineraryItems.length === 0) {
+    return {
+      summary: '추천 장소가 준비되면 AI 선비길 일정을 만들 수 있습니다.',
+      steps: ['관광 데이터를 불러온 뒤 다시 시도해주세요.'],
+      closingMessage: '현재는 카드 목록을 먼저 확인해보세요.',
+    }
+  }
+
+  return {
+    summary: mindTagFlow
+      ? `최근 마음 흐름 '${mindTagFlow}'에 맞춘 ${filterLabel} 일정입니다.`
+      : `선비유형과 현재 선택한 ${filterLabel} 정보를 바탕으로 만든 일정입니다.`,
+    steps: itineraryItems.map((item, index) => {
+      const title = item.title ?? '영주 추천 장소'
+      if (index === 0) return `${title}에서 오늘의 여행을 차분히 시작합니다.`
+      if (index === 1) return `${title}로 이동해 영주의 분위기를 이어서 살펴봅니다.`
+      return `${title}에서 여정을 정리하며 마무리합니다.`
+    }),
+    closingMessage: '정확한 이동 시간은 지도와 현장 상황을 함께 확인해주세요.',
+  }
 }
 
 interface TourismEmptyStateProps {

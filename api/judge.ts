@@ -45,6 +45,13 @@ interface JudgeResult {
   modernTranslation: string
   shareText: string
   imageObservation?: string
+  analysis?: JudgeAnalysis
+}
+
+interface JudgeAnalysis {
+  emotionTag?: string
+  situationTag?: string
+  adviceTag?: string
 }
 
 interface JudgeRequestBody {
@@ -193,12 +200,14 @@ export default async function handler(
               '반드시 JSON 객체만 반환한다.',
               '필드는 seonbiAdvice, modernTranslation, shareText를 반드시 사용한다.',
               '사진이 있으면 imageObservation 필드를 추가할 수 있다.',
+              '가능하면 analysis 객체를 추가하고 emotionTag, situationTag, adviceTag에는 짧은 한국어 태그만 넣는다.',
+              'analysis 태그는 사용자 원문을 복사하지 말고 감정, 상황, 조언 방향을 비식별 단어로만 요약한다.',
               'JSON key 이름은 seonbiAdvice, modernTranslation, shareText를 유지하되 모든 value는 반드시 한국어로만 작성한다.',
               '영어, 로마자 문장, 영어 번역문을 출력하지 않는다.',
               'modernTranslation은 영어 번역이 아니라 쉬운 현대 한국어 풀이이다.',
               '사용자가 영어로 입력해도 seonbiAdvice, modernTranslation, shareText, imageObservation은 모두 한국어로 작성한다.',
               'shareText도 한국어로만 작성한다.',
-              '반환 형식 예시: {"seonbiAdvice":"선비 말투의 한국어 조언","modernTranslation":"쉬운 현대 한국어 풀이","shareText":"공유용 한국어 문구"}',
+              '반환 형식 예시: {"seonbiAdvice":"선비 말투의 한국어 조언","modernTranslation":"쉬운 현대 한국어 풀이","shareText":"공유용 한국어 문구","analysis":{"emotionTag":"걱정","situationTag":"진로","adviceTag":"실천"}}',
               getSeonbiTypePrompt(seonbiType),
               getJudgeModePrompt(judgeMode),
               ragContext.promptContext,
@@ -563,10 +572,34 @@ function parseJudgeResult(content: string | undefined): JudgeResult | undefined 
         typeof parsed.imageObservation === 'string'
           ? parsed.imageObservation
           : undefined,
+      analysis: parseJudgeAnalysis(parsed.analysis),
     }
   } catch {
     return undefined
   }
+}
+
+function parseJudgeAnalysis(value: unknown): JudgeAnalysis | undefined {
+  if (!value || typeof value !== 'object') return undefined
+  const analysis = value as Record<string, unknown>
+  const parsedAnalysis = {
+    emotionTag: sanitizeAnalysisTag(analysis.emotionTag),
+    situationTag: sanitizeAnalysisTag(analysis.situationTag),
+    adviceTag: sanitizeAnalysisTag(analysis.adviceTag),
+  }
+
+  return parsedAnalysis.emotionTag ||
+    parsedAnalysis.situationTag ||
+    parsedAnalysis.adviceTag
+    ? parsedAnalysis
+    : undefined
+}
+
+function sanitizeAnalysisTag(value: unknown) {
+  if (typeof value !== 'string') return undefined
+  const tag = value.replace(/\s+/g, ' ').trim().slice(0, 12)
+  if (!tag || containsLikelyEnglishSentence(tag)) return undefined
+  return tag
 }
 
 function sanitizeJudgeResult(result: JudgeResult): JudgeResult {
@@ -581,6 +614,7 @@ function sanitizeJudgeResult(result: JudgeResult): JudgeResult {
       typeof result.imageObservation === 'string'
         ? sanitizeKoreanResultField(result.imageObservation, 'imageObservation')
         : undefined,
+    analysis: result.analysis,
   }
 }
 

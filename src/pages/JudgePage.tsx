@@ -15,6 +15,7 @@ import {
   judgeModeOptions,
 } from '../features/judge/judgeModes'
 import type {
+  JudgeAnalysis,
   JudgeMode,
   JudgeRagReference,
   JudgeResult,
@@ -70,6 +71,7 @@ function JudgePageContent({ testResult, typeInfo }: JudgePageContentProps) {
   const seonbiImageAlt = getSeonbiVisualImageAlt(typeInfo.name, judgeMode)
   const hasSeonbiImageError = failedSeonbiImageSrc === seonbiImageSrc
   const modeDescription = selectedModeOption.description
+  const analysisTags = getAnalysisTags(result?.analysis)
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -336,10 +338,25 @@ function JudgePageContent({ testResult, typeInfo }: JudgePageContentProps) {
               )}
               <h3>현대어 해석</h3>
               <p>{result.modernTranslation}</p>
+              {analysisTags.length > 0 && (
+                <div className="judge-ai-analysis">
+                  <div>
+                    <StatusBadge>AI 분석</StatusBadge>
+                    <h3>AI가 읽어낸 마음</h3>
+                    <p>입력한 문장에서 감정과 상황을 비식별 태그로 분석했습니다.</p>
+                  </div>
+                  <ul aria-label="AI가 읽어낸 마음 태그">
+                    {analysisTags.map((tag) => (
+                      <li key={tag}>{tag}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
               {ragReferences.length > 0 && (
                 <div className="judge-rag-references">
-                  <h3>함께 참고한 영주 이야기</h3>
-                  <ul aria-label="함께 참고한 영주 이야기">
+                  <h3>AI가 함께 참고한 영주 이야기</h3>
+                  <p>영주 관광 데이터와 선비 설정을 참고해 한마디를 구성했습니다.</p>
+                  <ul aria-label="AI가 함께 참고한 영주 이야기">
                     {ragReferences.map((reference) => (
                       <li
                         key={`${reference.sourceType}:${reference.sourceId}`}
@@ -390,6 +407,12 @@ function JudgePageContent({ testResult, typeInfo }: JudgePageContentProps) {
       </section>
     </AppLayout>
   )
+}
+
+function getAnalysisTags(analysis: JudgeAnalysis | undefined) {
+  return [analysis?.emotionTag, analysis?.situationTag, analysis?.adviceTag]
+    .map((tag) => tag?.trim())
+    .filter((tag): tag is string => Boolean(tag))
 }
 
 async function resizeImageFile(file: File) {

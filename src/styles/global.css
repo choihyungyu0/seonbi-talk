@@ -918,6 +918,74 @@ a {
   box-shadow: 0 10px 24px rgba(45, 75, 62, 0.18);
 }
 
+.course-ai-panel {
+  display: grid;
+  gap: 18px;
+  margin: 0 0 28px;
+  padding: 22px;
+  background:
+    linear-gradient(135deg, rgba(200, 234, 216, 0.32), transparent 52%),
+    var(--surface);
+}
+
+.course-ai-panel h2,
+.course-ai-panel h3,
+.course-ai-panel p {
+  margin: 0;
+}
+
+.course-ai-panel h2 {
+  margin-top: 12px;
+  font-family: var(--serif);
+  font-size: clamp(24px, 4vw, 34px);
+}
+
+.course-ai-panel p {
+  color: var(--muted);
+}
+
+.course-ai-itinerary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border: 1px solid rgba(45, 75, 62, 0.12);
+  border-radius: 16px;
+  padding: 16px;
+  background: rgba(255, 253, 249, 0.72);
+}
+
+.course-ai-itinerary h3 {
+  font-family: var(--serif);
+  font-size: 22px;
+}
+
+.course-ai-itinerary-result {
+  display: grid;
+  gap: 12px;
+  border-left: 4px solid var(--forest);
+  border-radius: 14px;
+  padding: 16px;
+  background: rgba(200, 234, 216, 0.28);
+}
+
+.course-ai-itinerary-result strong {
+  color: var(--forest-dark);
+}
+
+.course-ai-itinerary-result ol {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding-left: 22px;
+}
+
+.course-ai-itinerary-result li {
+  color: var(--ink-soft);
+  font-weight: 800;
+  line-height: 1.55;
+}
+
 .inline-actions,
 .page-actions,
 .modal-actions,
@@ -2126,7 +2194,54 @@ a {
 }
 
 .judge-rag-references {
+  display: grid;
+  gap: 10px;
   margin-top: 18px;
+  border: 1px solid rgba(45, 75, 62, 0.1);
+  border-radius: 16px;
+  padding: 16px;
+  background: rgba(255, 253, 249, 0.72);
+}
+
+.judge-ai-analysis {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+  border: 1px solid rgba(45, 75, 62, 0.12);
+  border-radius: 16px;
+  padding: 16px;
+  background: rgba(200, 234, 216, 0.28);
+}
+
+.judge-ai-analysis h3,
+.judge-ai-analysis p,
+.judge-rag-references h3,
+.judge-rag-references p {
+  margin: 0;
+}
+
+.judge-ai-analysis h3,
+.judge-rag-references h3 {
+  margin-top: 8px;
+}
+
+.judge-ai-analysis ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.judge-ai-analysis li {
+  border-radius: 999px;
+  padding: 7px 12px;
+  color: var(--forest-dark);
+  background: var(--mint);
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1.2;
 }
 
 .judge-rag-references ul {
@@ -3506,8 +3621,13 @@ a {
   .page-actions,
   .modal-actions,
   .auth-links,
-  .course-category-tabs {
+  .course-category-tabs,
+  .course-ai-itinerary {
     align-items: stretch;
+  }
+
+  .course-ai-itinerary {
+    display: grid;
   }
 
   .admin-summary-card {

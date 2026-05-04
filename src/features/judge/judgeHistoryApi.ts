@@ -48,6 +48,9 @@ export async function saveJudgeHistory(input: SaveJudgeHistoryInput) {
     judge_mode: input.judgeMode,
     has_image: input.hasImage,
     has_text: input.hasText,
+    emotion_tag: input.result.analysis?.emotionTag,
+    situation_tag: input.result.analysis?.situationTag,
+    advice_tag: input.result.analysis?.adviceTag,
   }
 
   try {

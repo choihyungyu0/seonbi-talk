@@ -16,6 +16,13 @@ export interface JudgeResult {
   modernTranslation: string
   shareText: string
   imageObservation?: string
+  analysis?: JudgeAnalysis
+}
+
+export interface JudgeAnalysis {
+  emotionTag?: string
+  situationTag?: string
+  adviceTag?: string
 }
 
 export interface JudgeRagReference {
