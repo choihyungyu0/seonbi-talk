@@ -8,6 +8,7 @@ import { seonbiTypeInfo } from '../data/seonbiTypes'
 import { trackEvent } from '../features/analytics/trackEvent'
 import { requestSeonbiAdvice } from '../features/judge/judgeApi'
 import { saveJudgeHistory } from '../features/judge/judgeHistoryApi'
+import { saveLatestMindTags } from '../features/judge/latestMindTagsStorage'
 import {
   getJudgeModeOption,
   getSeonbiVisualImageAlt,
@@ -108,6 +109,7 @@ function JudgePageContent({ testResult, typeInfo }: JudgePageContentProps) {
     }
 
     setResult(response.result)
+    saveLatestMindTags(response.result.analysis)
     setRagReferences((response.ragReferences ?? []).slice(0, 3))
     void saveJudgeHistory({
       seonbiType: testResult.type,

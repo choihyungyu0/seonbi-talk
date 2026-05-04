@@ -22,6 +22,7 @@ import {
 } from '../features/favorites/favoriteApi'
 import { getStoredAuthUser } from '../features/auth/authApi'
 import { getRecentJudgeMindTags } from '../features/judge/judgeHistoryApi'
+import { loadLatestMindTags } from '../features/judge/latestMindTagsStorage'
 import {
   createTourismRecommendationReason,
   formatMindTagFlow,
@@ -165,15 +166,14 @@ export function CoursePage() {
   }, [])
 
   useEffect(() => {
-    if (!getStoredAuthUser()) {
-      return
-    }
-
     let ignore = false
 
     async function loadMindTags() {
-      const tags = await getRecentJudgeMindTags(5)
-      if (!ignore) setMindTags(tags)
+      const localMindTags = loadLatestMindTags()
+      const remoteMindTags = getStoredAuthUser()
+        ? await getRecentJudgeMindTags(5)
+        : null
+      if (!ignore) setMindTags(remoteMindTags ?? localMindTags)
     }
 
     void loadMindTags()
@@ -402,7 +402,7 @@ export function CoursePage() {
         <div className="course-mind-tag-note" aria-label="추천 기준">
           {mindTagFlow ? (
             <>
-              <span>최근 읽어낸 마음</span>
+              <span>마음 태그 반영</span>
               <strong>{mindTagFlow}</strong>
             </>
           ) : (
