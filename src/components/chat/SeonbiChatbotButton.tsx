@@ -20,7 +20,9 @@ export function SeonbiChatbotButton({
       <span className="seonbi-chatbot-button__bubble" aria-hidden="true">
         영주 여행이 궁금하신가요?
       </span>
-      <img src={seonbiAiAvatar} alt="영주 선비 AI 챗봇" />
+      <span className="seonbi-chatbot-button__avatar">
+        <img src={seonbiAiAvatar} alt="영주 선비 AI 챗봇" />
+      </span>
       <span className="seonbi-chatbot-button__name" aria-hidden="true">
         선비 AI
       </span>
