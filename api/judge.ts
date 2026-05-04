@@ -68,6 +68,19 @@ const defaultModel = 'gpt-4o-mini'
 const maxInputLength = 600
 const maxImageDataUrlLength = 1_200_000
 const allowedImageMimeTypes = ['image/jpeg', 'image/png', 'image/webp']
+const ragSourceTypePriority: Record<RagSourceType, number> = {
+  tourism_place: 0,
+  seonbi_persona: 1,
+  judge_mode: 2,
+  recommendation_rule: 3,
+}
+const koreanFallbackResult: JudgeResult = {
+  seonbiAdvice:
+    '잠시 숨을 고르고 오늘의 마음을 차분히 살펴보시게. 작은 실천 하나가 길을 바르게 열어줄 것이네.',
+  modernTranslation: '오늘의 마음을 차분히 살피고, 작은 실천부터 시작해보세요.',
+  shareText: '오늘도 마음을 바르게 세우고 한 걸음씩 나아가보세요.',
+  imageObservation: '사진의 분위기는 차분히 살피되, 오늘 할 수 있는 작은 행동에 집중해보세요.',
+}
 const seonbiTypePrompts: Record<SeonbiType, string> = {
   toegye:
     '사용자의 선비유형은 퇴계형이다. 학문, 원칙, 성찰, 내면 수양을 중시하는 말투와 가치관을 담아 답한다.',
@@ -180,7 +193,12 @@ export default async function handler(
               '반드시 JSON 객체만 반환한다.',
               '필드는 seonbiAdvice, modernTranslation, shareText를 반드시 사용한다.',
               '사진이 있으면 imageObservation 필드를 추가할 수 있다.',
-              '각 필드는 한국어 문자열이어야 한다.',
+              'JSON key 이름은 seonbiAdvice, modernTranslation, shareText를 유지하되 모든 value는 반드시 한국어로만 작성한다.',
+              '영어, 로마자 문장, 영어 번역문을 출력하지 않는다.',
+              'modernTranslation은 영어 번역이 아니라 쉬운 현대 한국어 풀이이다.',
+              '사용자가 영어로 입력해도 seonbiAdvice, modernTranslation, shareText, imageObservation은 모두 한국어로 작성한다.',
+              'shareText도 한국어로만 작성한다.',
+              '반환 형식 예시: {"seonbiAdvice":"선비 말투의 한국어 조언","modernTranslation":"쉬운 현대 한국어 풀이","shareText":"공유용 한국어 문구"}',
               getSeonbiTypePrompt(seonbiType),
               getJudgeModePrompt(judgeMode),
               ragContext.promptContext,
@@ -214,9 +232,9 @@ export default async function handler(
 
     const data = (await openAiResponse.json()) as OpenAiChatResponse
     const content = data.choices?.[0]?.message?.content
-    const result = parseJudgeResult(content)
+    const parsedResult = parseJudgeResult(content)
 
-    if (!result) {
+    if (!parsedResult) {
       console.warn('[judge] OpenAI response parse failed', {
         hasContent: Boolean(content),
         contentPreview: content?.slice(0, 200) || '',
@@ -229,6 +247,8 @@ export default async function handler(
       )
       return
     }
+
+    const result = sanitizeJudgeResult(parsedResult)
 
     response.status(200).json({
       ok: true,
@@ -276,7 +296,7 @@ async function createRagContext(
       }
     }
 
-    const references = safeDocuments.flatMap(toJudgeRagReference).slice(0, 3)
+    const references = createJudgeRagReferences(safeDocuments)
 
     return {
       promptContext: [
@@ -299,20 +319,55 @@ async function createRagContext(
   }
 }
 
-function toJudgeRagReference(document: {
-  title: string
-  source_id?: string
-  source_type?: RagSourceType
-}): JudgeRagReference[] {
-  if (!document.title || !document.source_id || !document.source_type) return []
+function createJudgeRagReferences(
+  documents: Array<{
+    title: string
+    source_id?: string
+    source_type?: RagSourceType
+  }>,
+): JudgeRagReference[] {
+  const seenReferenceKeys = new Set<string>()
+  const seenTitles = new Set<string>()
+  const references: JudgeRagReference[] = []
 
-  return [
-    {
+  const sortedDocuments = [...documents].sort(
+    (first, second) =>
+      getRagSourceTypePriority(first.source_type) -
+      getRagSourceTypePriority(second.source_type),
+  )
+
+  for (const document of sortedDocuments) {
+    if (!document.title || !document.source_id || !document.source_type) continue
+
+    const normalizedTitle = normalizeReferenceKey(document.title)
+    const referenceKey = [
+      normalizedTitle,
+      document.source_type,
+      normalizeReferenceKey(document.source_id),
+    ].join(':')
+
+    if (seenTitles.has(normalizedTitle) || seenReferenceKeys.has(referenceKey)) continue
+
+    seenTitles.add(normalizedTitle)
+    seenReferenceKeys.add(referenceKey)
+    references.push({
       title: document.title,
       sourceType: document.source_type,
       sourceId: document.source_id,
-    },
-  ]
+    })
+
+    if (references.length >= 3) break
+  }
+
+  return references
+}
+
+function normalizeReferenceKey(value: string) {
+  return value.replace(/\s+/g, ' ').trim().toLowerCase()
+}
+
+function getRagSourceTypePriority(sourceType: RagSourceType | undefined) {
+  return sourceType ? ragSourceTypePriority[sourceType] : Number.MAX_SAFE_INTEGER
 }
 
 function summarizeRagContent(content: string) {
@@ -512,6 +567,44 @@ function parseJudgeResult(content: string | undefined): JudgeResult | undefined 
   } catch {
     return undefined
   }
+}
+
+function sanitizeJudgeResult(result: JudgeResult): JudgeResult {
+  return {
+    seonbiAdvice: sanitizeKoreanResultField(result.seonbiAdvice, 'seonbiAdvice'),
+    modernTranslation: sanitizeKoreanResultField(
+      result.modernTranslation,
+      'modernTranslation',
+    ),
+    shareText: sanitizeKoreanResultField(result.shareText, 'shareText'),
+    imageObservation:
+      typeof result.imageObservation === 'string'
+        ? sanitizeKoreanResultField(result.imageObservation, 'imageObservation')
+        : undefined,
+  }
+}
+
+function sanitizeKoreanResultField(
+  value: string,
+  field: keyof JudgeResult,
+): string {
+  const trimmedValue = value.trim()
+  if (!trimmedValue || containsLikelyEnglishSentence(trimmedValue)) {
+    return koreanFallbackResult[field] ?? koreanFallbackResult.modernTranslation
+  }
+
+  return trimmedValue
+}
+
+function containsLikelyEnglishSentence(value: string) {
+  const alphabetWords = value.match(/[A-Za-z]{3,}/g) ?? []
+  if (alphabetWords.length >= 2) return true
+
+  const compactValue = value.replace(/\s+/g, '')
+  if (!compactValue) return false
+
+  const alphabetCount = (compactValue.match(/[A-Za-z]/g) ?? []).length
+  return alphabetCount >= 8 && alphabetCount / compactValue.length >= 0.22
 }
 
 function createImageFallbackResponse(
