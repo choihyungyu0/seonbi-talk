@@ -1,6 +1,12 @@
 import type { SeonbiType } from '../seonbi-test/types'
 import type { RecommendedCourse, TourismContent } from './tourismTypes'
 
+export interface CourseMindTags {
+  emotionTag?: string
+  situationTag?: string
+  adviceTag?: string
+}
+
 const keywordsByType: Record<SeonbiType, string[]> = {
   toegye: ['서원', '문화유산', '학문', '전통', '조용한'],
   yulgok: ['체험', '시장', '실용', '가족', '도시'],
@@ -20,6 +26,7 @@ const recommendationLimit = 6
 export function recommendCourseForSeonbiType(
   seonbiType: SeonbiType,
   contents: TourismContent[],
+  mindTags?: CourseMindTags | null,
 ): RecommendedCourse {
   if (contents.length === 0) {
     return {
@@ -37,12 +44,13 @@ export function recommendCourseForSeonbiType(
       const contentTypeScore = content.contentTypeId
         ? contentTypeWeights[content.contentTypeId] ?? 0
         : 0
+      const mindTagScore = scoreTourismContentByMindTags(content, mindTags)
 
       return {
         content,
         index,
-        keywordScore,
-        contentTypeScore,
+        totalScore: keywordScore + contentTypeScore + mindTagScore,
+        mindTagScore,
         hasImage: Boolean(content.firstImage || content.firstImage2),
         hasCoordinates: content.mapX !== undefined && content.mapY !== undefined,
         hasAddress: Boolean(content.address),
@@ -50,8 +58,8 @@ export function recommendCourseForSeonbiType(
     })
     .sort((a, b) => {
       return (
-        b.keywordScore - a.keywordScore ||
-        b.contentTypeScore - a.contentTypeScore ||
+        b.totalScore - a.totalScore ||
+        b.mindTagScore - a.mindTagScore ||
         Number(b.hasImage) - Number(a.hasImage) ||
         Number(b.hasCoordinates) - Number(a.hasCoordinates) ||
         Number(b.hasAddress) - Number(a.hasAddress) ||
@@ -70,7 +78,12 @@ export function recommendCourseForSeonbiType(
 export function createTourismRecommendationReason(
   seonbiType: SeonbiType | undefined,
   content: TourismContent,
+  mindTags?: CourseMindTags | null,
 ) {
+  if (hasMindTags(mindTags)) {
+    return createMindTagRecommendationReason(content, mindTags)
+  }
+
   if (isRestaurant(content)) {
     return '여행 중 잠시 쉬어가며 지역의 맛을 경험하기 좋은 장소입니다.'
   }
@@ -111,6 +124,89 @@ function scoreTourismContent(content: TourismContent, keywords: string[]) {
   return keywords.reduce((score, keyword) => {
     return searchableText.includes(keyword) ? score + 1 : score
   }, 0)
+}
+
+function scoreTourismContentByMindTags(
+  content: TourismContent,
+  mindTags: CourseMindTags | null | undefined,
+) {
+  if (!hasMindTags(mindTags)) return 0
+
+  const emotionTag = mindTags.emotionTag ?? ''
+  const situationTag = mindTags.situationTag ?? ''
+  const adviceTag = mindTags.adviceTag ?? ''
+  const searchableText = getContentSearchableText(content)
+  let score = 0
+
+  if (
+    hasAnyTagValue(emotionTag, ['걱정', '막막함', '막막', '불안']) &&
+    (isCultureOrHistoryContent(content) ||
+      searchableText.includes('소수서원') ||
+      searchableText.includes('부석사'))
+  ) {
+    score += 8
+  }
+
+  if (
+    hasAnyTagValue(situationTag, ['진로', '학업', '공부']) &&
+    (searchableText.includes('소수서원') ||
+      searchableText.includes('선비세상') ||
+      searchableText.includes('서원'))
+  ) {
+    score += 8
+  }
+
+  if (
+    (hasAnyTagValue(emotionTag, ['피로', '평온', '지침']) ||
+      hasAnyTagValue(situationTag, ['휴식', '쉼'])) &&
+    (isAccommodation(content) ||
+      isNatureOrVillageContent(content) ||
+      searchableText.includes('무섬마을'))
+  ) {
+    score += 8
+  }
+
+  if (
+    hasAnyTagValue(adviceTag, ['실천', '행동']) &&
+    (content.contentTypeId === '12' ||
+      searchableText.includes('선비세상') ||
+      searchableText.includes('체험'))
+  ) {
+    score += 6
+  }
+
+  if (
+    hasAnyTagValue(adviceTag, ['응원', '칭찬', '격려']) &&
+    (isRestaurant(content) || searchableText.includes('풍기인삼시장'))
+  ) {
+    score += 5
+  }
+
+  return score
+}
+
+function createMindTagRecommendationReason(
+  content: TourismContent,
+  mindTags: CourseMindTags,
+) {
+  const tagFlow = formatMindTagFlow(mindTags)
+  if (isRestaurant(content)) {
+    return `최근 읽어낸 마음인 '${tagFlow}' 흐름에 맞춰 쉬어가며 기운을 채우기 좋은 장소입니다.`
+  }
+
+  if (isAccommodation(content)) {
+    return `최근 읽어낸 마음인 '${tagFlow}' 흐름에 맞춰 하루를 차분히 정리하기 좋은 머무름입니다.`
+  }
+
+  if (isNatureOrVillageContent(content)) {
+    return `최근 읽어낸 마음인 '${tagFlow}' 흐름에 맞춰 천천히 숨을 고르기 좋은 여행지입니다.`
+  }
+
+  if (isCultureOrHistoryContent(content)) {
+    return `최근 읽어낸 마음인 '${tagFlow}' 흐름에 맞춰 배움과 생각을 정리하기 좋은 장소입니다.`
+  }
+
+  return `최근 읽어낸 마음인 '${tagFlow}' 흐름에 맞춰 추천하는 영주 코스입니다.`
 }
 
 function createCategoryBasedRecommendationReason(content: TourismContent) {
@@ -156,5 +252,28 @@ function isNatureOrVillageContent(content: TourismContent) {
 }
 
 function getContentSearchableText(content: TourismContent) {
-  return [content.title, content.category, content.address].filter(Boolean).join(' ')
+  return [content.title, content.category, content.address, content.overview]
+    .filter(Boolean)
+    .join(' ')
+}
+
+export function formatMindTagFlow(mindTags: CourseMindTags | null | undefined) {
+  return [
+    mindTags?.emotionTag,
+    mindTags?.situationTag,
+    mindTags?.adviceTag,
+  ]
+    .map((tag) => tag?.trim())
+    .filter((tag): tag is string => Boolean(tag))
+    .join(' · ')
+}
+
+function hasMindTags(
+  mindTags: CourseMindTags | null | undefined,
+): mindTags is CourseMindTags {
+  return Boolean(mindTags?.emotionTag || mindTags?.situationTag || mindTags?.adviceTag)
+}
+
+function hasAnyTagValue(tag: string, candidates: string[]) {
+  return candidates.some((candidate) => tag.includes(candidate))
 }

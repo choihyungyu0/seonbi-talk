@@ -13,7 +13,16 @@ export interface JudgeHistory {
   judge_mode?: JudgeMode
   has_image: boolean
   has_text: boolean
+  emotion_tag?: string | null
+  situation_tag?: string | null
+  advice_tag?: string | null
   created_at?: string
+}
+
+export interface JudgeMindTags {
+  emotionTag?: string
+  situationTag?: string
+  adviceTag?: string
 }
 
 export interface SaveJudgeHistoryInput {
@@ -87,6 +96,34 @@ export async function getRecentJudgeHistories(limit = 5) {
   return response ?? []
 }
 
+export async function getRecentJudgeMindTags(limit = 5): Promise<JudgeMindTags | null> {
+  const auth = getJudgeHistoryAuth()
+  if (!auth) return null
+
+  const url = createJudgeHistoryUrl()
+  url.searchParams.set('select', 'emotion_tag,situation_tag,advice_tag,created_at')
+  url.searchParams.set('user_id', `eq.${auth.userId}`)
+  url.searchParams.set('order', 'created_at.desc')
+  url.searchParams.set('limit', String(limit))
+
+  try {
+    const response = await requestJudgeHistories<
+      Array<{
+        emotion_tag?: string | null
+        situation_tag?: string | null
+        advice_tag?: string | null
+      }>
+    >(url, {
+      method: 'GET',
+      accessToken: auth.accessToken,
+    })
+
+    return summarizeJudgeMindTags(response ?? [])
+  } catch {
+    return null
+  }
+}
+
 export async function deleteJudgeHistory(historyId: string) {
   const auth = getJudgeHistoryAuth()
   if (!auth) throw new Error('로그인 후 삭제할 수 있습니다.')
@@ -123,7 +160,7 @@ async function requestJudgeHistories<T = unknown>(
   options: {
     method: 'GET' | 'POST' | 'DELETE'
     accessToken: string
-    body?: JudgeHistory
+    body?: Partial<JudgeHistory>
     prefer?: string
   },
 ) {
@@ -148,4 +185,41 @@ async function requestJudgeHistories<T = unknown>(
   }
 
   return (await response.json().catch(() => undefined)) as T | undefined
+}
+
+function summarizeJudgeMindTags(
+  rows: Array<{
+    emotion_tag?: string | null
+    situation_tag?: string | null
+    advice_tag?: string | null
+  }>,
+): JudgeMindTags | null {
+  const tags = {
+    emotionTag: getMostFrequentTag(rows.map((row) => row.emotion_tag)),
+    situationTag: getMostFrequentTag(rows.map((row) => row.situation_tag)),
+    adviceTag: getMostFrequentTag(rows.map((row) => row.advice_tag)),
+  }
+
+  return tags.emotionTag || tags.situationTag || tags.adviceTag ? tags : null
+}
+
+function getMostFrequentTag(values: Array<string | null | undefined>) {
+  const counts = new Map<string, { count: number; firstIndex: number }>()
+
+  values.forEach((value, index) => {
+    const tag = typeof value === 'string' ? value.trim() : ''
+    if (!tag) return
+
+    const current = counts.get(tag)
+    counts.set(tag, {
+      count: (current?.count ?? 0) + 1,
+      firstIndex: current?.firstIndex ?? index,
+    })
+  })
+
+  return Array.from(counts.entries())
+    .sort(
+      (first, second) =>
+        second[1].count - first[1].count || first[1].firstIndex - second[1].firstIndex,
+    )[0]?.[0]
 }

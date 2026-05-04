@@ -20,10 +20,13 @@ import {
   removeFavoriteCourse,
 } from '../features/favorites/favoriteApi'
 import { getStoredAuthUser } from '../features/auth/authApi'
+import { getRecentJudgeMindTags } from '../features/judge/judgeHistoryApi'
 import {
   createTourismRecommendationReason,
+  formatMindTagFlow,
   recommendCourseForSeonbiType,
 } from '../features/tourism/recommendation'
+import type { CourseMindTags } from '../features/tourism/recommendation'
 import type {
   TourismApiResponse,
   TourismContent,
@@ -91,6 +94,7 @@ export function CoursePage() {
     () => new Set(),
   )
   const [favoriteMessage, setFavoriteMessage] = useState('')
+  const [mindTags, setMindTags] = useState<CourseMindTags | null>(null)
   const [detailState, setDetailState] = useState<TourismDetailState>({
     status: 'idle',
   })
@@ -153,6 +157,25 @@ export function CoursePage() {
   }, [])
 
   useEffect(() => {
+    if (!getStoredAuthUser()) {
+      return
+    }
+
+    let ignore = false
+
+    async function loadMindTags() {
+      const tags = await getRecentJudgeMindTags(5)
+      if (!ignore) setMindTags(tags)
+    }
+
+    void loadMindTags()
+
+    return () => {
+      ignore = true
+    }
+  }, [])
+
+  useEffect(() => {
     if (!navigator.geolocation) {
       return
     }
@@ -179,9 +202,9 @@ export function CoursePage() {
 
   const recommendedCourse = useMemo(() => {
     return testResult
-      ? recommendCourseForSeonbiType(testResult.type, tourismState.contents)
+      ? recommendCourseForSeonbiType(testResult.type, tourismState.contents, mindTags)
       : null
-  }, [testResult, tourismState.contents])
+  }, [mindTags, testResult, tourismState.contents])
   const typeInfo = testResult ? seonbiTypeInfo[testResult.type] : null
   const recommendedItems = useMemo(() => recommendedCourse?.items ?? [], [recommendedCourse])
   const routeItems = useMemo(() => {
@@ -213,6 +236,7 @@ export function CoursePage() {
   const shouldShowCards = tourismState.status === 'ready' && tourismState.contents.length > 0
   const shouldShowAllCards = tourismState.status === 'ready' && tourismState.contents.length > 0
   const activeSeonbiType = testResult?.type
+  const mindTagFlow = formatMindTagFlow(mindTags)
 
   useEffect(() => {
     const requestId = routeRequestIdRef.current + 1
@@ -363,6 +387,20 @@ export function CoursePage() {
           ))}
         </div>
 
+        <div className="course-mind-tag-note" aria-label="추천 기준">
+          {mindTagFlow ? (
+            <>
+              <span>최근 읽어낸 마음</span>
+              <strong>{mindTagFlow}</strong>
+            </>
+          ) : (
+            <>
+              <span>추천 기준</span>
+              <strong>선비유형을 기준으로 추천하고 있습니다.</strong>
+            </>
+          )}
+        </div>
+
         <section className="surface-card course-category-panel" aria-labelledby="course-category-title">
           <div>
             <StatusBadge tone="brown">유형 선택</StatusBadge>
@@ -446,6 +484,7 @@ export function CoursePage() {
                       recommendationReason={createTourismRecommendationReason(
                         activeSeonbiType,
                         item,
+                        mindTags,
                       )}
                       onSelect={selectTourismItem}
                       onToggleFavorite={toggleFavoriteCourse}
@@ -471,6 +510,7 @@ export function CoursePage() {
                       recommendationReason={createTourismRecommendationReason(
                         activeSeonbiType,
                         item,
+                        mindTags,
                       )}
                       onSelect={selectTourismItem}
                       onToggleFavorite={toggleFavoriteCourse}

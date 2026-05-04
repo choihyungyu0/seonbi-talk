@@ -837,6 +837,33 @@ a {
   margin-bottom: 32px;
 }
 
+.course-mind-tag-note {
+  display: flex;
+  width: fit-content;
+  max-width: 100%;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: -12px auto 28px;
+  border: 1px solid rgba(45, 75, 62, 0.14);
+  border-radius: 999px;
+  padding: 8px 14px;
+  color: var(--forest);
+  background: rgba(200, 234, 216, 0.42);
+  text-align: center;
+}
+
+.course-mind-tag-note span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.course-mind-tag-note strong {
+  overflow-wrap: anywhere;
+  font-size: 14px;
+}
+
 .course-category-panel {
   display: grid;
   gap: 18px;
