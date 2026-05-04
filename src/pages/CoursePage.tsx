@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AppLayout } from '../components/layout/AppLayout'
+import { BrandLoading } from '../components/common/BrandLoading'
 import { StatusBadge } from '../components/common/StatusBadge'
 import { CommonButton } from '../components/common/CommonButton'
 import { ProtectedFeaturePrompt } from '../components/common/ProtectedFeaturePrompt'
@@ -489,6 +490,7 @@ export function CoursePage() {
               <TourismEmptyState
                 title="영주 관광 공공데이터를 불러오고 있습니다."
                 description="잠시만 기다려주세요. 불러오기가 길어지면 다른 유형을 선택해 다시 확인할 수 있습니다."
+                isLoading
               />
             )}
             {tourismState.status === 'missing-api-key' && (
@@ -720,12 +722,17 @@ function createAiItinerary(
 interface TourismEmptyStateProps {
   title: string
   description?: string
+  isLoading?: boolean
 }
 
-function TourismEmptyState({ title, description }: TourismEmptyStateProps) {
+function TourismEmptyState({ title, description, isLoading = false }: TourismEmptyStateProps) {
   return (
     <article className="surface-card tourism-empty-state">
-      <StatusBadge tone="neutral">공공데이터</StatusBadge>
+      {isLoading ? (
+        <BrandLoading message="영주 관광 데이터를 살피는 중입니다." />
+      ) : (
+        <StatusBadge tone="neutral">공공데이터</StatusBadge>
+      )}
       <h2>{title}</h2>
       <p>{description ?? '실제 공공데이터 안에서 표시할 수 있는 정보를 확인하고 있습니다.'}</p>
       <p>가짜 관광지 데이터는 사용하지 않으며, 사용 가능한 정보만 보여드립니다.</p>

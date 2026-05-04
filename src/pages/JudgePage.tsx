@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { ChangeEvent, FormEvent } from 'react'
 import { CommonButton } from '../components/common/CommonButton'
+import { BrandLoading } from '../components/common/BrandLoading'
 import { ProtectedFeaturePrompt } from '../components/common/ProtectedFeaturePrompt'
 import { StatusBadge } from '../components/common/StatusBadge'
 import { AppLayout } from '../components/layout/AppLayout'
@@ -294,9 +295,11 @@ function JudgePageContent({ testResult, typeInfo }: JudgePageContentProps) {
                 <small>JPG, PNG, WebP 지원 · 선택 사항</small>
               </label>
               {isProcessingImage && (
-                <p className="disabled-notice" role="status">
-                  이미지를 준비하고 있습니다.
-                </p>
+                <BrandLoading
+                  className="judge-inline-loading"
+                  message="이미지를 준비하고 있습니다."
+                  compact
+                />
               )}
               {imageDataUrl && (
                 <figure className="judge-image-preview">
@@ -325,6 +328,12 @@ function JudgePageContent({ testResult, typeInfo }: JudgePageContentProps) {
             >
               한마디 받아보기
             </CommonButton>
+            {isLoading && (
+              <BrandLoading
+                className="judge-inline-loading"
+                message="AI 선비가 답을 고르는 중입니다."
+              />
+            )}
           </form>
         </div>
         <section className="surface-card judge-result" aria-label="결과 영역">

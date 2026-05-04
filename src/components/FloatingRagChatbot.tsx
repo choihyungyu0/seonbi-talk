@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { BrandLoading } from './common/BrandLoading'
 import { loadLatestMindTags } from '../features/judge/latestMindTagsStorage'
 import { loadTestResult } from '../lib/storage'
 
@@ -153,7 +154,10 @@ export function FloatingRagChatbot() {
               </div>
             ))}
             {status === 'loading' && (
-              <p className="rag-chat-message">답변을 준비하고 있습니다.</p>
+              <div className="rag-chat-message rag-chat-loading-message">
+                <BrandLoading message="AI 선비가 답을 고르는 중입니다." compact />
+                <span>답변을 준비하고 있습니다.</span>
+              </div>
             )}
           </div>
 

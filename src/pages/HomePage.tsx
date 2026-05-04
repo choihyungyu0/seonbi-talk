@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { Link } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
 import { CommonButton } from '../components/common/CommonButton'
+import { BrandLoading } from '../components/common/BrandLoading'
 import { ImagePlaceholder } from '../components/common/ImagePlaceholder'
 import { StatusBadge } from '../components/common/StatusBadge'
 import { trackEvent } from '../features/analytics/trackEvent'
@@ -223,6 +224,7 @@ export function HomePage() {
               ) : (
                 <ImagePlaceholder
                   className="home-hero-image-placeholder"
+                  isLoading={isHeroImageLoading}
                   label={
                     isHeroImageLoading
                       ? '공공데이터 이미지를 불러오고 있습니다.'
@@ -317,6 +319,11 @@ export function HomePage() {
           ) : (
             <article className="surface-card home-path-card">
               <StatusBadge tone="neutral">선비길 안내</StatusBadge>
+              {isCultureImageLoading && (
+                <div className="home-card-loading">
+                  <BrandLoading message="영주 관광 데이터를 살피는 중입니다." compact />
+                </div>
+              )}
               <h3>문화시설 사진은 준비되는 대로 이어집니다</h3>
               <p>
                 {isCultureImageLoading

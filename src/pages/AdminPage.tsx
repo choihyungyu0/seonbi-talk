@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { BrandLoading } from '../components/common/BrandLoading'
 import { CommonButton } from '../components/common/CommonButton'
 import { StatusBadge } from '../components/common/StatusBadge'
 import { AppLayout } from '../components/layout/AppLayout'
@@ -343,22 +344,28 @@ export function AdminPage() {
 
         {isCheckingSession && (
           <article className="surface-card admin-auth-card" role="status">
-            <StatusBadge tone="neutral">확인 중</StatusBadge>
+            <BrandLoading message="관리자 세션을 확인하고 있습니다." />
             <h2>관리자 세션을 확인하고 있습니다.</h2>
             <p>잠시만 기다려주세요.</p>
           </article>
         )}
 
         {isAuthenticated && dashboardStatus === 'loading' && (
-          <section className="admin-dashboard-grid" role="status">
-            {Array.from({ length: 4 }).map((_, index) => (
-              <article className="surface-card admin-skeleton-card" key={index}>
-                <span />
-                <strong />
-                <small />
-              </article>
-            ))}
-          </section>
+          <>
+            <BrandLoading
+              className="admin-dashboard-loading"
+              message="영주 관광 데이터를 살피는 중입니다."
+            />
+            <section className="admin-dashboard-grid" role="status">
+              {Array.from({ length: 4 }).map((_, index) => (
+                <article className="surface-card admin-skeleton-card" key={index}>
+                  <span />
+                  <strong />
+                  <small />
+                </article>
+              ))}
+            </section>
+          </>
         )}
 
         {isAuthenticated && dashboardStatus === 'error' && (

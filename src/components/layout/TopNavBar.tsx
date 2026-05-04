@@ -8,6 +8,7 @@ import {
   type AuthUser,
 } from '../../features/auth/authApi'
 import { loadTestResult } from '../../lib/storage'
+import { BrandLogo } from '../brand/BrandLogo'
 
 const navItems = [
   { to: '/', label: '홈' },
@@ -42,7 +43,7 @@ export function TopNavBar() {
     <header className="top-nav">
       <Link className="brand-link" to="/">
         <span className="brand-mark" aria-hidden="true">
-          영
+          <BrandLogo decorative />
         </span>
         <span>
           <strong>영주선비길</strong>

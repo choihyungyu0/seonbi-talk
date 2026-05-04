@@ -1,3 +1,5 @@
+import { BrandLogo } from './brand/BrandLogo'
+
 const navItems = ['홈', '추천 코스', '선비 테스트', '선비 한마디']
 
 export function AppHeader() {
@@ -5,7 +7,7 @@ export function AppHeader() {
     <header className="site-header">
       <a className="brand" href="#top" aria-label="영주선비길 홈">
         <span className="brand-mark" aria-hidden="true">
-          영
+          <BrandLogo decorative />
         </span>
         <span>
           <strong>영주선비길</strong>
