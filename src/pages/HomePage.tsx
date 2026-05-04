@@ -15,28 +15,19 @@ import { getTourismPrimaryImageUrl } from '../features/tourism/tourismImageUrl'
 import type { TourismContent } from '../features/tourism/tourismTypes'
 import { useHeroMotion } from '../hooks/useHeroMotion'
 import { useRevealOnScroll } from '../hooks/useRevealOnScroll'
-import featureCourseRecommendImage from '../assets/feature-course-recommend.png'
-import featureSeonbiAdviceImage from '../assets/feature-seonbi-advice.png'
-import featureSeonbiTestImage from '../assets/feature-seonbi-test.png'
 
 const featureCards = [
   {
     title: '선비유형 테스트',
     description: '나의 성향을 네 가지 선비 유형 중 하나로 확인합니다.',
-    image: featureSeonbiTestImage,
-    imageAlt: '선비유형 테스트를 표현한 선비 캐릭터 이미지',
   },
   {
     title: '영주 관광 코스 추천',
     description: '공공데이터 기반으로 나에게 맞는 영주 코스를 확인합니다.',
-    image: featureCourseRecommendImage,
-    imageAlt: '영주 관광 코스 추천을 표현한 선비 캐릭터 이미지',
   },
   {
     title: '선비의 한마디',
     description: '문장이나 사진을 바탕으로 짧은 한국어 조언을 받습니다.',
-    image: featureSeonbiAdviceImage,
-    imageAlt: '선비의 한마디를 표현한 선비 캐릭터 이미지',
   },
 ]
 
@@ -270,18 +261,11 @@ export function HomePage() {
               key={card.title}
               style={{ '--reveal-delay': `${index * 140}ms` } as CSSProperties}
             >
-              <div className="feature-card-image">
-                <img
-                  src={card.image}
-                  alt={card.imageAlt}
-                  loading="lazy"
-                  decoding="async"
-                />
-              </div>
-              <div className="feature-card-content">
-                <h2>{card.title}</h2>
-                <p>{card.description}</p>
-              </div>
+              <span className="card-symbol" aria-hidden="true">
+                ✦
+              </span>
+              <h2>{card.title}</h2>
+              <p>{card.description}</p>
             </article>
           ))}
         </div>

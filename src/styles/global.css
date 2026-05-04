@@ -4355,16 +4355,6 @@ a {
     border-radius: 18px;
   }
 
-  .rag-chat-header-avatar {
-    width: 42px;
-    height: 42px;
-    flex-basis: 42px;
-  }
-
-  .rag-chat-header-avatar img {
-    transform: scale(1.22);
-  }
-
   .seonbi-chatbot-button {
     width: 60px;
     height: 60px;
@@ -4399,18 +4389,6 @@ a {
 
   .rag-chat-form {
     grid-template-columns: 1fr;
-  }
-
-  .feature-card {
-    min-height: auto;
-  }
-
-  .feature-card-image {
-    aspect-ratio: 16 / 11;
-  }
-
-  .feature-card-content {
-    padding: 20px;
   }
 
   .mypage-section-heading,

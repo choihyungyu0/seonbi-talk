@@ -111,9 +111,7 @@ export function FloatingRagChatbot() {
         <section className="rag-chat-panel" aria-label="선비길 AI 길잡이">
           <div className="rag-chat-header">
             <div className="rag-chat-header-profile">
-              <span className="rag-chat-header-avatar">
-                <img src={seonbiAiAvatar} alt="영주 선비 AI 챗봇" />
-              </span>
+              <img src={seonbiAiAvatar} alt="영주 선비 AI 챗봇" />
               <div>
                 <span>선비 AI</span>
                 <h2>영주 선비 AI</h2>
