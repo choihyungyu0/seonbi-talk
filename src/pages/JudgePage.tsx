@@ -171,6 +171,11 @@ function JudgePageContent({ testResult, typeInfo }: JudgePageContentProps) {
     setImageMimeType('')
   }
 
+  function handleJudgeModeChange(nextJudgeMode: JudgeMode) {
+    setFailedSeonbiImageSrc('')
+    setJudgeMode(nextJudgeMode)
+  }
+
   async function handleCopyShareText() {
     if (!result) return
 
@@ -227,6 +232,7 @@ function JudgePageContent({ testResult, typeInfo }: JudgePageContentProps) {
             </div>
             {!hasSeonbiImageError ? (
               <img
+                key={seonbiImageSrc}
                 src={seonbiImageSrc}
                 alt={seonbiImageAlt}
                 onError={() => setFailedSeonbiImageSrc(seonbiImageSrc)}
@@ -265,7 +271,7 @@ function JudgePageContent({ testResult, typeInfo }: JudgePageContentProps) {
                     className={option.id === judgeMode ? 'active' : ''}
                     aria-pressed={option.id === judgeMode}
                     title={option.description}
-                    onClick={() => setJudgeMode(option.id)}
+                    onClick={() => handleJudgeModeChange(option.id)}
                   >
                     {option.badge}
                   </button>
