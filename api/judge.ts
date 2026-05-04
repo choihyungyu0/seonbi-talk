@@ -1,5 +1,6 @@
 /* global process */
 import { searchRagDocuments } from './_rag.js'
+import type { RagSourceType } from './_rag.js'
 
 type JudgeEmptyReason = 'missing_api_key' | 'invalid_input' | 'api_error'
 type SeonbiType = 'toegye' | 'yulgok' | 'cheosa' | 'uguk'
@@ -28,8 +29,15 @@ interface VercelResponseLike {
 interface JudgeProxyResponse {
   ok: boolean
   result?: JudgeResult
+  ragReferences?: JudgeRagReference[]
   emptyReason?: JudgeEmptyReason
   message?: string
+}
+
+interface JudgeRagReference {
+  title: string
+  sourceType: RagSourceType
+  sourceId: string
 }
 
 interface JudgeResult {
@@ -141,7 +149,12 @@ export default async function handler(
   }
 
   try {
-    const ragContext = await createRagContext(inputText, seonbiType, judgeMode, Boolean(imageInput?.dataUrl))
+    const ragContext = await createRagContext(
+      inputText,
+      seonbiType,
+      judgeMode,
+      Boolean(imageInput?.dataUrl),
+    )
     const openAiResponse = await fetch(openAiChatCompletionsUrl, {
       method: 'POST',
       headers: {
@@ -170,7 +183,7 @@ export default async function handler(
               '각 필드는 한국어 문자열이어야 한다.',
               getSeonbiTypePrompt(seonbiType),
               getJudgeModePrompt(judgeMode),
-              ragContext,
+              ragContext.promptContext,
             ].join(' '),
           },
           {
@@ -193,8 +206,8 @@ export default async function handler(
 
       response.status(imageInput?.dataUrl ? 200 : 502).json(
         imageInput?.dataUrl
-          ? createImageFallbackResponse(seonbiType, judgeMode)
-          : createSafeFailureResponse(),
+          ? createImageFallbackResponse(seonbiType, judgeMode, ragContext.references)
+          : createSafeFailureResponse()
       )
       return
     }
@@ -211,8 +224,8 @@ export default async function handler(
 
       response.status(imageInput?.dataUrl ? 200 : 502).json(
         imageInput?.dataUrl
-          ? createImageFallbackResponse(seonbiType, judgeMode)
-          : createSafeFailureResponse(),
+          ? createImageFallbackResponse(seonbiType, judgeMode, ragContext.references)
+          : createSafeFailureResponse()
       )
       return
     }
@@ -220,6 +233,7 @@ export default async function handler(
     response.status(200).json({
       ok: true,
       result,
+      ragReferences: ragContext.references,
     })
   } catch (error) {
     console.error('[judge] request failed', {
@@ -255,21 +269,50 @@ async function createRagContext(
       .filter((document) => document.title && document.content)
       .slice(0, 5)
 
-    if (safeDocuments.length === 0) return ''
+    if (safeDocuments.length === 0) {
+      return {
+        promptContext: '',
+        references: [],
+      }
+    }
 
-    return [
-      '[영주선비길 참고 데이터]',
-      ...safeDocuments.map((document, index) =>
-        [
-          `${index + 1}. ${document.title}`,
-          `- ${summarizeRagContent(document.content)}`,
-        ].join('\n'),
-      ),
-      '주의: 참고 데이터는 답변의 근거로만 사용한다. 참고 데이터에 없는 운영시간, 요금, 주소는 지어내지 않는다. 사용자에게 RAG 내부 구조를 설명하지 않는다.',
-    ].join('\n\n')
+    const references = safeDocuments.flatMap(toJudgeRagReference).slice(0, 3)
+
+    return {
+      promptContext: [
+        '[영주선비길 참고 데이터]',
+        ...safeDocuments.map((document, index) =>
+          [
+            `${index + 1}. ${document.title}`,
+            `- ${summarizeRagContent(document.content)}`,
+          ].join('\n'),
+        ),
+        '주의: 참고 데이터는 답변의 근거로만 사용한다. 참고 데이터에 없는 운영시간, 요금, 주소는 지어내지 않는다. 사용자에게 RAG 내부 구조를 설명하지 않는다.',
+      ].join('\n\n'),
+      references,
+    }
   } catch {
-    return ''
+    return {
+      promptContext: '',
+      references: [],
+    }
   }
+}
+
+function toJudgeRagReference(document: {
+  title: string
+  source_id?: string
+  source_type?: RagSourceType
+}): JudgeRagReference[] {
+  if (!document.title || !document.source_id || !document.source_type) return []
+
+  return [
+    {
+      title: document.title,
+      sourceType: document.source_type,
+      sourceId: document.source_id,
+    },
+  ]
 }
 
 function summarizeRagContent(content: string) {
@@ -474,6 +517,7 @@ function parseJudgeResult(content: string | undefined): JudgeResult | undefined 
 function createImageFallbackResponse(
   seonbiType: SeonbiType | undefined,
   judgeMode: JudgeMode,
+  ragReferences: JudgeRagReference[] = [],
 ): JudgeProxyResponse {
   const typeLabel = getSeonbiTypeLabel(seonbiType)
   const modeLabel = getJudgeModeLabel(judgeMode)
@@ -488,6 +532,7 @@ function createImageFallbackResponse(
       shareText: `${typeLabel} 선비의 ${modeLabel}: 사진 속 분위기를 정확히 읽지는 못했지만, 잠시 숨을 고르고 오늘의 마음을 바르게 세워보시게.`,
       imageObservation: '사진의 세부 분위기를 불러오지 못했습니다.',
     },
+    ragReferences,
   }
 }
 

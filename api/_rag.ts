@@ -19,6 +19,7 @@ export interface RagSearchResult {
   content: string
   metadata: Record<string, unknown>
   similarity: number
+  source_id?: string
   source_type?: RagSourceType
 }
 
@@ -256,6 +257,7 @@ function toRagSearchResult(row: Record<string, unknown>): RagSearchResult {
         ? (row.metadata as Record<string, unknown>)
         : {},
     similarity: typeof row.similarity === 'number' ? row.similarity : 0,
+    source_id: typeof row.source_id === 'string' ? row.source_id : undefined,
     source_type: isRagSourceType(row.source_type) ? row.source_type : undefined,
   }
 }

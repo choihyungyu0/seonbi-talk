@@ -14,7 +14,11 @@ import {
   getSeonbiVisualImagePath,
   judgeModeOptions,
 } from '../features/judge/judgeModes'
-import type { JudgeMode, JudgeResult } from '../features/judge/judgeTypes'
+import type {
+  JudgeMode,
+  JudgeRagReference,
+  JudgeResult,
+} from '../features/judge/judgeTypes'
 import type { SeonbiTypeInfo, TestResult } from '../features/seonbi-test/types'
 import { loadTestResult } from '../lib/storage'
 
@@ -50,6 +54,7 @@ function JudgePageContent({ testResult, typeInfo }: JudgePageContentProps) {
   const [judgeMode, setJudgeMode] = useState<JudgeMode>('default')
   const [failedSeonbiImageSrc, setFailedSeonbiImageSrc] = useState('')
   const [result, setResult] = useState<JudgeResult | null>(null)
+  const [ragReferences, setRagReferences] = useState<JudgeRagReference[]>([])
   const [message, setMessage] = useState('')
   const [shareMessage, setShareMessage] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -73,6 +78,7 @@ function JudgePageContent({ testResult, typeInfo }: JudgePageContentProps) {
     if (!trimmedText && !imageDataUrl) {
       setMessage('고민을 적거나 사진을 올려주세요.')
       setResult(null)
+      setRagReferences([])
       return
     }
 
@@ -90,6 +96,7 @@ function JudgePageContent({ testResult, typeInfo }: JudgePageContentProps) {
 
     if (!response.ok || !response.result) {
       setResult(null)
+      setRagReferences([])
       setMessage(
         response.message ??
           '선비의 한마디를 불러오는 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요.',
@@ -99,6 +106,7 @@ function JudgePageContent({ testResult, typeInfo }: JudgePageContentProps) {
     }
 
     setResult(response.result)
+    setRagReferences((response.ragReferences ?? []).slice(0, 3))
     void saveJudgeHistory({
       seonbiType: testResult.type,
       result: response.result,
@@ -328,6 +336,21 @@ function JudgePageContent({ testResult, typeInfo }: JudgePageContentProps) {
               )}
               <h3>현대어 해석</h3>
               <p>{result.modernTranslation}</p>
+              {ragReferences.length > 0 && (
+                <div className="judge-rag-references">
+                  <h3>함께 참고한 영주 이야기</h3>
+                  <ul aria-label="함께 참고한 영주 이야기">
+                    {ragReferences.map((reference) => (
+                      <li
+                        key={`${reference.sourceType}:${reference.sourceId}`}
+                        className="judge-rag-chip"
+                      >
+                        {reference.title}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
               <h3>공유용 문구</h3>
               <p>{result.shareText}</p>
               <div className="judge-share-actions">

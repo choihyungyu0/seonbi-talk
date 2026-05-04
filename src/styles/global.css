@@ -2048,6 +2048,30 @@ a {
   margin-top: 22px;
 }
 
+.judge-rag-references {
+  margin-top: 18px;
+}
+
+.judge-rag-references ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.judge-rag-chip {
+  border: 1px solid rgba(137, 111, 72, 0.28);
+  border-radius: 999px;
+  padding: 7px 11px;
+  color: var(--forest);
+  background: rgba(246, 240, 228, 0.78);
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
 .judge-share-message {
   margin-top: 12px;
   text-align: left;
