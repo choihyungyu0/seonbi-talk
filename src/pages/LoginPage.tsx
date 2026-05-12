@@ -225,6 +225,7 @@ export function LoginPage() {
                 }}
                 autoComplete="off"
               />
+              <p className="admin-code-hint">관리자코드 seonbi-admin-2026 입력</p>
             </label>
             {adminStatusMessage && (
               <p className="form-error" role="status">
