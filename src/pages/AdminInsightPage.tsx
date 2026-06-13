@@ -6,7 +6,7 @@ import { seonbiTypeNames } from '../features/seonbi-test/types'
 
 export function AdminInsightPage() {
   return (
-    <AppLayout hideNavigation adminMode>
+    <AppLayout hideNavigation hideChatbot adminMode>
       <section className="admin-page page-container">
         <div className="admin-header">
           <div>

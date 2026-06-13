@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
 import { CommonButton } from '../components/common/CommonButton'
 import { BrandLoading } from '../components/common/BrandLoading'
-import { ImagePlaceholder } from '../components/common/ImagePlaceholder'
 import { StatusBadge } from '../components/common/StatusBadge'
 import { trackEvent } from '../features/analytics/trackEvent'
 import {
@@ -61,6 +60,9 @@ export function HomePage() {
   const [isHeroImageLoading, setIsHeroImageLoading] = useState(true)
   const [isCultureImageLoading, setIsCultureImageLoading] = useState(true)
   const [activeHeroSlideIndex, setActiveHeroSlideIndex] = useState(0)
+  const [failedHeroImageSources, setFailedHeroImageSources] = useState<Set<string>>(
+    () => new Set(),
+  )
   const [isHeroCarouselPaused, setIsHeroCarouselPaused] = useState(false)
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(() => {
     if (typeof window === 'undefined') return false
@@ -125,23 +127,37 @@ export function HomePage() {
     return () => motionQuery.removeEventListener('change', handleMotionChange)
   }, [])
 
+  const visibleHeroSlides = useMemo(
+    () => heroTourismSlides.filter((slide) => !failedHeroImageSources.has(slide.src)),
+    [failedHeroImageSources, heroTourismSlides],
+  )
+
   useEffect(() => {
     if (prefersReducedMotion) return
     if (isHeroCarouselPaused) return
-    if (heroTourismSlides.length < 2) return
+    if (visibleHeroSlides.length < 2) return
 
     const intervalId = window.setInterval(() => {
       if (document.hidden) return
       setActiveHeroSlideIndex((currentIndex) => {
-        return (currentIndex + 1) % heroTourismSlides.length
+        return (currentIndex + 1) % visibleHeroSlides.length
       })
     }, 4600)
 
     return () => window.clearInterval(intervalId)
-  }, [heroTourismSlides.length, isHeroCarouselPaused, prefersReducedMotion])
+  }, [isHeroCarouselPaused, prefersReducedMotion, visibleHeroSlides.length])
 
   const visibleHeroSlideIndex =
-    activeHeroSlideIndex < heroTourismSlides.length ? activeHeroSlideIndex : 0
+    activeHeroSlideIndex < visibleHeroSlides.length ? activeHeroSlideIndex : 0
+
+  function handleHeroImageError(src: string) {
+    setFailedHeroImageSources((previousSources) => {
+      if (previousSources.has(src)) return previousSources
+      const nextSources = new Set(previousSources)
+      nextSources.add(src)
+      return nextSources
+    })
+  }
 
   return (
     <AppLayout>
@@ -189,12 +205,12 @@ export function HomePage() {
               onFocus={() => setIsHeroCarouselPaused(true)}
               onBlur={() => setIsHeroCarouselPaused(false)}
             >
-              {heroTourismSlides.length > 0 ? (
+              {visibleHeroSlides.length > 0 ? (
                 <div className="home-hero-carousel" aria-label="영주 관광지 사진">
-                  {heroTourismSlides.map((slide, index) => (
+                  {visibleHeroSlides.map((slide, index) => (
                     <figure
                       className={
-                          index === visibleHeroSlideIndex
+                        index === visibleHeroSlideIndex
                           ? 'home-floating-image is-active'
                           : 'home-floating-image'
                       }
@@ -202,10 +218,20 @@ export function HomePage() {
                       aria-hidden={index !== visibleHeroSlideIndex}
                     >
                       <img
+                        className="home-floating-image-backdrop"
+                        src={featureCourseRecommendImage}
+                        alt=""
+                        aria-hidden="true"
+                        loading="eager"
+                        decoding="async"
+                      />
+                      <img
+                        className="home-floating-image-photo"
                         src={slide.src}
                         alt={slide.title}
                         loading={index === 0 ? 'eager' : 'lazy'}
                         decoding="async"
+                        onError={() => handleHeroImageError(slide.src)}
                       />
                       {index === visibleHeroSlideIndex && (
                         <figcaption>{slide.title}</figcaption>
@@ -215,10 +241,10 @@ export function HomePage() {
                   <div className="home-carousel-status" aria-hidden="true">
                     <span>{visibleHeroSlideIndex + 1}</span>
                     <span>/</span>
-                    <span>{heroTourismSlides.length}</span>
+                    <span>{visibleHeroSlides.length}</span>
                   </div>
                   <div className="home-carousel-dots" aria-label="관광지 사진 순서">
-                    {heroTourismSlides.map((slide, index) => (
+                    {visibleHeroSlides.map((slide, index) => (
                       <button
                         type="button"
                         key={`${slide.contentId ?? slide.src}-dot-${index}`}
@@ -231,15 +257,23 @@ export function HomePage() {
                   </div>
                 </div>
               ) : (
-                <ImagePlaceholder
-                  className="home-hero-image-placeholder"
-                  isLoading={isHeroImageLoading}
-                  label={
-                    isHeroImageLoading
-                      ? '공공데이터 이미지를 불러오고 있습니다.'
-                      : '이미지를 불러오지 못했습니다. 추천 코스에서 영주 관광 정보를 확인해보세요.'
-                  }
-                />
+                <div className="home-hero-carousel home-hero-carousel--fallback">
+                  <figure className="home-floating-image home-floating-image--fallback is-active">
+                    <img
+                      src={featureCourseRecommendImage}
+                      alt="영주선비길 추천 코스를 표현한 선비 캐릭터 이미지"
+                      loading="eager"
+                      decoding="async"
+                    />
+                    <figcaption>영주 선비길 추천 코스</figcaption>
+                  </figure>
+                  <div className="home-hero-fallback-copy">
+                    <StatusBadge tone={isHeroImageLoading ? 'neutral' : 'brown'}>
+                      {isHeroImageLoading ? '이미지 연결 중' : '추천 코스 미리보기'}
+                    </StatusBadge>
+                    <strong>공공데이터가 준비되면 실제 관광지 사진으로 바뀝니다.</strong>
+                  </div>
+                </div>
               )}
             </div>
           </div>

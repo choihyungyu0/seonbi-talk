@@ -57,7 +57,7 @@ export function SignupPage() {
   }
 
   return (
-    <AppLayout>
+    <AppLayout hideChatbot hideBottomNavigation>
       <section className="auth-page page-container">
         <div className="auth-intro">
           <StatusBadge>회원가입</StatusBadge>

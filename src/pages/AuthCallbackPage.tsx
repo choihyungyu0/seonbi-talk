@@ -36,7 +36,7 @@ export function AuthCallbackPage() {
   }, [navigate])
 
   return (
-    <AppLayout>
+    <AppLayout hideChatbot hideBottomNavigation>
       <section className="auth-page page-container">
         <div className="auth-intro">
           <h1>간편로그인을 확인하고 있습니다</h1>

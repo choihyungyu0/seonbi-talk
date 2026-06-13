@@ -100,7 +100,7 @@ export function LoginPage() {
   }
 
   return (
-    <AppLayout>
+    <AppLayout hideChatbot hideBottomNavigation>
       <section className="auth-page page-container">
         <div className="auth-intro">
           <StatusBadge>로그인</StatusBadge>

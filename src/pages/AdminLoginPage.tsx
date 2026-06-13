@@ -27,7 +27,7 @@ export function AdminLoginPage() {
   }
 
   return (
-    <AppLayout hideNavigation adminMode>
+    <AppLayout hideNavigation hideChatbot adminMode>
       <section className="admin-login-page">
         <Link className="text-link back-link" to="/">
           일반 서비스로 돌아가기

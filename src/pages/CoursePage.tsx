@@ -392,8 +392,8 @@ export function CoursePage() {
   }
 
   return (
-    <AppLayout>
-      <section className="page-section page-container">
+    <AppLayout hideBottomNavigation>
+      <section className="page-section page-container course-page">
         <div className="section-heading">
           <StatusBadge>추천 코스</StatusBadge>
           <h1>유형별 영주 관광 추천 코스</h1>

@@ -4,6 +4,7 @@ const bottomItems = [
   { to: '/', label: '홈' },
   { to: '/course', label: '코스' },
   { to: '/heatmap', label: '히트맵' },
+  { to: '/knowledge-graph', label: '그래프' },
   { to: '/test', label: '테스트' },
   { to: '/judge', label: '한마디' },
 ]

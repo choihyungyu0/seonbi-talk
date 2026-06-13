@@ -28,7 +28,7 @@ export function ForgotPasswordPage() {
   }
 
   return (
-    <AppLayout>
+    <AppLayout hideChatbot hideBottomNavigation>
       <section className="auth-page page-container">
         <div className="auth-intro">
           <StatusBadge>비밀번호 찾기</StatusBadge>

@@ -54,7 +54,7 @@ export function TestPage() {
   }
 
   return (
-    <AppLayout>
+    <AppLayout hideChatbot hideBottomNavigation>
       <section className="page-section page-container test-page">
         <div className="progress-row">
           <span>

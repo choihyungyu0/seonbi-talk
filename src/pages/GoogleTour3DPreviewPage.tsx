@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
 import { StatusBadge } from '../components/common/StatusBadge'
 
@@ -252,10 +253,20 @@ export function GoogleTour3DPreviewPage() {
   const mapHostRef = useRef<HTMLDivElement>(null)
   const mapElementRef = useRef<GoogleMap3DElement | null>(null)
   const markerElementsRef = useRef<Map<string, GoogleMap3DMarkerElement>>(new Map())
+  const [searchParams] = useSearchParams()
+  const requestedPlaceId = searchParams.get('place')
+  const requestedSpot = useMemo(
+    () => tour3DSpots.find((spot) => spot.id === requestedPlaceId) ?? null,
+    [requestedPlaceId],
+  )
   const [status, setStatus] = useState<GoogleMaps3DLoadStatus>('idle')
   const [message, setMessage] = useState('')
-  const [activePlaceId, setActivePlaceId] = useState(initialCamera.id)
-  const [selectedSpotId, setSelectedSpotId] = useState(tour3DSpots[0]?.id ?? '')
+  const [activePlaceId, setActivePlaceId] = useState(
+    requestedSpot?.id ?? initialCamera.id,
+  )
+  const [selectedSpotId, setSelectedSpotId] = useState(
+    requestedSpot?.id ?? tour3DSpots[0]?.id ?? '',
+  )
   const [courseSpotIds, setCourseSpotIds] = useState<Set<string>>(() => new Set())
   const googleMapsApiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY
   const activePlaceName = useMemo(() => {
@@ -344,6 +355,11 @@ export function GoogleTour3DPreviewPage() {
         mapElementRef.current = mapElement
         markerElementsRef.current = markerElements
         setStatus('ready')
+        if (requestedSpot) {
+          setActivePlaceId(requestedSpot.id)
+          setSelectedSpotId(requestedSpot.id)
+          moveMapCamera(mapElement, requestedSpot)
+        }
       } catch (error) {
         if (isDisposed) return
         setStatus('error')
@@ -369,7 +385,7 @@ export function GoogleTour3DPreviewPage() {
       mapElementRef.current = null
       markerElementsRef.current.clear()
     }
-  }, [googleMapsApiKey])
+  }, [googleMapsApiKey, requestedSpot])
 
   useEffect(() => {
     markerElementsRef.current.forEach((marker, markerId) => {
@@ -409,7 +425,7 @@ export function GoogleTour3DPreviewPage() {
   }
 
   return (
-    <AppLayout>
+    <AppLayout hideBottomNavigation>
       <main className="page-section page-container tour3d-page">
         <section className="tour3d-heading">
           <StatusBadge>Google 3D Maps</StatusBadge>

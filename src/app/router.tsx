@@ -7,6 +7,7 @@ import { ForgotPasswordPage } from '../pages/ForgotPasswordPage'
 import { GoogleTour3DPreviewPage } from '../pages/GoogleTour3DPreviewPage'
 import { HomePage } from '../pages/HomePage'
 import { JudgePage } from '../pages/JudgePage'
+import { KnowledgeGraphPage } from '../pages/KnowledgeGraphPage'
 import { LoginPage } from '../pages/LoginPage'
 import { MyPage } from '../pages/MyPage'
 import { ResultPage } from '../pages/ResultPage'
@@ -24,6 +25,8 @@ export function AppRouter() {
         <Route path="/course" element={<CoursePage />} />
         <Route path="/heatmap" element={<TourismHeatmapPage />} />
         <Route path="/tour-3d" element={<GoogleTour3DPreviewPage />} />
+        <Route path="/ai-evidence-graph" element={<KnowledgeGraphPage />} />
+        <Route path="/knowledge-graph" element={<KnowledgeGraphPage />} />
         <Route path="/judge" element={<JudgePage />} />
         <Route path="/mypage" element={<MyPage />} />
         <Route path="/login" element={<LoginPage />} />

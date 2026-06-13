@@ -6,20 +6,32 @@ import { TopNavBar } from './TopNavBar'
 interface AppLayoutProps {
   children: ReactNode
   hideNavigation?: boolean
+  hideChatbot?: boolean
+  hideBottomNavigation?: boolean
   adminMode?: boolean
 }
 
 export function AppLayout({
   children,
+  hideChatbot = false,
+  hideBottomNavigation = false,
   hideNavigation = false,
   adminMode = false,
 }: AppLayoutProps) {
+  const shellClassName = [
+    'app-shell',
+    adminMode ? 'app-shell--admin' : '',
+    hideBottomNavigation || hideNavigation || adminMode ? 'app-shell--no-bottom-nav' : '',
+  ]
+    .filter(Boolean)
+    .join(' ')
+
   return (
-    <div className={adminMode ? 'app-shell app-shell--admin' : 'app-shell'}>
+    <div className={shellClassName}>
       {!hideNavigation && <TopNavBar />}
       <main>{children}</main>
-      <FloatingRagChatbot />
-      {!hideNavigation && !adminMode && <BottomNavigation />}
+      {!hideChatbot && <FloatingRagChatbot />}
+      {!hideNavigation && !adminMode && !hideBottomNavigation && <BottomNavigation />}
     </div>
   )
 }

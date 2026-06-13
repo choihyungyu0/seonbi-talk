@@ -3,7 +3,7 @@ import DeckGL from '@deck.gl/react'
 import type { Color } from '@deck.gl/core'
 import { HexagonLayer } from '@deck.gl/aggregation-layers'
 import MapboxMap, { NavigationControl } from 'react-map-gl/mapbox'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import { BrandLoading } from '../components/common/BrandLoading'
 import { StatusBadge } from '../components/common/StatusBadge'
@@ -167,7 +167,10 @@ const expandedFallbackHeatmapPoints = dedupeHeatmapPoints([
 ])
 
 export function TourismHeatmapPage() {
-  const [activeMode, setActiveMode] = useState<HeatmapMode>('tourism')
+  const [searchParams] = useSearchParams()
+  const requestedMode = getHeatmapMode(searchParams.get('mode'))
+  const [selectedMode, setSelectedMode] = useState<HeatmapMode | null>(null)
+  const activeMode = selectedMode ?? requestedMode
   const [radiusMeters, setRadiusMeters] = useState(defaultRadiusMeters)
   const [dataState, setDataState] = useState<HeatmapDataState>({
     status: 'loading',
@@ -244,7 +247,7 @@ export function TourismHeatmapPage() {
   }, [activeMode, activePoints, modeConfig, radiusMeters])
 
   return (
-    <AppLayout>
+    <AppLayout hideBottomNavigation>
       <section className="page-section page-container heatmap-page">
         <div className="section-heading center">
           <StatusBadge>3D 히트맵</StatusBadge>
@@ -276,7 +279,7 @@ export function TourismHeatmapPage() {
                   type="button"
                   className={isActive ? 'active' : ''}
                   aria-pressed={isActive}
-                  onClick={() => setActiveMode(mode as HeatmapMode)}
+                  onClick={() => setSelectedMode(mode as HeatmapMode)}
                 >
                   {config.label}
                 </button>
@@ -284,25 +287,6 @@ export function TourismHeatmapPage() {
             })}
           </div>
         </section>
-
-        <dl className="heatmap-summary-grid" aria-label="히트맵 데이터 요약">
-          <div className="surface-card heatmap-summary-card">
-            <dt>{modeConfig.metricLabel}</dt>
-            <dd>{Math.round(totalWeight)}</dd>
-          </div>
-          <div className="surface-card heatmap-summary-card">
-            <dt>좌표 지점</dt>
-            <dd>{activePoints.length}</dd>
-          </div>
-          <div className="surface-card heatmap-summary-card">
-            <dt>TourAPI 재사용</dt>
-            <dd>{apiPointCount}</dd>
-          </div>
-          <div className="surface-card heatmap-summary-card">
-            <dt>샘플 기반</dt>
-            <dd>{samplePointCount}</dd>
-          </div>
-        </dl>
 
         <div className="heatmap-layout">
           <section className="surface-card heatmap-map-card" aria-labelledby="heatmap-map-title">
@@ -397,6 +381,25 @@ export function TourismHeatmapPage() {
             </section>
           </aside>
         </div>
+
+        <dl className="heatmap-summary-grid" aria-label="히트맵 데이터 요약">
+          <div className="surface-card heatmap-summary-card">
+            <dt>{modeConfig.metricLabel}</dt>
+            <dd>{Math.round(totalWeight)}</dd>
+          </div>
+          <div className="surface-card heatmap-summary-card">
+            <dt>좌표 지점</dt>
+            <dd>{activePoints.length}</dd>
+          </div>
+          <div className="surface-card heatmap-summary-card">
+            <dt>TourAPI 재사용</dt>
+            <dd>{apiPointCount}</dd>
+          </div>
+          <div className="surface-card heatmap-summary-card">
+            <dt>샘플 기반</dt>
+            <dd>{samplePointCount}</dd>
+          </div>
+        </dl>
       </section>
     </AppLayout>
   )
@@ -548,6 +551,11 @@ function getModePoints(points: HeatmapPoint[], mode: HeatmapMode) {
   }
 
   return points.filter((point) => categoriesByMode[mode].includes(point.category))
+}
+
+function getHeatmapMode(mode: string | null): HeatmapMode {
+  if (mode === 'facility' || mode === 'festival' || mode === 'tourism') return mode
+  return 'tourism'
 }
 
 function createFallbackPoint(

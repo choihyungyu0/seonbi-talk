@@ -4,7 +4,6 @@ import { CommonButton } from '../components/common/CommonButton'
 import { BrandLoading } from '../components/common/BrandLoading'
 import { StatusBadge } from '../components/common/StatusBadge'
 import { AppLayout } from '../components/layout/AppLayout'
-import { SeonbiPreviewPanel } from '../components/SeonbiPreviewPanel'
 import { seonbiTypeInfo } from '../data/seonbiTypes'
 import { trackEvent } from '../features/analytics/trackEvent'
 import { requestSeonbiAdvice } from '../features/judge/judgeApi'
@@ -26,14 +25,16 @@ import type {
 import type { SeonbiType, SeonbiTypeInfo } from '../features/seonbi-test/types'
 import { loadTestResult } from '../lib/storage'
 
-const defaultResultMessage = '고민을 적거나 사진을 올리면 선비의 한마디가 표시됩니다.'
+const defaultAdvice = '고요한 물은 깊이 흐르고, 작은 배움은 큰 길이 되나니.'
+const defaultModernTranslation = '지금의 작은 노력과 배움이 쌓여, 결국 큰 성취로 이어질 것입니다.'
+const defaultAnalysisTags = ['호기심', '배움', '소통']
 const allowedImageTypes = ['image/jpeg', 'image/png', 'image/webp']
 const maxImageDimension = 1024
 const maxImageDataUrlLength = 1_100_000
 
 export function JudgePage() {
   const testResult = loadTestResult()
-  const [selectedSeonbiType, setSelectedSeonbiType] = useState<SeonbiType>(
+  const [selectedSeonbiType] = useState<SeonbiType>(
     testResult?.type ?? 'toegye',
   )
   const typeInfo = seonbiTypeInfo[selectedSeonbiType]
@@ -43,7 +44,6 @@ export function JudgePage() {
       seonbiType={selectedSeonbiType}
       typeInfo={typeInfo}
       hasTestResult={Boolean(testResult)}
-      onSelectSeonbiType={setSelectedSeonbiType}
     />
   )
 }
@@ -52,14 +52,12 @@ interface JudgePageContentProps {
   seonbiType: SeonbiType
   typeInfo: SeonbiTypeInfo
   hasTestResult: boolean
-  onSelectSeonbiType: (seonbiType: SeonbiType) => void
 }
 
 function JudgePageContent({
   seonbiType,
   typeInfo,
   hasTestResult,
-  onSelectSeonbiType,
 }: JudgePageContentProps) {
   const [text, setText] = useState('')
   const [judgeMode, setJudgeMode] = useState<JudgeMode>('default')
@@ -82,7 +80,11 @@ function JudgePageContent({
   const seonbiImageAlt = getSeonbiVisualImageAlt(typeInfo.name, judgeMode)
   const hasSeonbiImageError = failedSeonbiImageSrc === seonbiImageSrc
   const modeDescription = selectedModeOption.description
-  const analysisTags = getAnalysisTags(result?.analysis)
+  const analysisTags = result ? getAnalysisTags(result.analysis) : defaultAnalysisTags
+  const displayedAdvice = result?.seonbiAdvice ?? defaultAdvice
+  const displayedTranslation = result?.modernTranslation ?? defaultModernTranslation
+  const displayedShareText =
+    result?.shareText ?? `${typeInfo.name} 선비의 한마디: ${defaultAdvice}`
 
   useEffect(() => {
     const preloadedImages = getSeonbiVisualImagePreloadPaths(seonbiType).map(
@@ -206,19 +208,7 @@ function JudgePageContent({
     setJudgeMode(nextJudgeMode)
   }
 
-  function handleSelectSeonbiType(nextSeonbiType: SeonbiType) {
-    setFailedSeonbiImageSrc('')
-    setIsSeonbiImageLoaded(false)
-    setResult(null)
-    setRagReferences([])
-    setMessage('')
-    setShareMessage('')
-    onSelectSeonbiType(nextSeonbiType)
-  }
-
   async function handleCopyShareText() {
-    if (!result) return
-
     void trackEvent('judge_share_clicked', {
       seonbiType,
       metadata: {
@@ -227,7 +217,7 @@ function JudgePageContent({
     })
 
     try {
-      await navigator.clipboard.writeText(result.shareText)
+      await navigator.clipboard.writeText(displayedShareText)
       setShareMessage('공유 문구를 복사했습니다.')
     } catch {
       setShareMessage('공유 문구를 복사하지 못했습니다. 잠시 후 다시 시도해주세요.')
@@ -257,25 +247,20 @@ function JudgePageContent({
   }
 
   return (
-    <AppLayout>
-      <section className="page-section page-container judge-page">
-        <div className="section-heading center">
-          <StatusBadge>선비의 한마디</StatusBadge>
-          <h1>{pageTitle}</h1>
-          <p>
-            {hasTestResult
-              ? '오늘의 문장을 선비 말투의 유쾌한 조언으로 바꿔드립니다.'
-              : `${typeInfo.name}을 미리 선택해 선비의 한마디를 체험하고 있습니다.`}
-          </p>
-        </div>
-        {!hasTestResult && (
-          <SeonbiPreviewPanel
-            selectedType={seonbiType}
-            featureLabel="선비의 한마디"
-            onSelect={handleSelectSeonbiType}
-          />
-        )}
-        <div className="judge-grid">
+    <AppLayout hideBottomNavigation>
+      <section className="judge-page">
+        <div className="judge-page-shell page-container">
+          <header className="judge-hero">
+            <StatusBadge>선비의 한마디</StatusBadge>
+            <h1>{pageTitle}</h1>
+            <p>
+              {hasTestResult
+                ? '오늘의 생각을 적으면, 선비가 마음을 담아 전해드립니다.'
+                : '오늘의 생각을 적으면, 선비가 마음을 담아 전해드립니다.'}
+            </p>
+          </header>
+
+          <div className="judge-workspace">
           <div className={`wisdom-visual wisdom-visual--${judgeMode}`}>
             <div className="wisdom-visual-badges">
               <StatusBadge tone="brown">{typeInfo.name}</StatusBadge>
@@ -317,20 +302,30 @@ function JudgePageContent({
             </div>
           </div>
           <form className="surface-card judge-form" onSubmit={handleSubmit}>
-            <label htmlFor="judge-text">지금 어떤 생각을 하고 계신가요?</label>
-            <textarea
-              id="judge-text"
-              value={text}
-              onChange={(event) => setText(event.target.value)}
-              placeholder="오늘의 생각을 적어보세요."
-              maxLength={600}
-              aria-describedby="judge-help judge-message"
-            />
-            <p id="judge-help" className="judge-help">
-              외모비하, 혐오, 욕설, 개인정보가 포함된 문장은 처리하지 않습니다.
-            </p>
+            <div className="judge-field-block">
+              <label className="judge-section-label" htmlFor="judge-text">
+                <JudgeIcon name="sprout" />
+                지금 어떤 생각을 하고 계신가요?
+              </label>
+              <div className="judge-textarea-wrap">
+                <textarea
+                  id="judge-text"
+                  value={text}
+                  onChange={(event) => setText(event.target.value)}
+                  placeholder="오늘의 생각을 적어보세요."
+                  maxLength={300}
+                  aria-describedby="judge-text-count judge-message"
+                />
+                <span id="judge-text-count" className="judge-text-count">
+                  {text.length} / 300
+                </span>
+              </div>
+            </div>
             <fieldset className="judge-mode-field">
-              <legend>한마디 분위기 선택</legend>
+              <legend>
+                <JudgeIcon name="sprout" />
+                분위기 선택
+              </legend>
               <div className="judge-mode-options">
                 {judgeModeOptions.map((option) => (
                   <button
@@ -345,17 +340,12 @@ function JudgePageContent({
                   </button>
                 ))}
               </div>
-              <p className="judge-selected-mode">
-                선택한 분위기: {selectedModeOption.badge} — {modeDescription}
-              </p>
             </fieldset>
             <div className="judge-image-field">
-              <div>
-                <p className="judge-image-title">사진으로도 한마디를 받을 수 있습니다.</p>
-                <p className="judge-help">
-                  사진을 올리면 선비가 장면을 보고 한마디를 건넵니다.
-                </p>
-              </div>
+              <p className="judge-section-label judge-image-title">
+                <JudgeIcon name="sprout" />
+                사진으로도 한마디 받기
+              </p>
               <input
                 className="visually-hidden"
                 id="judge-image"
@@ -365,8 +355,7 @@ function JudgePageContent({
               />
               <label className="judge-upload-box" htmlFor="judge-image">
                 <span aria-hidden="true">+</span>
-                <strong>사진 올리기</strong>
-                <small>JPG, PNG, WebP 지원 · 선택 사항</small>
+                <strong>이미지 업로드 (선택)</strong>
               </label>
               {isProcessingImage && (
                 <BrandLoading
@@ -394,13 +383,13 @@ function JudgePageContent({
             )}
             <CommonButton
               type="submit"
-              disabled={isProcessingImage || (!text.trim() && !imageDataUrl)}
+              disabled={isProcessingImage}
               isLoading={isLoading}
-              loadingLabel="한마디를 받고 있습니다..."
+              loadingLabel="한마디 받는 중..."
               fullWidth
               className="judge-submit-button"
             >
-              한마디 받아보기
+              한마디 받기 <span aria-hidden="true">↗</span>
             </CommonButton>
             {isLoading && (
               <BrandLoading
@@ -409,60 +398,46 @@ function JudgePageContent({
               />
             )}
           </form>
-        </div>
-        <section className="surface-card judge-result" aria-label="결과 영역">
-          {result ? (
-            <>
-              <h2>선비의 한마디</h2>
-              <p>{result.seonbiAdvice}</p>
-              {result.imageObservation && (
-                <>
-                  <h3>사진에서 읽은 분위기</h3>
+          </div>
+
+          <div className="judge-lower-grid">
+            <section className="surface-card judge-result" aria-label="결과 영역">
+              <div className="judge-result-tabs" aria-label="결과 보기">
+                <button type="button" className="active">선비의 한마디</button>
+                <button type="button">현대어 해석</button>
+                <button type="button">AI가 읽어낸 마음</button>
+              </div>
+              <blockquote className="judge-advice-quote">
+                <span aria-hidden="true">“</span>
+                <p>{displayedAdvice}</p>
+                <span aria-hidden="true">”</span>
+              </blockquote>
+              {result?.imageObservation && (
+                <div className="judge-image-observation">
+                  <strong>사진에서 읽은 분위기</strong>
                   <p>{result.imageObservation}</p>
-                </>
-              )}
-              <h3>현대어 해석</h3>
-              <p>{result.modernTranslation}</p>
-              {analysisTags.length > 0 && (
-                <div className="judge-ai-analysis">
-                  <div>
-                    <StatusBadge>AI 분석</StatusBadge>
-                    <h3>AI가 읽어낸 마음</h3>
-                    <p>입력한 문장에서 감정과 상황을 비식별 태그로 분석했습니다.</p>
-                  </div>
-                  <ul aria-label="AI가 읽어낸 마음 태그">
-                    {analysisTags.map((tag) => (
-                      <li key={tag}>{tag}</li>
-                    ))}
-                  </ul>
                 </div>
               )}
-              {ragReferences.length > 0 && (
-                <div className="judge-rag-references">
-                  <h3>AI가 함께 참고한 영주 이야기</h3>
-                  <p>영주 관광 데이터와 선비 설정을 참고해 한마디를 구성했습니다.</p>
-                  <ul aria-label="AI가 함께 참고한 영주 이야기">
-                    {ragReferences.map((reference) => (
-                      <li
-                        key={`${reference.sourceType}:${reference.sourceId}`}
-                        className="judge-rag-chip"
-                      >
-                        {reference.title}
+              <div className="judge-result-body">
+                <div className="judge-modern-card">
+                  <strong>현대어 해석</strong>
+                  <p>{displayedTranslation}</p>
+                </div>
+                <div className="judge-mind-card">
+                  <strong>AI가 읽어낸 마음</strong>
+                  <ul aria-label="AI가 읽어낸 마음 태그">
+                    {analysisTags.map((tag) => (
+                      <li key={tag}>
+                        <JudgeIcon name={getMindIconName(tag)} />
+                        <span>{tag}</span>
                       </li>
                     ))}
                   </ul>
                 </div>
-              )}
-              <h3>공유용 문구</h3>
-              <p>{result.shareText}</p>
+              </div>
               <div className="judge-share-actions">
-                <CommonButton
-                  type="button"
-                  variant="secondary"
-                  disabled={!canShareResult}
-                  onClick={handleCopyShareText}
-                >
-                  공유 문구 복사
+                <CommonButton type="button" variant="secondary" onClick={handleCopyShareText}>
+                  <span aria-hidden="true">□</span> 공유 문구 복사
                 </CommonButton>
                 {canUseWebShare && (
                   <CommonButton
@@ -471,27 +446,99 @@ function JudgePageContent({
                     disabled={!canShareResult}
                     onClick={handleShareResult}
                   >
-                    공유하기
+                    <span aria-hidden="true">⌯</span> 공유하기
                   </CommonButton>
                 )}
               </div>
-            </>
-          ) : (
-            <div className="judge-empty-state">
-              <StatusBadge tone="neutral">대기 중</StatusBadge>
-              <h2>아직 받은 한마디가 없습니다.</h2>
-              <p>{defaultResultMessage}</p>
-            </div>
-          )}
-          {shareMessage && (
-            <p className="disabled-notice judge-share-message" role="status">
-              {shareMessage}
-            </p>
-          )}
-        </section>
+              {shareMessage && (
+                <p className="disabled-notice judge-share-message" role="status">
+                  {shareMessage}
+                </p>
+              )}
+            </section>
+
+            <aside className="surface-card judge-reference-card" aria-label="AI가 함께 참고한 영주 이야기">
+              <h2>
+                <JudgeIcon name="book" />
+                AI가 함께 참고한 영주 이야기
+              </h2>
+              <ul>
+                {ragReferences.length > 0 ? (
+                  ragReferences.map((reference) => (
+                    <li key={`${reference.sourceType}:${reference.sourceId}`}>
+                      <JudgeIcon name="place" />
+                      {reference.title}
+                    </li>
+                  ))
+                ) : (
+                  <>
+                    <li>
+                      <JudgeIcon name="place" />
+                      엄격한 선비
+                    </li>
+                    <li>
+                      <JudgeIcon name="sprout" />
+                      기본 선비
+                    </li>
+                  </>
+                )}
+              </ul>
+            </aside>
+          </div>
+        </div>
       </section>
     </AppLayout>
   )
+}
+
+type JudgeIconName = 'book' | 'people' | 'place' | 'search' | 'sprout'
+
+function JudgeIcon({ name }: { name: JudgeIconName }) {
+  return (
+    <svg className={`judge-icon judge-icon--${name}`} viewBox="0 0 24 24" aria-hidden="true">
+      {name === 'sprout' && (
+        <>
+          <path d="M12 20c0-5.7 1.2-9.5 4.2-12.7" />
+          <path d="M12.3 12.2c-3.8-.6-5.9-2.8-6.8-6.6 4.3.2 6.8 2.2 6.8 6.6Z" />
+          <path d="M14.1 10.1c.8-3.4 3.1-5.3 6.5-5.6-.4 3.9-2.5 6.1-6.5 5.6Z" />
+        </>
+      )}
+      {name === 'book' && (
+        <>
+          <path d="M5 5.5c2.6-.8 4.7-.4 7 1.3v12c-2.3-1.7-4.4-2.1-7-1.3v-12Z" />
+          <path d="M19 5.5c-2.6-.8-4.7-.4-7 1.3v12c2.3-1.7 4.4-2.1 7-1.3v-12Z" />
+        </>
+      )}
+      {name === 'search' && (
+        <>
+          <circle cx="10.5" cy="10.5" r="5.5" />
+          <path d="m15 15 4 4" />
+        </>
+      )}
+      {name === 'people' && (
+        <>
+          <circle cx="9" cy="8" r="3" />
+          <circle cx="16.5" cy="9.5" r="2.5" />
+          <path d="M3.8 19c.7-3.1 2.6-4.7 5.2-4.7s4.5 1.6 5.2 4.7" />
+          <path d="M13.8 14.8c2.9-.5 5.1.9 5.9 4.2" />
+        </>
+      )}
+      {name === 'place' && (
+        <>
+          <path d="M4 19h16" />
+          <path d="M6 17V9l6-4 6 4v8" />
+          <path d="M9 17v-5h6v5" />
+          <path d="M7.5 9h9" />
+        </>
+      )}
+    </svg>
+  )
+}
+
+function getMindIconName(tag: string): JudgeIconName {
+  if (tag.includes('배움') || tag.includes('학문')) return 'book'
+  if (tag.includes('소통') || tag.includes('관계')) return 'people'
+  return 'search'
 }
 
 function getAnalysisTags(analysis: JudgeAnalysis | undefined) {

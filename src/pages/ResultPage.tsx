@@ -16,7 +16,7 @@ export function ResultPage() {
 
   if (!result) {
     return (
-      <AppLayout>
+      <AppLayout hideChatbot hideBottomNavigation>
         <section className="page-section page-container result-page">
           <article className="surface-card empty-result-card">
             <h1>아직 선비유형 테스트 결과가 없습니다.</h1>
@@ -49,7 +49,7 @@ export function ResultPage() {
   }
 
   return (
-    <AppLayout>
+    <AppLayout hideChatbot hideBottomNavigation>
       <section className="page-section page-container result-page">
         <div className="section-heading center">
           <p className="section-kicker">선비유형 결과</p>

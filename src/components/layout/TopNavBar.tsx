@@ -13,6 +13,7 @@ const navItems = [
   { to: '/', label: '홈' },
   { to: '/course', label: '추천 코스' },
   { to: '/heatmap', label: '관광 히트맵' },
+  { to: '/knowledge-graph', label: 'AI 근거 그래프' },
   { to: '/test', label: '선비 테스트' },
   { to: '/judge', label: '선비의 한마디' },
 ]
