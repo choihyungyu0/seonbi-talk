@@ -25,8 +25,13 @@ export const authService: AuthService = {
   },
   async signup(values: SignupFormValues): Promise<AuthResult> {
     try {
-      await signUp(values.email.trim(), values.password, values.nickname)
-      return { ok: true, message: '이메일 인증 후 로그인해주세요.' }
+      const result = await signUp(values.email.trim(), values.password, values.nickname)
+      return {
+        ok: true,
+        message: result.requiresEmailConfirmation
+          ? '이메일 인증 후 로그인해주세요.'
+          : '회원가입이 완료되었습니다.',
+      }
     } catch (error) {
       return {
         ok: false,

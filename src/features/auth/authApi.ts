@@ -31,6 +31,14 @@ interface SupabaseAuthResponse {
   user?: SupabaseAuthUser
 }
 
+interface SignUpResult {
+  user: AuthUser
+  signedIn: boolean
+  requiresEmailConfirmation: boolean
+}
+
+type SupabaseSignupResponse = SupabaseAuthResponse | SupabaseAuthUser
+
 type AuthChangeHandler = (user: AuthUser | null) => void
 
 const authSessionKey = 'yeongju-seonbi-auth-session'
@@ -38,8 +46,12 @@ const authChangeEventName = 'yeongju-seonbi-auth-change'
 const authReturnToKey = 'yeongju-auth-return-to'
 const authHandlers = new Set<AuthChangeHandler>()
 
-export async function signUp(email: string, password: string, nickname?: string) {
-  const response = await requestAuth<SupabaseAuthResponse>('signup', {
+export async function signUp(
+  email: string,
+  password: string,
+  nickname?: string,
+): Promise<SignUpResult> {
+  const response = await requestAuth<SupabaseSignupResponse>('signup', {
     method: 'POST',
     body: {
       email,
@@ -47,13 +59,19 @@ export async function signUp(email: string, password: string, nickname?: string)
       data: nickname?.trim() ? { nickname: nickname.trim() } : undefined,
     },
   })
+  const user = getSignupUser(response)
+  const hasSession = isAuthResponse(response) && Boolean(response.access_token && user)
 
-  if (response.access_token && response.user) {
-    saveSession(createSession(response))
+  if (hasSession) {
+    saveSession(createSession({ ...response, user }))
     notifyAuthChange()
   }
 
-  return toAuthUser(response.user)
+  return {
+    user: toAuthUser(user),
+    signedIn: hasSession,
+    requiresEmailConfirmation: !hasSession,
+  }
 }
 
 export async function signIn(email: string, password: string) {
@@ -270,17 +288,34 @@ async function getFriendlyAuthError(response: Response) {
   }
   const message = data.msg ?? data.error_description ?? data.message ?? ''
 
+  if (message.includes('already registered') || message.includes('User already registered')) {
+    return '이미 가입된 이메일입니다.'
+  }
+  if (message.includes('Password should be at least')) {
+    return '비밀번호는 6자 이상이어야 합니다.'
+  }
   if (response.status === 400 && message.includes('Email not confirmed')) {
     return '이메일 인증 후 로그인해주세요.'
   }
   if (response.status === 400 || response.status === 401) {
     return '이메일 또는 비밀번호를 확인해주세요.'
   }
-  if (message.includes('already registered')) {
-    return '이미 가입된 이메일입니다.'
-  }
 
   return '인증 처리 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요.'
+}
+
+function getSignupUser(response: SupabaseSignupResponse) {
+  if (isAuthResponse(response) && response.user) return response.user
+  if (isSupabaseAuthUser(response)) return response
+  throw new Error('회원가입은 완료되었지만 사용자 정보를 확인할 수 없습니다.')
+}
+
+function isAuthResponse(response: SupabaseSignupResponse): response is SupabaseAuthResponse {
+  return 'access_token' in response || 'refresh_token' in response || 'user' in response
+}
+
+function isSupabaseAuthUser(response: SupabaseSignupResponse): response is SupabaseAuthUser {
+  return 'id' in response && typeof response.id === 'string'
 }
 
 function toAuthUser(user: SupabaseAuthUser | undefined): AuthUser {

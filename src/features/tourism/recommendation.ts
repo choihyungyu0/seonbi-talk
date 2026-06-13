@@ -80,16 +80,18 @@ export function createTourismRecommendationReason(
   content: TourismContent,
   mindTags?: CourseMindTags | null,
 ) {
+  const subject = getContentReasonSubject(content)
+
   if (hasMindTags(mindTags)) {
     return createMindTagRecommendationReason(content, mindTags)
   }
 
   if (isRestaurant(content)) {
-    return '여행 중 잠시 쉬어가며 지역의 맛을 경험하기 좋은 장소입니다.'
+    return `${subject}에서 여행 중 잠시 쉬어가며 지역의 맛을 경험하기 좋습니다.`
   }
 
   if (isAccommodation(content)) {
-    return '하루의 여정을 차분히 마무리하기 좋은 머무름의 장소입니다.'
+    return `${subject}은 하루의 여정을 차분히 마무리하기 좋은 머무름의 장소입니다.`
   }
 
   if (!seonbiType) {
@@ -97,18 +99,42 @@ export function createTourismRecommendationReason(
   }
 
   if (seonbiType === 'toegye') {
-    return '차분한 배움과 성찰을 중시하는 퇴계형에게 어울리는 장소입니다.'
+    if (isCultureOrHistoryContent(content)) {
+      return `${subject}의 역사와 이야기가 차분한 배움과 성찰을 중시하는 퇴계형에게 잘 맞습니다.`
+    }
+    if (isNatureOrVillageContent(content)) {
+      return `${subject}에서 조용히 머물며 생각을 정리하기 좋아 퇴계형에게 어울립니다.`
+    }
+    return `${subject}은 여행 중에도 의미를 차분히 살피기 좋은 퇴계형 추천 장소입니다.`
   }
 
   if (seonbiType === 'yulgok') {
-    return '실천과 경험을 중시하는 율곡형에게 잘 맞는 코스입니다.'
+    if (isRestaurant(content)) {
+      return `${subject}에서 지역의 맛을 빠르게 경험하며 다음 동선을 이어가기 좋아 율곡형에게 잘 맞습니다.`
+    }
+    if (isAccommodation(content)) {
+      return `${subject}은 다음 일정을 준비하며 하루를 정리하기 좋은 율곡형 머무름입니다.`
+    }
+    return `${subject}은 직접 보고 움직이는 경험을 중시하는 율곡형에게 알맞은 코스입니다.`
   }
 
   if (seonbiType === 'cheosa') {
-    return '여유와 쉼을 중시하는 처사형에게 어울리는 느린 여행지입니다.'
+    if (isNatureOrVillageContent(content)) {
+      return `${subject}의 풍경은 속도를 낮추고 쉬어가기 좋아 처사형에게 특히 어울립니다.`
+    }
+    if (isAccommodation(content)) {
+      return `${subject}은 조용히 머물며 여정을 비우기 좋은 처사형 숙소 후보입니다.`
+    }
+    return `${subject}은 여유와 쉼의 리듬을 살려 둘러보기 좋은 처사형 여행지입니다.`
   }
 
-  return '역사와 책임의 가치를 돌아보기 좋은 우국형 추천 장소입니다.'
+  if (isCultureOrHistoryContent(content)) {
+    return `${subject}에서 영주의 역사와 책임의 가치를 돌아보기 좋아 우국형에게 추천합니다.`
+  }
+  if (isNatureOrVillageContent(content)) {
+    return `${subject}을 걸으며 공동체와 삶의 터전을 생각해보기 좋은 우국형 코스입니다.`
+  }
+  return `${subject}은 의미 있는 이동과 실천의 감각을 더하기 좋은 우국형 추천 장소입니다.`
 }
 
 function scoreTourismContent(content: TourismContent, keywords: string[]) {
@@ -190,35 +216,37 @@ function createMindTagRecommendationReason(
   mindTags: CourseMindTags,
 ) {
   const tagFlow = formatMindTagFlow(mindTags)
+  const subject = getContentReasonSubject(content)
   if (isRestaurant(content)) {
-    return `최근 읽어낸 마음인 '${tagFlow}' 흐름에 맞춰 쉬어가며 기운을 채우기 좋은 장소입니다.`
+    return `최근 읽어낸 마음인 '${tagFlow}' 흐름에 맞춰 ${subject}에서 쉬어가며 기운을 채우기 좋습니다.`
   }
 
   if (isAccommodation(content)) {
-    return `최근 읽어낸 마음인 '${tagFlow}' 흐름에 맞춰 하루를 차분히 정리하기 좋은 머무름입니다.`
+    return `최근 읽어낸 마음인 '${tagFlow}' 흐름에 맞춰 ${subject}에서 하루를 차분히 정리하기 좋습니다.`
   }
 
   if (isNatureOrVillageContent(content)) {
-    return `최근 읽어낸 마음인 '${tagFlow}' 흐름에 맞춰 천천히 숨을 고르기 좋은 여행지입니다.`
+    return `최근 읽어낸 마음인 '${tagFlow}' 흐름에 맞춰 ${subject}에서 천천히 숨을 고르기 좋습니다.`
   }
 
   if (isCultureOrHistoryContent(content)) {
-    return `최근 읽어낸 마음인 '${tagFlow}' 흐름에 맞춰 배움과 생각을 정리하기 좋은 장소입니다.`
+    return `최근 읽어낸 마음인 '${tagFlow}' 흐름에 맞춰 ${subject}의 이야기를 보며 생각을 정리하기 좋습니다.`
   }
 
-  return `최근 읽어낸 마음인 '${tagFlow}' 흐름에 맞춰 추천하는 영주 코스입니다.`
+  return `최근 읽어낸 마음인 '${tagFlow}' 흐름에 맞춰 ${subject}을 추천합니다.`
 }
 
 function createCategoryBasedRecommendationReason(content: TourismContent) {
+  const subject = getContentReasonSubject(content)
   if (isCultureOrHistoryContent(content)) {
-    return '영주의 역사와 문화를 차분히 살펴보기 좋은 장소입니다.'
+    return `${subject}에서 영주의 역사와 문화를 차분히 살펴보기 좋습니다.`
   }
 
   if (isNatureOrVillageContent(content)) {
-    return '자연과 마을의 분위기를 천천히 느끼기 좋은 여행지입니다.'
+    return `${subject}은 자연과 마을의 분위기를 천천히 느끼기 좋은 여행지입니다.`
   }
 
-  return '영주 여행의 흐름에 자연스럽게 더하기 좋은 추천 장소입니다.'
+  return `${subject}은 영주 여행의 흐름에 자연스럽게 더하기 좋은 추천 장소입니다.`
 }
 
 function isRestaurant(content: TourismContent) {
@@ -255,6 +283,11 @@ function getContentSearchableText(content: TourismContent) {
   return [content.title, content.category, content.address, content.overview]
     .filter(Boolean)
     .join(' ')
+}
+
+function getContentReasonSubject(content: TourismContent) {
+  const title = content.title?.trim()
+  return title ? title : '이 장소'
 }
 
 export function formatMindTagFlow(mindTags: CourseMindTags | null | undefined) {

@@ -8,24 +8,35 @@ export function createResultShareText(typeInfo: SeonbiTypeInfo) {
 
 export async function shareResult(typeInfo: SeonbiTypeInfo): Promise<ShareResultStatus> {
   const text = createResultShareText(typeInfo)
+  const shareData = {
+    title: '영주선비길 선비유형 결과',
+    text,
+  }
 
-  if (navigator.share) {
+  if (canUseWebShare(shareData)) {
     try {
-      await navigator.share({
-        title: '영주선비길 선비유형 결과',
-        text,
-      })
+      await navigator.share(shareData)
       return 'shared'
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') {
         return 'cancelled'
       }
-      throw error
     }
   }
 
   await copyText(text)
   return 'copied'
+}
+
+function canUseWebShare(data: ShareData) {
+  if (!navigator.share) return false
+  if (!isLikelyMobileShareDevice()) return false
+  if (!navigator.canShare) return true
+  return navigator.canShare(data)
+}
+
+function isLikelyMobileShareDevice() {
+  return navigator.maxTouchPoints > 0 || window.matchMedia('(pointer: coarse)').matches
 }
 
 async function copyText(text: string) {

@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react'
 import type { ChangeEvent, FormEvent } from 'react'
 import { CommonButton } from '../components/common/CommonButton'
 import { BrandLoading } from '../components/common/BrandLoading'
-import { ProtectedFeaturePrompt } from '../components/common/ProtectedFeaturePrompt'
 import { StatusBadge } from '../components/common/StatusBadge'
 import { AppLayout } from '../components/layout/AppLayout'
+import { SeonbiPreviewPanel } from '../components/SeonbiPreviewPanel'
 import { seonbiTypeInfo } from '../data/seonbiTypes'
 import { trackEvent } from '../features/analytics/trackEvent'
 import { requestSeonbiAdvice } from '../features/judge/judgeApi'
@@ -23,7 +23,7 @@ import type {
   JudgeRagReference,
   JudgeResult,
 } from '../features/judge/judgeTypes'
-import type { SeonbiTypeInfo, TestResult } from '../features/seonbi-test/types'
+import type { SeonbiType, SeonbiTypeInfo } from '../features/seonbi-test/types'
 import { loadTestResult } from '../lib/storage'
 
 const defaultResultMessage = '고민을 적거나 사진을 올리면 선비의 한마디가 표시됩니다.'
@@ -33,27 +33,34 @@ const maxImageDataUrlLength = 1_100_000
 
 export function JudgePage() {
   const testResult = loadTestResult()
-  const typeInfo = testResult ? seonbiTypeInfo[testResult.type] : null
+  const [selectedSeonbiType, setSelectedSeonbiType] = useState<SeonbiType>(
+    testResult?.type ?? 'toegye',
+  )
+  const typeInfo = seonbiTypeInfo[selectedSeonbiType]
 
-  if (!testResult || !typeInfo) {
-    return (
-      <AppLayout>
-        <section className="page-section page-container judge-page">
-          <ProtectedFeaturePrompt description="테스트 결과에 따라 선비의 한마디가 달라집니다." />
-        </section>
-      </AppLayout>
-    )
-  }
-
-  return <JudgePageContent testResult={testResult} typeInfo={typeInfo} />
+  return (
+    <JudgePageContent
+      seonbiType={selectedSeonbiType}
+      typeInfo={typeInfo}
+      hasTestResult={Boolean(testResult)}
+      onSelectSeonbiType={setSelectedSeonbiType}
+    />
+  )
 }
 
 interface JudgePageContentProps {
-  testResult: TestResult
+  seonbiType: SeonbiType
   typeInfo: SeonbiTypeInfo
+  hasTestResult: boolean
+  onSelectSeonbiType: (seonbiType: SeonbiType) => void
 }
 
-function JudgePageContent({ testResult, typeInfo }: JudgePageContentProps) {
+function JudgePageContent({
+  seonbiType,
+  typeInfo,
+  hasTestResult,
+  onSelectSeonbiType,
+}: JudgePageContentProps) {
   const [text, setText] = useState('')
   const [judgeMode, setJudgeMode] = useState<JudgeMode>('default')
   const [failedSeonbiImageSrc, setFailedSeonbiImageSrc] = useState('')
@@ -71,14 +78,14 @@ function JudgePageContent({ testResult, typeInfo }: JudgePageContentProps) {
   const canUseWebShare = typeof navigator.share === 'function'
   const hasImage = Boolean(imageDataUrl)
   const selectedModeOption = getJudgeModeOption(judgeMode)
-  const seonbiImageSrc = getSeonbiVisualImagePath(testResult.type, judgeMode)
+  const seonbiImageSrc = getSeonbiVisualImagePath(seonbiType, judgeMode)
   const seonbiImageAlt = getSeonbiVisualImageAlt(typeInfo.name, judgeMode)
   const hasSeonbiImageError = failedSeonbiImageSrc === seonbiImageSrc
   const modeDescription = selectedModeOption.description
   const analysisTags = getAnalysisTags(result?.analysis)
 
   useEffect(() => {
-    const preloadedImages = getSeonbiVisualImagePreloadPaths(testResult.type).map(
+    const preloadedImages = getSeonbiVisualImagePreloadPaths(seonbiType).map(
       (imagePath) => {
         const image = new Image()
         image.decoding = 'async'
@@ -93,7 +100,7 @@ function JudgePageContent({ testResult, typeInfo }: JudgePageContentProps) {
         image.onerror = null
       })
     }
-  }, [testResult.type])
+  }, [seonbiType])
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -112,7 +119,7 @@ function JudgePageContent({ testResult, typeInfo }: JudgePageContentProps) {
 
     const response = await requestSeonbiAdvice({
       text: trimmedText,
-      seonbiType: testResult.type,
+      seonbiType,
       judgeMode,
       imageDataUrl: imageDataUrl || undefined,
       imageMimeType: imageMimeType || undefined,
@@ -133,16 +140,17 @@ function JudgePageContent({ testResult, typeInfo }: JudgePageContentProps) {
     saveLatestMindTags(response.result.analysis)
     setRagReferences((response.ragReferences ?? []).slice(0, 3))
     void saveJudgeHistory({
-      seonbiType: testResult.type,
+      seonbiType,
       result: response.result,
       judgeMode,
       hasImage,
       hasText: Boolean(trimmedText),
     })
     void trackEvent('judge_used', {
-      seonbiType: testResult.type,
+      seonbiType,
       metadata: {
         hasSeonbiType: true,
+        seonbiTypeSource: hasTestResult ? 'test_result' : 'preview',
         hasText: Boolean(trimmedText),
         hasImage,
         judgeMode,
@@ -150,8 +158,9 @@ function JudgePageContent({ testResult, typeInfo }: JudgePageContentProps) {
     })
     if (hasImage) {
       void trackEvent('judge_image_used', {
-        seonbiType: testResult.type,
+        seonbiType,
         metadata: {
+          seonbiTypeSource: hasTestResult ? 'test_result' : 'preview',
           hasImage: true,
           hasText: Boolean(trimmedText),
           judgeMode,
@@ -197,11 +206,21 @@ function JudgePageContent({ testResult, typeInfo }: JudgePageContentProps) {
     setJudgeMode(nextJudgeMode)
   }
 
+  function handleSelectSeonbiType(nextSeonbiType: SeonbiType) {
+    setFailedSeonbiImageSrc('')
+    setIsSeonbiImageLoaded(false)
+    setResult(null)
+    setRagReferences([])
+    setMessage('')
+    setShareMessage('')
+    onSelectSeonbiType(nextSeonbiType)
+  }
+
   async function handleCopyShareText() {
     if (!result) return
 
     void trackEvent('judge_share_clicked', {
-      seonbiType: testResult.type,
+      seonbiType,
       metadata: {
         method: 'copy',
       },
@@ -219,7 +238,7 @@ function JudgePageContent({ testResult, typeInfo }: JudgePageContentProps) {
     if (!result || !canUseWebShare) return
 
     void trackEvent('judge_share_clicked', {
-      seonbiType: testResult.type,
+      seonbiType,
       metadata: {
         method: 'web_share',
       },
@@ -243,8 +262,19 @@ function JudgePageContent({ testResult, typeInfo }: JudgePageContentProps) {
         <div className="section-heading center">
           <StatusBadge>선비의 한마디</StatusBadge>
           <h1>{pageTitle}</h1>
-          <p>오늘의 문장을 선비 말투의 유쾌한 조언으로 바꿔드립니다.</p>
+          <p>
+            {hasTestResult
+              ? '오늘의 문장을 선비 말투의 유쾌한 조언으로 바꿔드립니다.'
+              : `${typeInfo.name}을 미리 선택해 선비의 한마디를 체험하고 있습니다.`}
+          </p>
         </div>
+        {!hasTestResult && (
+          <SeonbiPreviewPanel
+            selectedType={seonbiType}
+            featureLabel="선비의 한마디"
+            onSelect={handleSelectSeonbiType}
+          />
+        )}
         <div className="judge-grid">
           <div className={`wisdom-visual wisdom-visual--${judgeMode}`}>
             <div className="wisdom-visual-badges">

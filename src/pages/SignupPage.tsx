@@ -35,9 +35,16 @@ export function SignupPage() {
     setStatusMessage('')
 
     try {
-      await signUp(values.email.trim(), values.password, values.nickname)
-      setStatusMessage('이메일 인증 후 로그인해주세요.')
-      window.setTimeout(() => navigate('/login'), 900)
+      const result = await signUp(values.email.trim(), values.password, values.nickname)
+      setStatusMessage(
+        result.requiresEmailConfirmation
+          ? '이메일 인증 후 로그인해주세요.'
+          : '회원가입이 완료되었습니다.',
+      )
+      window.setTimeout(
+        () => navigate(result.requiresEmailConfirmation ? '/login' : '/mypage'),
+        900,
+      )
     } catch (error) {
       setStatusMessage(
         error instanceof Error

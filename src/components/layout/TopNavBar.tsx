@@ -7,32 +7,25 @@ import {
   signOut,
   type AuthUser,
 } from '../../features/auth/authApi'
-import { loadTestResult } from '../../lib/storage'
 import { BrandLogo } from '../brand/BrandLogo'
 
 const navItems = [
   { to: '/', label: '홈' },
-  { to: '/course', label: '추천 코스', requiresTestResult: true },
+  { to: '/course', label: '추천 코스' },
   { to: '/heatmap', label: '관광 히트맵' },
   { to: '/test', label: '선비 테스트' },
-  { to: '/judge', label: '선비의 한마디', requiresTestResult: true },
+  { to: '/judge', label: '선비의 한마디' },
 ]
 
 export function TopNavBar() {
   const navigate = useNavigate()
-  const [notice, setNotice] = useState('')
   const [authUser, setAuthUser] = useState<AuthUser | null>(() => getStoredAuthUser())
-  const hasTestResult = Boolean(loadTestResult())
 
   useEffect(() => {
     const unsubscribe = onAuthStateChange(setAuthUser)
     void getCurrentUser().then(setAuthUser)
     return unsubscribe
   }, [])
-
-  function showProtectedNotice() {
-    setNotice('선비유형 테스트 완료 후 이용 가능')
-  }
 
   async function handleSignOut() {
     await signOut()
@@ -52,42 +45,17 @@ export function TopNavBar() {
         </span>
       </Link>
       <nav className="desktop-nav" aria-label="주요 메뉴">
-        {navItems.map((item) => {
-          const isDisabled = item.requiresTestResult && !hasTestResult
-
-          if (isDisabled) {
-            return (
-              <button
-                key={item.to}
-                type="button"
-                className="nav-disabled-link"
-                aria-disabled="true"
-                title="선비유형 테스트 완료 후 이용 가능"
-                onClick={showProtectedNotice}
-              >
-                {item.label}
-              </button>
-            )
-          }
-
-          return (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              className={({ isActive }) => (isActive ? 'active' : '')}
-              onClick={() => setNotice('')}
-            >
-              {item.label}
-            </NavLink>
-          )
-        })}
+        {navItems.map((item) => (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            className={({ isActive }) => (isActive ? 'active' : '')}
+          >
+            {item.label}
+          </NavLink>
+        ))}
       </nav>
       <div className="top-nav-actions">
-        {notice && (
-          <span className="nav-protected-notice" role="status">
-            {notice}
-          </span>
-        )}
         {authUser ? (
           <>
             <Link className="nav-login-link" to="/mypage">

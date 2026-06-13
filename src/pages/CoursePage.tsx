@@ -3,7 +3,7 @@ import { AppLayout } from '../components/layout/AppLayout'
 import { BrandLoading } from '../components/common/BrandLoading'
 import { StatusBadge } from '../components/common/StatusBadge'
 import { CommonButton } from '../components/common/CommonButton'
-import { ProtectedFeaturePrompt } from '../components/common/ProtectedFeaturePrompt'
+import { SeonbiPreviewPanel } from '../components/SeonbiPreviewPanel'
 import { TourismCard } from '../components/tourism/TourismCard'
 import { CourseMap } from '../components/tourism/CourseMap'
 import { TourismDetailPanel } from '../components/tourism/TourismDetailPanel'
@@ -44,6 +44,7 @@ import {
 } from '../features/tourism/routeApi'
 import { trackEvent } from '../features/analytics/trackEvent'
 import { loadTestResult } from '../lib/storage'
+import type { SeonbiType } from '../features/seonbi-test/types'
 
 const yeongjuKeywords = ['소수서원', '선비세상', '무섬마을', '부석사', '풍기인삼']
 const yeongjuCenterLocation: RouteCoordinate = {
@@ -84,6 +85,9 @@ interface AiItinerary {
 
 export function CoursePage() {
   const testResult = useMemo(() => loadTestResult(), [])
+  const [selectedSeonbiType, setSelectedSeonbiType] = useState<SeonbiType>(
+    testResult?.type ?? 'toegye',
+  )
   const detailRequestIdRef = useRef(0)
   const routeRequestIdRef = useRef(0)
   const [activeFilter, setActiveFilter] = useState<TourismFilterId>('all')
@@ -109,14 +113,11 @@ export function CoursePage() {
     status: 'idle',
   })
   const [tourismState, setTourismState] = useState<TourismPageState>({
-    status: testResult ? 'loading' : 'empty',
+    status: 'loading',
     contents: [],
-    reason: testResult ? undefined : 'no_test_result',
   })
 
   useEffect(() => {
-    if (!testResult) return
-
     let ignore = false
 
     async function loadTourismContents() {
@@ -139,7 +140,7 @@ export function CoursePage() {
     return () => {
       ignore = true
     }
-  }, [activeFilter, testResult])
+  }, [activeFilter])
 
   useEffect(() => {
     if (!getStoredAuthUser()) return
@@ -210,12 +211,14 @@ export function CoursePage() {
   }, [])
 
   const recommendedCourse = useMemo(() => {
-    return testResult
-      ? recommendCourseForSeonbiType(testResult.type, tourismState.contents, mindTags)
-      : null
-  }, [mindTags, testResult, tourismState.contents])
-  const typeInfo = testResult ? seonbiTypeInfo[testResult.type] : null
-  const recommendedItems = useMemo(() => recommendedCourse?.items ?? [], [recommendedCourse])
+    return recommendCourseForSeonbiType(
+      selectedSeonbiType,
+      tourismState.contents,
+      mindTags,
+    )
+  }, [mindTags, selectedSeonbiType, tourismState.contents])
+  const typeInfo = seonbiTypeInfo[selectedSeonbiType]
+  const recommendedItems = useMemo(() => recommendedCourse.items, [recommendedCourse])
   const routeItems = useMemo(() => {
     return getNearestTourismItems(currentLocation, recommendedItems, 3)
   }, [currentLocation, recommendedItems])
@@ -234,17 +237,25 @@ export function CoursePage() {
   const routePath = routeState.key === routePointsKey ? routeState.path : []
   const routeSource = routeState.key === routePointsKey ? routeState.source : 'straight-line'
   const activeFilterLabel = getTourismFilterLabel(activeFilter)
-  const selectedRecommendationTitle = getRecommendationTitle(activeFilter)
+  const selectedRecommendationTitle = getRecommendationTitle(
+    activeFilter,
+    typeInfo.name,
+    Boolean(testResult),
+  )
   const selectedDataTitle = getTourismDataTitle(activeFilter)
   const selectedEmptyTitle = getTourismEmptyTitle(activeFilter)
-  const selectedRecommendationDescription = getRecommendationDescription(activeFilter)
+  const selectedRecommendationDescription = getRecommendationDescription(
+    activeFilter,
+    typeInfo.name,
+    Boolean(testResult),
+  )
   const locationMessage = isLocationFallback
     ? `위치 권한이 없어 영주 중심 기준으로 가까운 ${activeFilterLabel} 추천 코스 3곳을 표시합니다.`
     : `현재 위치 기준 가까운 ${activeFilterLabel} 추천 코스 3곳`
   const routeLabel = `현재 위치 기준 가까운 ${activeFilterLabel} 추천 경로`
   const shouldShowCards = tourismState.status === 'ready' && tourismState.contents.length > 0
   const shouldShowAllCards = tourismState.status === 'ready' && tourismState.contents.length > 0
-  const activeSeonbiType = testResult?.type
+  const activeSeonbiType = selectedSeonbiType
   const mindTagFlow = formatMindTagFlow(mindTags)
 
   useEffect(() => {
@@ -315,9 +326,15 @@ export function CoursePage() {
     setDetailState({ status: 'idle' })
   }, [])
 
-  const selectTourismItem = useCallback((item: TourismContent) => {
-    if (!activeSeonbiType) return
+  const selectSeonbiType = useCallback((seonbiType: SeonbiType) => {
+    detailRequestIdRef.current += 1
+    setSelectedSeonbiType(seonbiType)
+    setSelectedContentId(undefined)
+    setDetailState({ status: 'idle' })
+    setAiItinerary(null)
+  }, [])
 
+  const selectTourismItem = useCallback((item: TourismContent) => {
     setSelectedContentId(getTourismItemKey(item))
     void openTourismDetail(item)
     void trackEvent('tourism_card_clicked', {
@@ -325,18 +342,11 @@ export function CoursePage() {
       contentId: item.contentId,
       contentTitle: item.title,
       contentTypeId: item.contentTypeId,
+      metadata: {
+        seonbiTypeSource: testResult ? 'test_result' : 'preview',
+      },
     })
-  }, [activeSeonbiType, openTourismDetail])
-
-  if (!testResult) {
-    return (
-      <AppLayout>
-        <section className="page-section page-container">
-          <ProtectedFeaturePrompt />
-        </section>
-      </AppLayout>
-    )
-  }
+  }, [activeSeonbiType, openTourismDetail, testResult])
 
   async function toggleFavoriteCourse(item: TourismContent) {
     setFavoriteMessage('')
@@ -388,9 +398,9 @@ export function CoursePage() {
           <StatusBadge>추천 코스</StatusBadge>
           <h1>유형별 영주 관광 추천 코스</h1>
           <p>
-            {typeInfo
+            {testResult
               ? `${typeInfo.name} 결과를 기준으로 실제 공공데이터 안에서만 추천합니다.`
-              : '선비유형 테스트 결과를 기준으로 추천 코스를 준비합니다.'}
+              : `${typeInfo.name}을 미리 선택해 실제 공공데이터 추천을 체험하고 있습니다.`}
           </p>
         </div>
 
@@ -413,6 +423,14 @@ export function CoursePage() {
             </>
           )}
         </div>
+
+        {!testResult && (
+          <SeonbiPreviewPanel
+            selectedType={selectedSeonbiType}
+            featureLabel="추천 코스"
+            onSelect={selectSeonbiType}
+          />
+        )}
 
         <section className="surface-card course-category-panel" aria-labelledby="course-category-title">
           <div>
@@ -508,7 +526,7 @@ export function CoursePage() {
                 }
               />
             )}
-            {tourismState.status === 'empty' && testResult && (
+            {tourismState.status === 'empty' && (
               <TourismEmptyState
                 title={selectedEmptyTitle}
                 description="현재 조건에서 표시할 관광 정보가 없습니다. 전체 또는 다른 유형을 선택해보세요."
@@ -623,12 +641,17 @@ function getTourismDataTitle(filterId: TourismFilterId) {
   return '전체 영주 관광 데이터 보기'
 }
 
-function getRecommendationTitle(filterId: TourismFilterId) {
-  if (filterId === 'attraction') return '내 선비유형에 맞는 영주 관광지 추천'
-  if (filterId === 'culture') return '내 선비유형에 맞는 영주 문화시설 추천'
-  if (filterId === 'accommodation') return '내 선비유형에 맞는 영주 숙박 추천'
-  if (filterId === 'restaurant') return '내 선비유형에 맞는 영주 음식점 추천'
-  return '내 선비유형에 맞는 영주 추천 코스'
+function getRecommendationTitle(
+  filterId: TourismFilterId,
+  seonbiTypeName: string,
+  hasTestResult: boolean,
+) {
+  const ownerLabel = hasTestResult ? '내 선비유형' : seonbiTypeName
+  if (filterId === 'attraction') return `${ownerLabel}에 맞는 영주 관광지 추천`
+  if (filterId === 'culture') return `${ownerLabel}에 맞는 영주 문화시설 추천`
+  if (filterId === 'accommodation') return `${ownerLabel}에 맞는 영주 숙박 추천`
+  if (filterId === 'restaurant') return `${ownerLabel}에 맞는 영주 음식점 추천`
+  return `${ownerLabel}에 맞는 영주 추천 코스`
 }
 
 function getTourismEmptyTitle(filterId: TourismFilterId) {
@@ -636,13 +659,18 @@ function getTourismEmptyTitle(filterId: TourismFilterId) {
   return '선택한 유형의 영주 공공데이터를 찾지 못했습니다.'
 }
 
-function getRecommendationDescription(filterId: TourismFilterId) {
+function getRecommendationDescription(
+  filterId: TourismFilterId,
+  seonbiTypeName: string,
+  hasTestResult: boolean,
+) {
   const label = getTourismFilterLabel(filterId)
+  const sourceLabel = hasTestResult ? '선비유형 성향' : `${seonbiTypeName} 성향`
   if (filterId === 'all') {
-    return '실제 영주 관광 공공데이터 중 선비유형 성향과 가까운 장소를 우선 추천합니다.'
+    return `실제 영주 관광 공공데이터 중 ${sourceLabel}과 가까운 장소를 우선 추천합니다.`
   }
 
-  return `실제 영주 ${label} 공공데이터 중 선비유형 성향과 가까운 장소를 우선 추천합니다.`
+  return `실제 영주 ${label} 공공데이터 중 ${sourceLabel}과 가까운 장소를 우선 추천합니다.`
 }
 
 function getTourismItemKey(item: TourismContent) {
