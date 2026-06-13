@@ -54,6 +54,12 @@ interface JudgeAnalysis {
   adviceTag?: string
 }
 
+type JudgeTextField =
+  | 'seonbiAdvice'
+  | 'modernTranslation'
+  | 'shareText'
+  | 'imageObservation'
+
 interface JudgeRequestBody {
   text?: unknown
   seonbiType?: unknown
@@ -620,7 +626,7 @@ function sanitizeJudgeResult(result: JudgeResult): JudgeResult {
 
 function sanitizeKoreanResultField(
   value: string,
-  field: keyof JudgeResult,
+  field: JudgeTextField,
 ): string {
   const trimmedValue = value.trim()
   if (!trimmedValue || containsLikelyEnglishSentence(trimmedValue)) {

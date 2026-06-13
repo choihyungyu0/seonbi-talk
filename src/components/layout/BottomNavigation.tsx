@@ -5,6 +5,7 @@ import { loadTestResult } from '../../lib/storage'
 const bottomItems = [
   { to: '/', label: '홈' },
   { to: '/course', label: '코스', requiresTestResult: true },
+  { to: '/heatmap', label: '히트맵' },
   { to: '/test', label: '테스트' },
   { to: '/judge', label: '한마디', requiresTestResult: true },
 ]

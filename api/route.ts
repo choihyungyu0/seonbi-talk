@@ -162,7 +162,7 @@ function getValidatedRoutePoints(body: unknown): RoutePointsValidation {
     }
 
     const coordinate = point as Partial<RouteCoordinate>
-    if (!isValidCoordinate(coordinate.lat, coordinate.lng)) {
+    if (!isValidRouteCoordinate(coordinate)) {
       return {
         ok: false,
         message: '경로 좌표 범위가 올바르지 않습니다.',
@@ -189,6 +189,12 @@ function parseRequestBody(body: unknown): RouteRequestBody {
   } catch {
     return {}
   }
+}
+
+function isValidRouteCoordinate(
+  coordinate: Partial<RouteCoordinate>,
+): coordinate is RouteCoordinate {
+  return isValidCoordinate(coordinate.lat, coordinate.lng)
 }
 
 function createKakaoDirectionsUrl(points: RouteCoordinate[]) {
