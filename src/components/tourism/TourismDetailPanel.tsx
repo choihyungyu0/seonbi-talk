@@ -4,6 +4,7 @@ import {
   normalizeTourApiImageUrl,
 } from '../../features/tourism/tourismImageUrl'
 import type { TourismContent, TourismDetail } from '../../features/tourism/tourismTypes'
+import { getTourismContentSourceLabel } from '../../features/tourism/yeongjuEnrichment'
 import { ImagePlaceholder } from '../common/ImagePlaceholder'
 import { StatusBadge } from '../common/StatusBadge'
 
@@ -134,6 +135,31 @@ export function TourismDetailPanel({
               <DetailRow label="이용요금" value={item.useFee} fallback="요금 정보 없음" />
               <DetailRow label="주차" value={item.parking} fallback="주차 정보 없음" />
               <DetailRow label="전화번호" value={item.tel} fallback="전화번호 정보 없음" />
+              {item.eventPeriod && (
+                <DetailRow label="행사기간" value={item.eventPeriod} fallback="" />
+              )}
+              {item.roomCount !== undefined && (
+                <DetailRow
+                  label="객실 수"
+                  value={`${item.roomCount.toLocaleString()}실`}
+                  fallback=""
+                />
+              )}
+              {item.designationDate && (
+                <DetailRow label="지정일" value={item.designationDate} fallback="" />
+              )}
+              {item.coordinateSource && (
+                <DetailRow
+                  label="좌표 기준"
+                  value={getCoordinateSourceLabel(item.coordinateSource)}
+                  fallback=""
+                />
+              )}
+              <DetailRow
+                label="출처"
+                value={item.sourceLabel ?? getTourismContentSourceLabel(item.source)}
+                fallback="출처 정보 없음"
+              />
               <div>
                 <dt>홈페이지</dt>
                 <dd>
@@ -147,6 +173,16 @@ export function TourismDetailPanel({
                 </dd>
               </div>
             </dl>
+            {item.dataEvidence && item.dataEvidence.length > 0 && (
+              <div className="tourism-detail-evidence">
+                <strong>데이터 근거</strong>
+                <ul>
+                  {item.dataEvidence.map((evidence) => (
+                    <li key={evidence}>{evidence}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </>
         )}
       </section>
@@ -211,4 +247,12 @@ function getHomepageLink(value?: string) {
   const cleaned = cleanText(value)
   const match = cleaned.match(/https?:\/\/[^\s"]+/)
   return match ? match[0] : ''
+}
+
+function getCoordinateSourceLabel(value: string) {
+  if (value === 'known-place') return '주요 장소 대표 좌표'
+  if (value === 'official-main-venue') return '공식 주요 행사장 좌표'
+  if (value === 'representative-venue-keyword') return '개최장소 키워드 대표 좌표'
+  if (value === 'address-area-centroid') return '주소 권역 대표 좌표'
+  return value
 }

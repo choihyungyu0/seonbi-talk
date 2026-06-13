@@ -45,11 +45,16 @@ export function recommendCourseForSeonbiType(
         ? contentTypeWeights[content.contentTypeId] ?? 0
         : 0
       const mindTagScore = scoreTourismContentByMindTags(content, mindTags)
+      const localDataScore = scoreTourismContentByLocalData(
+        content,
+        seonbiType,
+        mindTags,
+      )
 
       return {
         content,
         index,
-        totalScore: keywordScore + contentTypeScore + mindTagScore,
+        totalScore: keywordScore + contentTypeScore + mindTagScore + localDataScore,
         mindTagScore,
         hasImage: Boolean(content.firstImage || content.firstImage2),
         hasCoordinates: content.mapX !== undefined && content.mapY !== undefined,
@@ -81,9 +86,15 @@ export function createTourismRecommendationReason(
   mindTags?: CourseMindTags | null,
 ) {
   const subject = getContentReasonSubject(content)
+  const localDataReason = createLocalDataRecommendationReason(content, subject)
 
   if (hasMindTags(mindTags)) {
-    return createMindTagRecommendationReason(content, mindTags)
+    const mindTagReason = createMindTagRecommendationReason(content, mindTags)
+    return localDataReason ? `${mindTagReason} ${localDataReason}` : mindTagReason
+  }
+
+  if (localDataReason) {
+    return localDataReason
   }
 
   if (isRestaurant(content)) {
@@ -211,6 +222,51 @@ function scoreTourismContentByMindTags(
   return score
 }
 
+function scoreTourismContentByLocalData(
+  content: TourismContent,
+  seonbiType: SeonbiType,
+  mindTags: CourseMindTags | null | undefined,
+) {
+  const searchableText = getContentSearchableText(content)
+  let score = 0
+
+  if (content.source === 'SosuVisitorStats') score += 12
+  if (content.source === 'YeongjuOfficialFestival') score += 9
+  if (content.source === 'YeongjuRuralTourismOpenData') score += 7
+  if (content.source === 'YeongjuRuralHomestayOpenData') score += 6
+  if (content.source === 'YeongjuSafeRestaurantOpenData') score += 6
+  if (content.source === 'YeongjuGoodRestaurantOpenData') score += 4
+
+  if (content.coordinateSource === 'known-place') score += 2
+  if (content.parkingCapacity) score += 2
+  if (content.roomCount && content.roomCount >= 4) score += 2
+
+  if (seonbiType === 'yulgok' && isRestaurant(content)) score += 5
+  if (seonbiType === 'cheosa' && isAccommodation(content)) score += 5
+  if (seonbiType === 'toegye' && searchableText.includes('서원')) score += 4
+  if (seonbiType === 'uguk' && isCultureOrHistoryContent(content)) score += 4
+
+  if (
+    hasMindTags(mindTags) &&
+    (hasAnyTagValue(mindTags.situationTag ?? '', ['부모', '가족', '동반']) ||
+      hasAnyTagValue(mindTags.adviceTag ?? '', ['응원', '칭찬', '격려'])) &&
+    content.source === 'YeongjuSafeRestaurantOpenData'
+  ) {
+    score += 5
+  }
+
+  if (
+    hasMindTags(mindTags) &&
+    (hasAnyTagValue(mindTags.situationTag ?? '', ['휴식', '쉼']) ||
+      hasAnyTagValue(mindTags.emotionTag ?? '', ['피로', '지침'])) &&
+    content.source === 'YeongjuRuralHomestayOpenData'
+  ) {
+    score += 5
+  }
+
+  return score
+}
+
 function createMindTagRecommendationReason(
   content: TourismContent,
   mindTags: CourseMindTags,
@@ -247,6 +303,54 @@ function createCategoryBasedRecommendationReason(content: TourismContent) {
   }
 
   return `${subject}은 영주 여행의 흐름에 자연스럽게 더하기 좋은 추천 장소입니다.`
+}
+
+function createLocalDataRecommendationReason(
+  content: TourismContent,
+  subject: string,
+) {
+  if (content.source === 'SosuVisitorStats') {
+    const evidence = content.dataEvidence?.[0]
+    return `${subject}은 실제 입장객 추이 데이터${evidence ? `(${evidence})` : ''}로 확인되는 영주 대표 역사문화 거점입니다.`
+  }
+
+  if (content.source === 'YeongjuFestivalOpenData') {
+    const period = content.eventPeriod ? ` ${content.eventPeriod} 일정의` : ''
+    return `${subject}은 영주시 문화축제 데이터에 포함된${period} 행사라 계절형 동선 후보로 참고하기 좋습니다.`
+  }
+
+  if (content.source === 'YeongjuOfficialFestival') {
+    const period = content.eventPeriod ? ` ${content.eventPeriod}` : ''
+    return `${subject}은 공식 축제 안내에서 확인한${period} 핵심 행사라 선비문화 테마 여행의 기준점으로 쓰기 좋습니다.`
+  }
+
+  if (content.source === 'YeongjuGoodRestaurantOpenData') {
+    return `${subject}은 영주시 맛집 현황에 등록된 지역 음식점이라 관광 동선 중 식사 후보로 연결하기 좋습니다.`
+  }
+
+  if (content.source === 'YeongjuSafeRestaurantOpenData') {
+    return `${subject}은 안심식당 데이터에 포함되어 가족 동반 식사나 쉬어가는 일정에 우선 검토하기 좋습니다.`
+  }
+
+  if (content.source === 'YeongjuRuralTourismOpenData') {
+    return `${subject}은 영주시 농촌관광시설 데이터에 포함되어 체험·자연·마을형 동선 보강에 적합합니다.`
+  }
+
+  if (content.source === 'YeongjuRuralHomestayOpenData') {
+    const roomEvidence = content.roomCount
+      ? ` 객실 수 ${content.roomCount.toLocaleString()}실 정보도 확인됩니다.`
+      : ''
+    return `${subject}은 농어촌민박 신고 데이터에 포함되어 1박 2일 체류형 코스로 전환하기 좋습니다.${roomEvidence}`
+  }
+
+  if (content.source === 'NationalTourismStandardData') {
+    const parkingEvidence = content.parkingCapacity
+      ? ` 주차 가능 ${content.parkingCapacity.toLocaleString()}면 정보도 함께 확인됩니다.`
+      : ''
+    return `${subject}은 전국관광지정보표준데이터에서 영주시 제공 관광지로 확인됩니다.${parkingEvidence}`
+  }
+
+  return ''
 }
 
 function isRestaurant(content: TourismContent) {

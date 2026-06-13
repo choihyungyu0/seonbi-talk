@@ -24,6 +24,24 @@ export type TourismEmptyStateReason =
   | 'no_test_result'
   | 'api_error'
 
+export type TourismContentSource =
+  | 'TourAPI'
+  | 'SosuVisitorStats'
+  | 'YeongjuFestivalOpenData'
+  | 'YeongjuOfficialFestival'
+  | 'YeongjuGoodRestaurantOpenData'
+  | 'YeongjuSafeRestaurantOpenData'
+  | 'YeongjuRuralTourismOpenData'
+  | 'YeongjuRuralHomestayOpenData'
+  | 'NationalTourismStandardData'
+  | 'NationalParkingStandardData'
+  | 'KorailRouteFrequencyOpenData'
+  | 'PublicToiletOpenData'
+  | 'KmaWeatherForecast'
+  | 'KmaLivingWeatherIndex'
+  | 'TagoTransitOpenData'
+  | 'BarrierFreeTourismInfo'
+
 export interface TourismContent {
   code?: string
   name?: string
@@ -48,7 +66,15 @@ export interface TourismContent {
   areaCode?: string
   sigunguCode?: string
   category?: string
-  source?: 'TourAPI'
+  source?: TourismContentSource
+  sourceLabel?: string
+  dataEvidence?: string[]
+  eventPeriod?: string
+  parkingCapacity?: number
+  coordinateSource?: string
+  roomCount?: number
+  designationDate?: string
+  recommendationSignals?: string[]
 }
 
 export interface TourismApiResponse {

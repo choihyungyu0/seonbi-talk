@@ -4,6 +4,10 @@ import { BrandLoading } from '../components/common/BrandLoading'
 import { CommonButton } from '../components/common/CommonButton'
 import { StatusBadge } from '../components/common/StatusBadge'
 import { AppLayout } from '../components/layout/AppLayout'
+import {
+  loadYeongjuEnrichmentData,
+  type YeongjuEnrichmentData,
+} from '../features/tourism/yeongjuEnrichment'
 
 type AdminSessionStatus = 'checking' | 'authenticated' | 'unauthenticated'
 type DashboardStatus = 'idle' | 'loading' | 'ready' | 'error'
@@ -132,6 +136,7 @@ export function AdminPage() {
   const [ragSearchStatus, setRagSearchStatus] = useState<RagSearchStatus>('idle')
   const [ragSearchResults, setRagSearchResults] = useState<RagSearchResult[]>([])
   const [ragSearchMessage, setRagSearchMessage] = useState('')
+  const [enrichmentData, setEnrichmentData] = useState<YeongjuEnrichmentData | null>(null)
   const isCheckingSession = sessionStatus === 'checking'
   const isAuthenticated = sessionStatus === 'authenticated'
   const hasNoData = useMemo(() => {
@@ -228,6 +233,22 @@ export function AdminPage() {
       ignore = true
     }
   }, [isAuthenticated, loadDashboard])
+
+  useEffect(() => {
+    if (!isAuthenticated) return
+    let ignore = false
+
+    async function loadEnrichment() {
+      const data = await loadYeongjuEnrichmentData()
+      if (!ignore) setEnrichmentData(data)
+    }
+
+    void loadEnrichment()
+
+    return () => {
+      ignore = true
+    }
+  }, [isAuthenticated])
 
   async function handleLogout() {
     setStatusMessage('')
@@ -415,6 +436,7 @@ export function AdminPage() {
                 onSearchQueryChange={setRagSearchQuery}
                 onSeed={() => void handleRagSeed()}
               />
+              <LocalPublicDataPanel data={enrichmentData} />
               <ChartPanel
                 title="선비유형 분포"
                 rows={toChartRows(dashboard.seonbiTypeDistribution, seonbiTypeLabels)}
@@ -511,6 +533,90 @@ function ChartPanel({ title, rows }: { title: string; rows: ChartRow[] }) {
             </div>
           ))}
         </div>
+      )}
+    </article>
+  )
+}
+
+function LocalPublicDataPanel({ data }: { data: YeongjuEnrichmentData | null }) {
+  if (!data) {
+    return (
+      <article className="surface-card admin-chart-panel">
+        <h2>영주 보강 데이터 적용 현황</h2>
+        <p className="admin-empty-panel">보강 데이터를 불러오는 중입니다.</p>
+      </article>
+    )
+  }
+
+  const inventoryRows = data.sourceInventory
+    .filter((item) => item.appliedRows > 0)
+    .map((item) => ({
+      label: item.label,
+      value: item.appliedRows,
+    }))
+    .sort((first, second) => second.value - first.value)
+    .slice(0, 8)
+  const maxInventoryRows = Math.max(...inventoryRows.map((row) => row.value), 1)
+  const trendRows = data.visitorDemand.latestMonthlyTrend.slice(-6)
+  const maxVisitors = Math.max(...trendRows.map((row) => row.visitors), 1)
+  const weather = data.weatherSummary
+
+  return (
+    <article className="surface-card admin-chart-panel admin-local-data-panel">
+      <div className="admin-panel-heading">
+        <h2>영주 보강 데이터 적용 현황</h2>
+        <span>{formatDateTime(data.generatedAt)}</span>
+      </div>
+      <MetricGrid
+        metrics={[
+          { label: '맛집', value: data.localRestaurants.length },
+          { label: '안심식당', value: data.safeRestaurants.length },
+          { label: '농어촌민박', value: data.ruralHomestays.length },
+          { label: '공중화장실', value: data.publicToilets.length },
+          {
+            label: '무장애 화장실',
+            value: data.accessibilitySummary?.accessiblePublicToilets ?? 0,
+          },
+          {
+            label: '단기예보',
+            value: weather?.forecastDate ? weather.forecastDate : '수집 전',
+          },
+        ]}
+      />
+      <div className="admin-quality-subchart">
+        <strong>적용 데이터셋 상위</strong>
+        <div className="admin-bar-list">
+          {inventoryRows.map((row) => (
+            <div className="admin-bar-row" key={row.label}>
+              <span>{row.label}</span>
+              <div className="admin-bar-track">
+                <i style={{ width: `${Math.max((row.value / maxInventoryRows) * 100, 4)}%` }} />
+              </div>
+              <strong>{formatNumber(row.value)}</strong>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="admin-quality-subchart">
+        <strong>소수서원 최근 월별 입장객</strong>
+        <div className="admin-bar-list">
+          {trendRows.map((row) => (
+            <div className="admin-bar-row" key={row.month}>
+              <span>{row.month}</span>
+              <div className="admin-bar-track">
+                <i style={{ width: `${Math.max((row.visitors / maxVisitors) * 100, 4)}%` }} />
+              </div>
+              <strong>{formatNumber(row.visitors)}</strong>
+            </div>
+          ))}
+        </div>
+      </div>
+      {weather && (
+        <p className="admin-data-note">
+          날씨 근거: {weather.sky ?? '미확인'}, 강수확률{' '}
+          {formatNumber(weather.precipitationProbability ?? 0)}%, 자외선{' '}
+          {weather.uvIndex?.level ?? '미확인'}
+        </p>
       )}
     </article>
   )

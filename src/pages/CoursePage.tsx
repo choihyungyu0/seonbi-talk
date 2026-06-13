@@ -11,6 +11,8 @@ import { seonbiTypeInfo } from '../data/seonbiTypes'
 import {
   getYeongjuAccommodations,
   getYeongjuCultureFacilities,
+  getYeongjuExperienceFacilities,
+  getYeongjuFestivals,
   getYeongjuRestaurants,
   getYeongjuTourismContents,
   getYeongjuTouristAttractions,
@@ -29,6 +31,10 @@ import {
   formatMindTagFlow,
   recommendCourseForSeonbiType,
 } from '../features/tourism/recommendation'
+import {
+  loadYeongjuEnrichmentData,
+  type YeongjuEnrichmentData,
+} from '../features/tourism/yeongjuEnrichment'
 import type { CourseMindTags } from '../features/tourism/recommendation'
 import type {
   TourismApiResponse,
@@ -55,6 +61,8 @@ const tourismFilters = [
   { id: 'all', label: '전체', contentTypeId: undefined },
   { id: 'attraction', label: '관광지', contentTypeId: '12' },
   { id: 'culture', label: '문화시설', contentTypeId: '14' },
+  { id: 'festival', label: '축제', contentTypeId: '15' },
+  { id: 'experience', label: '체험', contentTypeId: '12' },
   { id: 'accommodation', label: '숙박', contentTypeId: '32' },
   { id: 'restaurant', label: '음식점', contentTypeId: '39' },
 ] as const
@@ -116,6 +124,7 @@ export function CoursePage() {
     status: 'loading',
     contents: [],
   })
+  const [enrichmentData, setEnrichmentData] = useState<YeongjuEnrichmentData | null>(null)
 
   useEffect(() => {
     let ignore = false
@@ -208,6 +217,21 @@ export function CoursePage() {
         timeout: 7000,
       },
     )
+  }, [])
+
+  useEffect(() => {
+    let ignore = false
+
+    async function loadEnrichment() {
+      const data = await loadYeongjuEnrichmentData()
+      if (!ignore) setEnrichmentData(data)
+    }
+
+    void loadEnrichment()
+
+    return () => {
+      ignore = true
+    }
   }, [])
 
   const recommendedCourse = useMemo(() => {
@@ -424,6 +448,10 @@ export function CoursePage() {
           )}
         </div>
 
+        {tourismState.status === 'ready' && tourismState.message && (
+          <p className="course-data-source-note">{tourismState.message}</p>
+        )}
+
         {!testResult && (
           <SeonbiPreviewPanel
             selectedType={selectedSeonbiType}
@@ -437,7 +465,8 @@ export function CoursePage() {
             <StatusBadge tone="brown">유형 선택</StatusBadge>
             <h2 id="course-category-title">코스 유형 선택</h2>
             <p>
-              관광지, 문화시설, 숙박, 음식점 중 원하는 유형을 골라 추천 코스를 확인하세요.
+              관광지, 문화시설, 축제, 체험, 숙박, 음식점 중 원하는 유형을 골라
+              추천 코스를 확인하세요.
             </p>
           </div>
           <div className="course-category-tabs" aria-label="추천 코스 유형">
@@ -494,6 +523,8 @@ export function CoursePage() {
             </div>
           )}
         </section>
+
+        <CourseTravelContextPanel data={enrichmentData} />
 
         {favoriteMessage && (
           <p className="disabled-notice course-favorite-notice" role="status">
@@ -624,9 +655,118 @@ export function CoursePage() {
 function getTourismResponse(filterId: TourismFilterId) {
   if (filterId === 'attraction') return getYeongjuTouristAttractions()
   if (filterId === 'culture') return getYeongjuCultureFacilities()
+  if (filterId === 'festival') return getYeongjuFestivals()
+  if (filterId === 'experience') return getYeongjuExperienceFacilities()
   if (filterId === 'accommodation') return getYeongjuAccommodations()
   if (filterId === 'restaurant') return getYeongjuRestaurants()
   return getYeongjuTourismContents()
+}
+
+function CourseTravelContextPanel({ data }: { data: YeongjuEnrichmentData | null }) {
+  if (!data) {
+    return (
+      <section className="surface-card course-context-panel" aria-label="여행 판단 근거">
+        <div className="course-context-heading">
+          <div>
+            <StatusBadge tone="neutral">판단 근거</StatusBadge>
+            <h2>오늘 여행 판단 근거</h2>
+          </div>
+          <span>불러오는 중</span>
+        </div>
+        <p className="course-context-empty">영주 보강 데이터를 불러오고 있습니다.</p>
+      </section>
+    )
+  }
+
+  const weather = data.weatherSummary
+  const accessibility = data.accessibilitySummary
+  const transit = data.transitAccess
+  const appliedRows = data.sourceInventory.reduce(
+    (sum, item) => sum + item.appliedRows,
+    0,
+  )
+  const latestVisitors = data.visitorDemand.latestCompleteMonth
+  const weatherSummary = weather
+    ? `${weather.sky ?? '날씨 미확인'} · ${formatTemperature(weather.temperatureC)} · 강수 ${formatPercent(weather.precipitationProbability)}`
+    : '기상 데이터 수집 전'
+  const uvSummary = weather?.uvIndex?.level
+    ? `자외선 ${weather.uvIndex.level}`
+    : '자외선 미확인'
+  const contextCards = [
+    {
+      label: '날씨',
+      value: weatherSummary,
+      detail: `${uvSummary}. ${weather?.guidance[0] ?? '날씨 기반 동선 보정 전입니다.'}`,
+    },
+    {
+      label: '교통',
+      value: transit
+        ? `영주역 기준 주중 ${formatNumber(transit.weekdayPassengerTrainCount)}회`
+        : '교통 데이터 수집 전',
+      detail: transit?.guidance ?? '영주역 기준 이동 근거를 확인하는 중입니다.',
+    },
+    {
+      label: '편의',
+      value: accessibility
+        ? `화장실 ${formatNumber(accessibility.totalPublicToilets)}곳 · 주차장 ${formatNumber(accessibility.totalParkingLots)}곳`
+        : '편의 데이터 수집 전',
+      detail: accessibility
+        ? `무장애 화장실 ${formatNumber(accessibility.accessiblePublicToilets)}곳, 장애인 주차 근거 ${formatNumber(accessibility.accessibleParkingLots)}곳을 추천 보정에 사용합니다.`
+        : '편의시설 근거를 확인하는 중입니다.',
+    },
+    {
+      label: '수요',
+      value: `${latestVisitors.month} 소수서원 ${formatNumber(latestVisitors.visitors)}명`,
+      detail: `총 ${formatNumber(appliedRows)}건의 보강 공공데이터를 추천 후보와 히트맵에 연결했습니다.`,
+    },
+  ]
+
+  return (
+    <section className="surface-card course-context-panel" aria-labelledby="course-context-title">
+      <div className="course-context-heading">
+        <div>
+          <StatusBadge tone="brown">판단 근거</StatusBadge>
+          <h2 id="course-context-title">오늘 여행 판단 근거</h2>
+        </div>
+        <span>{formatShortDate(data.generatedAt)}</span>
+      </div>
+      <div className="course-context-grid">
+        {contextCards.map((card) => (
+          <article key={card.label} className="course-context-card">
+            <span>{card.label}</span>
+            <strong>{card.value}</strong>
+            <p>{card.detail}</p>
+          </article>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+function formatNumber(value: number) {
+  return new Intl.NumberFormat('ko-KR').format(value)
+}
+
+function formatPercent(value: number | undefined) {
+  if (value === undefined) return '미확인'
+  return `${formatNumber(value)}%`
+}
+
+function formatTemperature(value: number | undefined) {
+  if (value === undefined) return '기온 미확인'
+  return `${formatNumber(value)}°C`
+}
+
+function formatShortDate(value: string) {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return '최근 갱신'
+
+  return new Intl.DateTimeFormat('ko-KR', {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date)
 }
 
 function getTourismFilterLabel(filterId: TourismFilterId) {
@@ -636,6 +776,8 @@ function getTourismFilterLabel(filterId: TourismFilterId) {
 function getTourismDataTitle(filterId: TourismFilterId) {
   if (filterId === 'attraction') return '영주 관광지 데이터 보기'
   if (filterId === 'culture') return '영주 문화시설 데이터 보기'
+  if (filterId === 'festival') return '영주 축제 데이터 보기'
+  if (filterId === 'experience') return '영주 체험 데이터 보기'
   if (filterId === 'accommodation') return '영주 숙박 데이터 보기'
   if (filterId === 'restaurant') return '영주 음식점 데이터 보기'
   return '전체 영주 관광 데이터 보기'
@@ -649,6 +791,8 @@ function getRecommendationTitle(
   const ownerLabel = hasTestResult ? '내 선비유형' : seonbiTypeName
   if (filterId === 'attraction') return `${ownerLabel}에 맞는 영주 관광지 추천`
   if (filterId === 'culture') return `${ownerLabel}에 맞는 영주 문화시설 추천`
+  if (filterId === 'festival') return `${ownerLabel}에 맞는 영주 축제 추천`
+  if (filterId === 'experience') return `${ownerLabel}에 맞는 영주 체험 추천`
   if (filterId === 'accommodation') return `${ownerLabel}에 맞는 영주 숙박 추천`
   if (filterId === 'restaurant') return `${ownerLabel}에 맞는 영주 음식점 추천`
   return `${ownerLabel}에 맞는 영주 추천 코스`

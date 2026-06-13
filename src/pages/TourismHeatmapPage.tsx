@@ -14,7 +14,16 @@ import {
   getYeongjuTouristAttractions,
   searchYeongjuTourismByKeyword,
 } from '../features/tourism/tourismApi'
-import type { TourismApiResponse, TourismContent } from '../features/tourism/tourismTypes'
+import type {
+  TourismApiResponse,
+  TourismContent,
+  TourismContentSource,
+} from '../features/tourism/tourismTypes'
+import {
+  getTourismContentSourceLabel,
+  loadYeongjuEnrichmentData,
+  type YeongjuEnrichmentData,
+} from '../features/tourism/yeongjuEnrichment'
 
 type HeatmapMode = 'tourism' | 'facility' | 'festival'
 type HeatmapCategory =
@@ -24,6 +33,8 @@ type HeatmapCategory =
   | 'parking'
   | 'toilet'
   | 'lodging'
+  | 'food'
+  | 'rural'
 
 interface HeatmapPoint {
   id: string
@@ -31,7 +42,7 @@ interface HeatmapPoint {
   category: HeatmapCategory
   coordinates: [number, number]
   address?: string
-  source: 'TourAPI' | 'fallback' | 'visual-sample'
+  source: TourismContentSource | 'fallback' | 'visual-sample'
   weights: Record<HeatmapMode, number>
 }
 
@@ -181,15 +192,22 @@ export function TourismHeatmapPage() {
     let ignore = false
 
     async function loadHeatmapData() {
-      const responses = await Promise.all([
+      const [attractions, cultureFacilities, accommodations, festivals, enrichment] =
+        await Promise.all([
         getYeongjuTouristAttractions(),
         getYeongjuCultureFacilities(),
         getYeongjuAccommodations(),
         searchYeongjuTourismByKeyword('축제'),
+        loadYeongjuEnrichmentData(),
       ])
       if (ignore) return
 
-      setDataState(createHeatmapDataState(responses))
+      setDataState(
+        createHeatmapDataState(
+          [attractions, cultureFacilities, accommodations, festivals],
+          enrichment,
+        ),
+      )
     }
 
     void loadHeatmapData()
@@ -209,6 +227,7 @@ export function TourismHeatmapPage() {
     [activeMode, activePoints],
   )
   const apiPointCount = activePoints.filter((point) => point.source === 'TourAPI').length
+  const localPointCount = activePoints.filter((point) => isLocalHeatmapSource(point.source)).length
   const fallbackPointCount = activePoints.filter((point) => point.source === 'fallback').length
   const samplePointCount = activePoints.filter((point) => point.source === 'visual-sample').length
   const topPoints = useMemo(
@@ -296,7 +315,7 @@ export function TourismHeatmapPage() {
                 <span>Mapbox + deck.gl HexagonLayer</span>
               </div>
               <StatusBadge tone={samplePointCount > 0 || fallbackPointCount > 0 ? 'brown' : 'green'}>
-                {samplePointCount > 0 ? '샘플 기반 예상 집중도' : 'TourAPI 기반'}
+                {localPointCount > 0 ? '공공데이터 보강' : samplePointCount > 0 ? '샘플 기반 예상 집중도' : 'TourAPI 기반'}
               </StatusBadge>
             </div>
             <p className="map-panel-note">
@@ -358,8 +377,9 @@ export function TourismHeatmapPage() {
               <StatusBadge>데이터</StatusBadge>
               <h2>좌표 변환 기준</h2>
               <p>
-                TourAPI의 mapX/mapY는 [경도, 위도] 배열로 변환하고, 데이터가 부족한
-                영역은 영주 대표 지점 주변의 샘플 기반 시각화 포인트로 보강합니다.
+                TourAPI의 mapX/mapY와 영주시 축제·주차장·관광지·맛집·안심식당·
+                민박·공중화장실 좌표를 [경도, 위도] 배열로 변환하고, 부족한
+                영역만 대표 지점 주변 샘플로 보강합니다.
               </p>
               {dataState.message && <p className="heatmap-data-message">{dataState.message}</p>}
             </section>
@@ -372,7 +392,7 @@ export function TourismHeatmapPage() {
                   <li key={`${point.id}-${activeMode}`}>
                     <span>
                       <strong>{point.title}</strong>
-                      <small>{getCategoryLabel(point.category)} · {point.source}</small>
+                      <small>{getCategoryLabel(point.category)} · {getHeatmapSourceLabel(point.source)}</small>
                     </span>
                     <em>{point.weights[activeMode]}</em>
                   </li>
@@ -396,6 +416,10 @@ export function TourismHeatmapPage() {
             <dd>{apiPointCount}</dd>
           </div>
           <div className="surface-card heatmap-summary-card">
+            <dt>공공데이터 보강</dt>
+            <dd>{localPointCount}</dd>
+          </div>
+          <div className="surface-card heatmap-summary-card">
             <dt>샘플 기반</dt>
             <dd>{samplePointCount}</dd>
           </div>
@@ -405,25 +429,35 @@ export function TourismHeatmapPage() {
   )
 }
 
-function createHeatmapDataState(responses: TourismApiResponse[]): HeatmapDataState {
+function createHeatmapDataState(
+  responses: TourismApiResponse[],
+  enrichment: YeongjuEnrichmentData | null,
+): HeatmapDataState {
   const [attractions, cultureFacilities, accommodations, festivals] = responses
-  const apiPoints = dedupeHeatmapPoints([
+  const responsePoints = dedupeHeatmapPoints([
     ...toHeatmapPoints(attractions.contents, 'tour'),
     ...toHeatmapPoints(cultureFacilities.contents, 'course'),
     ...toHeatmapPoints(accommodations.contents, 'lodging'),
     ...toHeatmapPoints(festivals.contents, 'festival'),
     ...toParkingPoints([...attractions.contents, ...cultureFacilities.contents]),
   ])
-  const basePoints = addFallbackPoints(apiPoints)
+  const enrichmentPoints = enrichment ? toEnrichmentHeatmapPoints(enrichment) : []
+  const publicDataPoints = dedupeHeatmapPoints([...responsePoints, ...enrichmentPoints])
+  const basePoints = addFallbackPoints(publicDataPoints)
   const visualSamplePoints = createVisualSamplePoints(fallbackHeatmapPoints)
   const mergedPoints = dedupeHeatmapPoints([...basePoints, ...visualSamplePoints])
+  const apiPointCount = publicDataPoints.filter((point) => point.source === 'TourAPI').length
+  const localPointCount = publicDataPoints.filter((point) =>
+    isLocalHeatmapSource(point.source),
+  ).length
 
   return {
     status: 'ready',
     points: mergedPoints,
     message: createDataMessage(
       responses,
-      apiPoints.length,
+      apiPointCount,
+      localPointCount,
       mergedPoints.length,
       visualSamplePoints.length,
     ),
@@ -447,7 +481,7 @@ function toHeatmapPoints(
       category,
       coordinates: [item.mapX as number, item.mapY as number],
       address: item.address,
-      source: 'TourAPI' as const,
+      source: item.source ?? 'TourAPI',
       weights,
     }
   })
@@ -464,7 +498,7 @@ function toParkingPoints(contents: TourismContent[]): HeatmapPoint[] {
       category: 'parking' as const,
       coordinates: [item.mapX as number, item.mapY as number],
       address: item.address,
-      source: 'TourAPI' as const,
+      source: item.source ?? 'TourAPI',
       weights: normalizeWeights({
         tourism: 2,
         facility: 7,
@@ -472,6 +506,205 @@ function toParkingPoints(contents: TourismContent[]): HeatmapPoint[] {
       }),
     }
   })
+}
+
+function toEnrichmentHeatmapPoints(data: YeongjuEnrichmentData): HeatmapPoint[] {
+  const visitorDemandPoint: HeatmapPoint = {
+    id: `visitor-demand-${data.visitorDemand.placeId}`,
+    title: `${data.visitorDemand.placeName} 입장객 수요`,
+    category: 'course',
+    coordinates: data.visitorDemand.coordinates,
+    source: 'SosuVisitorStats',
+    weights: normalizeWeights({
+      tourism: data.visitorDemand.peakMonth.demandIndex,
+      facility: 4,
+      festival: 7,
+    }),
+  }
+
+  const tourismPoints = data.tourismSupplements.flatMap((item): HeatmapPoint[] => {
+    if (!isValidCoordinate(item.mapX, item.mapY)) return []
+
+    return [
+      {
+        id: `tourism-standard-${item.id}`,
+        title: item.title,
+        category: 'tour',
+        coordinates: [item.mapX as number, item.mapY as number],
+        address: item.address,
+        source: item.source,
+        weights: normalizeWeights({
+          tourism: 8,
+          facility: item.parkingCapacity ? 5 : 3,
+          festival: 5,
+        }),
+      },
+    ]
+  })
+
+  const festivalPoints = data.festivals.flatMap((item): HeatmapPoint[] => {
+    if (!isValidCoordinate(item.mapX, item.mapY)) return []
+
+    return [
+      {
+        id: `festival-open-data-${item.id}`,
+        title: item.title,
+        category: 'festival',
+        coordinates: [item.mapX as number, item.mapY as number],
+        address: item.address ?? item.venue,
+        source: item.source,
+        weights: normalizeWeights({
+          tourism: 6,
+          facility: 3,
+          festival: 10,
+        }),
+      },
+    ]
+  })
+  const officialFestivalPoints = data.officialSeonbiFestival &&
+    isValidCoordinate(data.officialSeonbiFestival.mapX, data.officialSeonbiFestival.mapY)
+      ? [
+          {
+            id: `official-festival-${data.officialSeonbiFestival.id}`,
+            title: data.officialSeonbiFestival.title,
+            category: 'festival' as const,
+            coordinates: [
+              data.officialSeonbiFestival.mapX as number,
+              data.officialSeonbiFestival.mapY as number,
+            ] as [number, number],
+            address: data.officialSeonbiFestival.address,
+            source: data.officialSeonbiFestival.source,
+            weights: normalizeWeights({
+              tourism: 8,
+              facility: 5,
+              festival: 10,
+            }),
+          },
+        ]
+      : []
+
+  const parkingPoints = data.parkingLots.flatMap((item): HeatmapPoint[] => {
+    if (!isValidCoordinate(item.mapX, item.mapY)) return []
+
+    return [
+      {
+        id: `parking-standard-${item.id}`,
+        title: item.title,
+        category: 'parking',
+        coordinates: [item.mapX as number, item.mapY as number],
+        address: item.address,
+        source: item.source,
+        weights: normalizeWeights({
+          tourism: 2,
+          facility: clampNumber(4 + item.capacity / 80, 4, 10),
+          festival: item.title.includes('선비') || item.title.includes('소수') ? 7 : 4,
+        }),
+      },
+    ]
+  })
+  const ruralTourismPoints = data.ruralTourismFacilities.flatMap((item): HeatmapPoint[] => {
+    if (!isValidCoordinate(item.mapX, item.mapY)) return []
+
+    return [
+      {
+        id: `rural-tourism-${item.id}`,
+        title: item.title,
+        category: 'rural',
+        coordinates: [item.mapX as number, item.mapY as number],
+        address: item.address,
+        source: item.source,
+        weights: normalizeWeights({
+          tourism: item.coordinateSource === 'known-place' ? 9 : 7,
+          facility: 4,
+          festival: item.title.includes('선비') || item.title.includes('소수') ? 8 : 5,
+        }),
+      },
+    ]
+  })
+  const restaurantPoints = [
+    ...data.localRestaurants.map((item) => ({
+      id: `good-restaurant-${item.id}`,
+      item,
+      baseWeight: 5,
+    })),
+    ...data.safeRestaurants.map((item) => ({
+      id: `safe-restaurant-${item.id}`,
+      item,
+      baseWeight: 7,
+    })),
+  ].flatMap(({ id, item, baseWeight }): HeatmapPoint[] => {
+    if (!isValidCoordinate(item.mapX, item.mapY)) return []
+
+    return [
+      {
+        id,
+        title: item.title,
+        category: 'food',
+        coordinates: [item.mapX as number, item.mapY as number],
+        address: item.address,
+        source: item.source,
+        weights: normalizeWeights({
+          tourism: 3,
+          facility: baseWeight,
+          festival: 6,
+        }),
+      },
+    ]
+  })
+  const homestayPoints = data.ruralHomestays.flatMap((item): HeatmapPoint[] => {
+    if (!isValidCoordinate(item.mapX, item.mapY)) return []
+
+    return [
+      {
+        id: `rural-homestay-${item.id}`,
+        title: item.title,
+        category: 'lodging',
+        coordinates: [item.mapX as number, item.mapY as number],
+        address: item.address,
+        source: item.source,
+        weights: normalizeWeights({
+          tourism: 2,
+          facility: clampNumber(5 + (item.roomCount ?? 0) / 2, 5, 10),
+          festival: 6,
+        }),
+      },
+    ]
+  })
+  const toiletPoints = data.publicToilets.flatMap((item): HeatmapPoint[] => {
+    if (!isValidCoordinate(item.mapX, item.mapY)) return []
+
+    return [
+      {
+        id: `public-toilet-${item.id}`,
+        title: item.title,
+        category: 'toilet',
+        coordinates: [item.mapX as number, item.mapY as number],
+        address: item.address,
+        source: item.source,
+        weights: normalizeWeights({
+          tourism: 2,
+          facility: clampNumber(
+            5 + item.disabledToiletCount / 2 + (item.emergencyBell ? 1 : 0),
+            5,
+            10,
+          ),
+          festival: 5,
+        }),
+      },
+    ]
+  })
+
+  return dedupeHeatmapPoints([
+    visitorDemandPoint,
+    ...tourismPoints,
+    ...festivalPoints,
+    ...officialFestivalPoints,
+    ...parkingPoints,
+    ...ruralTourismPoints,
+    ...restaurantPoints,
+    ...homestayPoints,
+    ...toiletPoints,
+  ])
 }
 
 function addFallbackPoints(apiPoints: HeatmapPoint[]) {
@@ -545,9 +778,9 @@ function dedupeHeatmapPoints(points: HeatmapPoint[]) {
 
 function getModePoints(points: HeatmapPoint[], mode: HeatmapMode) {
   const categoriesByMode: Record<HeatmapMode, HeatmapCategory[]> = {
-    tourism: ['tour', 'festival', 'course'],
-    facility: ['parking', 'toilet', 'lodging'],
-    festival: ['festival', 'tour', 'parking', 'toilet'],
+    tourism: ['tour', 'festival', 'course', 'rural'],
+    facility: ['parking', 'toilet', 'lodging', 'food'],
+    festival: ['festival', 'tour', 'parking', 'toilet', 'food', 'rural'],
   }
 
   return points.filter((point) => categoriesByMode[mode].includes(point.category))
@@ -581,6 +814,7 @@ function getTourismCategory(
 ): HeatmapCategory {
   if (item.contentTypeId === '15') return 'festival'
   if (item.contentTypeId === '32') return 'lodging'
+  if (item.contentTypeId === '39') return 'food'
   if (item.contentTypeId === '14') return 'course'
   if (item.contentTypeId === '12') return 'tour'
   if (item.title?.includes('축제') || item.category?.includes('축제')) return 'festival'
@@ -594,6 +828,14 @@ function getApiWeights(category: HeatmapCategory): Record<HeatmapMode, number> {
 
   if (category === 'lodging') {
     return { tourism: 2, facility: 8, festival: 6 }
+  }
+
+  if (category === 'food') {
+    return { tourism: 3, facility: 7, festival: 6 }
+  }
+
+  if (category === 'rural') {
+    return { tourism: 7, facility: 4, festival: 5 }
   }
 
   if (category === 'course') {
@@ -646,29 +888,30 @@ function isValidCoordinate(lng?: number, lat?: number) {
 function createDataMessage(
   responses: TourismApiResponse[],
   apiPointCount: number,
+  localPointCount: number,
   mergedPointCount: number,
   visualSampleCount: number,
 ) {
   const hasMissingApiKey = responses.some((response) => response.status === 'missing-api-key')
   const hasError = responses.some((response) => response.status === 'error')
 
-  if (apiPointCount === 0) {
+  if (apiPointCount === 0 && localPointCount === 0) {
     return `공공데이터 좌표를 불러오지 못해 소수서원, 선비촌, 선비세상, 무섬마을, 부석사, 영주역 주변 샘플 기반 시각화 ${visualSampleCount}개를 사용했습니다.`
   }
 
   if (hasMissingApiKey) {
-    return `일부 TourAPI 설정이 없어 ${mergedPointCount}개 좌표 중 샘플 기반 시각화 ${visualSampleCount}개를 함께 사용했습니다.`
+    return `일부 TourAPI 설정이 없어도 영주시 보강 공공데이터 ${localPointCount}개를 적용했고, ${mergedPointCount}개 좌표 중 샘플 기반 시각화 ${visualSampleCount}개를 함께 사용했습니다.`
   }
 
   if (hasError) {
-    return `일부 공공데이터 요청이 실패해 ${mergedPointCount}개 좌표 중 샘플 기반 시각화 ${visualSampleCount}개를 함께 사용했습니다.`
+    return `일부 공공데이터 요청이 실패해도 영주시 보강 공공데이터 ${localPointCount}개를 적용했고, ${mergedPointCount}개 좌표 중 샘플 기반 시각화 ${visualSampleCount}개를 함께 사용했습니다.`
   }
 
   if (visualSampleCount > 0) {
-    return `${apiPointCount}개 TourAPI 좌표를 재사용하고, 시각적 분포 확인을 위해 샘플 기반 시각화 ${visualSampleCount}개를 보강했습니다.`
+    return `${apiPointCount}개 TourAPI 좌표와 영주시 보강 공공데이터 ${localPointCount}개를 적용하고, 시각적 분포 확인을 위해 샘플 기반 시각화 ${visualSampleCount}개를 보강했습니다.`
   }
 
-  return `${apiPointCount}개 TourAPI 좌표를 재사용했습니다.`
+  return `${apiPointCount}개 TourAPI 좌표와 영주시 보강 공공데이터 ${localPointCount}개를 적용했습니다.`
 }
 
 function createHexagonTooltip(object: unknown, activeMode: HeatmapMode) {
@@ -709,7 +952,19 @@ function getCategoryLabel(category: HeatmapCategory) {
   if (category === 'parking') return '주차장'
   if (category === 'toilet') return '화장실'
   if (category === 'lodging') return '숙박'
+  if (category === 'food') return '음식점'
+  if (category === 'rural') return '농촌관광'
   return '관광지'
+}
+
+function getHeatmapSourceLabel(source: HeatmapPoint['source']) {
+  if (source === 'fallback') return '대표 지점'
+  if (source === 'visual-sample') return '시각화 샘플'
+  return getTourismContentSourceLabel(source)
+}
+
+function isLocalHeatmapSource(source: HeatmapPoint['source']) {
+  return source !== 'TourAPI' && source !== 'fallback' && source !== 'visual-sample'
 }
 
 function escapeHtml(value: string) {

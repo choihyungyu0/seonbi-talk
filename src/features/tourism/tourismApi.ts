@@ -4,6 +4,7 @@ import type {
   TourismDetailResponse,
   TourismQueryParams,
 } from './tourismTypes'
+import { getLocalTourismContents, type LocalTourismContentGroup } from './yeongjuEnrichment'
 
 const yeongjuKeyword = '영주'
 const yeongjuAreaCode = '35'
@@ -24,6 +25,7 @@ const yeongjuTitleKeywords = [
 const tourismContentTypes = {
   attraction: '12',
   culture: '14',
+  festival: '15',
   accommodation: '32',
   restaurant: '39',
 } as const
@@ -36,30 +38,48 @@ interface TourismProxyResponse {
 }
 
 export async function getYeongjuTourismContents(): Promise<TourismApiResponse> {
-  return requestTourismProxy(createYeongjuAreaBasedParams())
+  return requestTourismProxyWithLocal(createYeongjuAreaBasedParams(), 'all')
 }
 
 export async function getYeongjuTouristAttractions(): Promise<TourismApiResponse> {
-  return requestTourismProxy(
+  return requestTourismProxyWithLocal(
     createYeongjuAreaBasedParams(tourismContentTypes.attraction),
+    'attraction',
   )
 }
 
 export async function getYeongjuCultureFacilities(): Promise<TourismApiResponse> {
-  return requestTourismProxy(
+  return requestTourismProxyWithLocal(
     createYeongjuAreaBasedParams(tourismContentTypes.culture),
+    'culture',
+  )
+}
+
+export async function getYeongjuFestivals(): Promise<TourismApiResponse> {
+  return requestTourismProxyWithLocal(
+    createYeongjuAreaBasedParams(tourismContentTypes.festival),
+    'festival',
+  )
+}
+
+export async function getYeongjuExperienceFacilities(): Promise<TourismApiResponse> {
+  return requestTourismProxyWithLocal(
+    { type: 'keyword', keyword: `${yeongjuKeyword} 체험` },
+    'experience',
   )
 }
 
 export async function getYeongjuAccommodations(): Promise<TourismApiResponse> {
-  return requestTourismProxy(
+  return requestTourismProxyWithLocal(
     createYeongjuAreaBasedParams(tourismContentTypes.accommodation),
+    'accommodation',
   )
 }
 
 export async function getYeongjuRestaurants(): Promise<TourismApiResponse> {
-  return requestTourismProxy(
+  return requestTourismProxyWithLocal(
     createYeongjuAreaBasedParams(tourismContentTypes.restaurant),
+    'restaurant',
   )
 }
 
@@ -67,7 +87,11 @@ export async function searchYeongjuTourismByKeyword(
   keyword: string,
 ): Promise<TourismApiResponse> {
   const query = [yeongjuKeyword, keyword].filter(Boolean).join(' ')
-  return requestTourismProxy({ type: 'keyword', keyword: query })
+  return requestTourismProxyWithLocal(
+    { type: 'keyword', keyword: query },
+    'all',
+    keyword,
+  )
 }
 
 export async function getTourismDetail(
@@ -77,7 +101,11 @@ export async function getTourismDetail(
   const contentTypeId = selectedItem.contentTypeId
   const fallbackResponse = createFallbackDetailResponse(selectedItem)
 
-  if (!contentId || !contentTypeId) {
+  if (
+    !contentId ||
+    !contentTypeId ||
+    (selectedItem.source && selectedItem.source !== 'TourAPI')
+  ) {
     return fallbackResponse
   }
 
@@ -143,6 +171,14 @@ export function normalizeTourismItem(raw: TourismContent): TourismContent {
     sigunguCode: raw.sigunguCode,
     category: raw.category,
     source: raw.source,
+    sourceLabel: raw.sourceLabel,
+    dataEvidence: raw.dataEvidence,
+    eventPeriod: raw.eventPeriod,
+    parkingCapacity: raw.parkingCapacity,
+    coordinateSource: raw.coordinateSource,
+    roomCount: raw.roomCount,
+    designationDate: raw.designationDate,
+    recommendationSignals: raw.recommendationSignals,
   }
 }
 
@@ -277,6 +313,28 @@ async function requestTourismProxy(
   }
 }
 
+async function requestTourismProxyWithLocal(
+  params: TourismQueryParams,
+  localGroup: LocalTourismContentGroup,
+  localKeyword?: string,
+): Promise<TourismApiResponse> {
+  const [remoteResponse, localContents] = await Promise.all([
+    requestTourismProxy(params),
+    getLocalTourismContents(localGroup, localKeyword),
+  ])
+  const contents = mergeTourismContentLists(remoteResponse.contents, localContents)
+
+  if (contents.length === 0) return remoteResponse
+
+  return {
+    ...remoteResponse,
+    contents,
+    status: 'ready',
+    reason: undefined,
+    message: createMergedTourismMessage(remoteResponse.message, localContents.length),
+  }
+}
+
 function shouldFilterYeongjuContents(type: TourismQueryParams['type']) {
   return type === 'areaBased' || type === 'keyword' || type === undefined
 }
@@ -297,4 +355,78 @@ function isYeongjuTourismContent(content: TourismContent) {
     .join(' ')
 
   return yeongjuTitleKeywords.some((keyword) => searchableText.includes(keyword))
+}
+
+function mergeTourismContentLists(
+  remoteContents: TourismContent[],
+  localContents: TourismContent[],
+) {
+  const uniqueContents = new Map<string, TourismContent>()
+
+  for (const content of localContents) {
+    uniqueContents.set(getTourismContentDedupeKey(content), content)
+  }
+
+  for (const content of remoteContents) {
+    const key = getTourismContentDedupeKey(content)
+    const existingContent = uniqueContents.get(key)
+    uniqueContents.set(
+      key,
+      existingContent
+        ? mergeTourismContentForDisplay(existingContent, content)
+        : content,
+    )
+  }
+
+  return Array.from(uniqueContents.values())
+}
+
+function mergeTourismContentForDisplay(
+  localContent: TourismContent,
+  remoteContent: TourismContent,
+): TourismContent {
+  const mergedContent = mergeTourismItems(localContent, remoteContent)
+  const sourceLabels = [
+    remoteContent.sourceLabel,
+    localContent.sourceLabel,
+    remoteContent.source === 'TourAPI' ? 'TourAPI' : undefined,
+  ]
+    .filter(Boolean)
+    .filter((label, index, labels) => labels.indexOf(label) === index)
+
+  return {
+    ...mergedContent,
+    sourceLabel: sourceLabels.join(' + ') || mergedContent.sourceLabel,
+    dataEvidence: [
+      ...(localContent.dataEvidence ?? []),
+      ...(remoteContent.dataEvidence ?? []),
+    ].filter((evidence, index, evidenceList) => {
+      return evidenceList.indexOf(evidence) === index
+    }),
+  }
+}
+
+function getTourismContentDedupeKey(content: TourismContent) {
+  const title = normalizeDedupeText(content.title ?? content.name)
+  if (title) return `title:${title}`
+  if (content.mapX !== undefined && content.mapY !== undefined) {
+    return `coord:${content.mapX.toFixed(5)}:${content.mapY.toFixed(5)}`
+  }
+  return `id:${content.contentId ?? Math.random().toString(36)}`
+}
+
+function normalizeDedupeText(value: string | undefined) {
+  return value
+    ?.replace(/\[[^\]]+\]/g, '')
+    .replace(/\([^)]*\)/g, '')
+    .replace(/\s+/g, '')
+    .trim()
+    .toLowerCase()
+}
+
+function createMergedTourismMessage(message: string | undefined, localCount: number) {
+  if (localCount === 0) return message
+
+  const localMessage = `영주시 보강 공공데이터 ${localCount}건을 함께 적용했습니다.`
+  return message ? `${message} ${localMessage}` : localMessage
 }
