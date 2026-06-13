@@ -28,13 +28,83 @@ import { loadTestResult } from '../lib/storage'
 const defaultAdvice = '고요한 물은 깊이 흐르고, 작은 배움은 큰 길이 되나니.'
 const defaultModernTranslation = '지금의 작은 노력과 배움이 쌓여, 결국 큰 성취로 이어질 것입니다.'
 const defaultAnalysisTags = ['호기심', '배움', '소통']
+const judgeAssetPath = (fileName: string) => `/images/judge/${encodeURI(fileName)}`
+const judgeIconPaths = {
+  book: judgeAssetPath('image-Photoroom (8).png'),
+  copy: judgeAssetPath('image-Photoroom (9).png'),
+  frame: judgeAssetPath('image-removebg-preview (19).png'),
+  heroCloud: judgeAssetPath('image-removebg-preview (22).png'),
+  imageTitle: judgeAssetPath('image-Photoroom (20).png'),
+  modernScroll: judgeAssetPath('image-Photoroom (7).png'),
+  mood: judgeAssetPath('image-Photoroom (4).png'),
+  people: judgeAssetPath('image-Photoroom (18).png'),
+  referenceBook: judgeAssetPath('image-Photoroom (5).png'),
+  referencePlace: judgeAssetPath('image-removebg-preview (20).png'),
+  search: judgeAssetPath('image-Photoroom (6).png'),
+  section: judgeAssetPath('image-Photoroom (20).png'),
+  send: judgeAssetPath('image-Photoroom (22).png'),
+  share: judgeAssetPath('image-Photoroom (17).png'),
+  thought: judgeAssetPath('image-Photoroom (14).png'),
+  upload: judgeAssetPath('+.png'),
+} as const
+const judgeModeVisuals: Record<JudgeMode, { badge: string; iconSrc: string }> = {
+  default: {
+    badge: '기본',
+    iconSrc: judgeAssetPath('image-Photoroom (3).png'),
+  },
+  strict: {
+    badge: '엄격',
+    iconSrc: judgeAssetPath('image-Photoroom (10).png'),
+  },
+  practical: {
+    badge: '현실',
+    iconSrc: judgeAssetPath('image-Photoroom (11).png'),
+  },
+  hermit: {
+    badge: '은둔',
+    iconSrc: judgeAssetPath('image-Photoroom (12).png'),
+  },
+  righteous: {
+    badge: '의병',
+    iconSrc: judgeAssetPath('image-Photoroom (13).png'),
+  },
+  praise: {
+    badge: '칭찬',
+    iconSrc: judgeAssetPath('image-Photoroom (4).png'),
+  },
+  roast: {
+    badge: '팩폭',
+    iconSrc: judgeAssetPath('image-Photoroom (9).png'),
+  },
+  petition: {
+    badge: '상소문',
+    iconSrc: judgeAssetPath('image-Photoroom (15).png'),
+  },
+  poison: {
+    badge: '사약',
+    iconSrc: judgeAssetPath('image-Photoroom (16).png'),
+  },
+}
+const defaultJudgeReferenceCards = [
+  {
+    id: 'reference-place',
+    title: '엄격한 선비',
+    iconSrc: judgeIconPaths.referencePlace,
+  },
+  {
+    id: 'reference-book',
+    title: '기본 선비',
+    iconSrc: judgeIconPaths.referenceBook,
+  },
+]
+const seonbiExperienceTypes: SeonbiType[] = ['toegye', 'yulgok', 'cheosa', 'uguk']
 const allowedImageTypes = ['image/jpeg', 'image/png', 'image/webp']
 const maxImageDimension = 1024
 const maxImageDataUrlLength = 1_100_000
 
 export function JudgePage() {
   const testResult = loadTestResult()
-  const [selectedSeonbiType] = useState<SeonbiType>(
+  const [selectedSeonbiType, setSelectedSeonbiType] = useState<SeonbiType>(
     testResult?.type ?? 'toegye',
   )
   const typeInfo = seonbiTypeInfo[selectedSeonbiType]
@@ -44,6 +114,7 @@ export function JudgePage() {
       seonbiType={selectedSeonbiType}
       typeInfo={typeInfo}
       hasTestResult={Boolean(testResult)}
+      onSelectSeonbiType={setSelectedSeonbiType}
     />
   )
 }
@@ -52,12 +123,14 @@ interface JudgePageContentProps {
   seonbiType: SeonbiType
   typeInfo: SeonbiTypeInfo
   hasTestResult: boolean
+  onSelectSeonbiType: (seonbiType: SeonbiType) => void
 }
 
 function JudgePageContent({
   seonbiType,
   typeInfo,
   hasTestResult,
+  onSelectSeonbiType,
 }: JudgePageContentProps) {
   const [text, setText] = useState('')
   const [judgeMode, setJudgeMode] = useState<JudgeMode>('default')
@@ -85,6 +158,14 @@ function JudgePageContent({
   const displayedTranslation = result?.modernTranslation ?? defaultModernTranslation
   const displayedShareText =
     result?.shareText ?? `${typeInfo.name} 선비의 한마디: ${defaultAdvice}`
+  const referenceCards =
+    ragReferences.length > 0
+      ? ragReferences.map((reference) => ({
+          id: `${reference.sourceType}:${reference.sourceId}`,
+          title: reference.title,
+          iconSrc: judgeIconPaths.referencePlace,
+        }))
+      : defaultJudgeReferenceCards
 
   useEffect(() => {
     const preloadedImages = getSeonbiVisualImagePreloadPaths(seonbiType).map(
@@ -208,6 +289,18 @@ function JudgePageContent({
     setJudgeMode(nextJudgeMode)
   }
 
+  function handleSeonbiTypeChange(nextSeonbiType: SeonbiType) {
+    if (nextSeonbiType === seonbiType) return
+
+    setIsSeonbiImageLoaded(false)
+    setFailedSeonbiImageSrc('')
+    setResult(null)
+    setRagReferences([])
+    setMessage('')
+    setShareMessage('')
+    onSelectSeonbiType(nextSeonbiType)
+  }
+
   async function handleCopyShareText() {
     void trackEvent('judge_share_clicked', {
       seonbiType,
@@ -252,7 +345,11 @@ function JudgePageContent({
         <div className="judge-page-shell page-container">
           <header className="judge-hero">
             <StatusBadge>선비의 한마디</StatusBadge>
-            <h1>{pageTitle}</h1>
+            <h1>
+              <img src={judgeIconPaths.heroCloud} alt="" aria-hidden="true" />
+              <span>{pageTitle}</span>
+              <img src={judgeIconPaths.heroCloud} alt="" aria-hidden="true" />
+            </h1>
             <p>
               {hasTestResult
                 ? '오늘의 생각을 적으면, 선비가 마음을 담아 전해드립니다.'
@@ -260,11 +357,29 @@ function JudgePageContent({
             </p>
           </header>
 
+          <div className="seonbi-experience-switcher" aria-label="선비 유형 체험">
+            {seonbiExperienceTypes.map((experienceType) => {
+              const experienceTypeInfo = seonbiTypeInfo[experienceType]
+
+              return (
+                <button
+                  key={experienceType}
+                  type="button"
+                  className={experienceType === seonbiType ? 'active' : ''}
+                  aria-pressed={experienceType === seonbiType}
+                  onClick={() => handleSeonbiTypeChange(experienceType)}
+                >
+                  {experienceTypeInfo.name}
+                </button>
+              )
+            })}
+          </div>
+
           <div className="judge-workspace">
           <div className={`wisdom-visual wisdom-visual--${judgeMode}`}>
             <div className="wisdom-visual-badges">
               <StatusBadge tone="brown">{typeInfo.name}</StatusBadge>
-              <StatusBadge>{selectedModeOption.badge}</StatusBadge>
+              <StatusBadge>{judgeModeVisuals[judgeMode].badge}</StatusBadge>
             </div>
             {!hasSeonbiImageError ? (
               <>
@@ -300,11 +415,19 @@ function JudgePageContent({
               <p>현재 모드: {selectedModeOption.badge}</p>
               <p>{modeDescription}</p>
             </div>
+            <img
+              className="wisdom-visual-frame"
+              src={judgeIconPaths.frame}
+              alt=""
+              aria-hidden="true"
+              loading="eager"
+              decoding="async"
+            />
           </div>
           <form className="surface-card judge-form" onSubmit={handleSubmit}>
             <div className="judge-field-block">
               <label className="judge-section-label" htmlFor="judge-text">
-                <JudgeIcon name="sprout" />
+                <JudgeAssetIcon name="thought" />
                 지금 어떤 생각을 하고 계신가요?
               </label>
               <div className="judge-textarea-wrap">
@@ -323,27 +446,39 @@ function JudgePageContent({
             </div>
             <fieldset className="judge-mode-field">
               <legend>
-                <JudgeIcon name="sprout" />
+                <JudgeAssetIcon name="mood" />
                 분위기 선택
               </legend>
               <div className="judge-mode-options">
-                {judgeModeOptions.map((option) => (
-                  <button
-                    key={option.id}
-                    type="button"
-                    className={option.id === judgeMode ? 'active' : ''}
-                    aria-pressed={option.id === judgeMode}
-                    title={option.description}
-                    onClick={() => handleJudgeModeChange(option.id)}
-                  >
-                    {option.badge}
-                  </button>
-                ))}
+                {judgeModeOptions.map((option) => {
+                  const visual = judgeModeVisuals[option.id]
+
+                  return (
+                    <button
+                      key={option.id}
+                      type="button"
+                      className={option.id === judgeMode ? 'active' : ''}
+                      aria-pressed={option.id === judgeMode}
+                      title={option.description}
+                      onClick={() => handleJudgeModeChange(option.id)}
+                    >
+                      <img
+                        className="judge-mode-option-icon"
+                        src={visual.iconSrc}
+                        alt=""
+                        aria-hidden="true"
+                        loading="lazy"
+                        decoding="async"
+                      />
+                      {visual.badge}
+                    </button>
+                  )
+                })}
               </div>
             </fieldset>
             <div className="judge-image-field">
               <p className="judge-section-label judge-image-title">
-                <JudgeIcon name="sprout" />
+                <JudgeAssetIcon name="imageTitle" />
                 사진으로도 한마디 받기
               </p>
               <input
@@ -354,7 +489,7 @@ function JudgePageContent({
                 onChange={handleImageChange}
               />
               <label className="judge-upload-box" htmlFor="judge-image">
-                <span aria-hidden="true">+</span>
+                <img src={judgeIconPaths.upload} alt="" aria-hidden="true" />
                 <strong>이미지 업로드 (선택)</strong>
               </label>
               {isProcessingImage && (
@@ -389,7 +524,7 @@ function JudgePageContent({
               fullWidth
               className="judge-submit-button"
             >
-              한마디 받기 <span aria-hidden="true">↗</span>
+              한마디 받기 <JudgeAssetIcon name="send" />
             </CommonButton>
             {isLoading && (
               <BrandLoading
@@ -402,11 +537,6 @@ function JudgePageContent({
 
           <div className="judge-lower-grid">
             <section className="surface-card judge-result" aria-label="결과 영역">
-              <div className="judge-result-tabs" aria-label="결과 보기">
-                <button type="button" className="active">선비의 한마디</button>
-                <button type="button">현대어 해석</button>
-                <button type="button">AI가 읽어낸 마음</button>
-              </div>
               <blockquote className="judge-advice-quote">
                 <span aria-hidden="true">“</span>
                 <p>{displayedAdvice}</p>
@@ -420,15 +550,18 @@ function JudgePageContent({
               )}
               <div className="judge-result-body">
                 <div className="judge-modern-card">
-                  <strong>현대어 해석</strong>
-                  <p>{displayedTranslation}</p>
+                  <img src={judgeIconPaths.modernScroll} alt="" aria-hidden="true" />
+                  <div>
+                    <strong>현대어 해석</strong>
+                    <p>{displayedTranslation}</p>
+                  </div>
                 </div>
                 <div className="judge-mind-card">
                   <strong>AI가 읽어낸 마음</strong>
                   <ul aria-label="AI가 읽어낸 마음 태그">
                     {analysisTags.map((tag) => (
                       <li key={tag}>
-                        <JudgeIcon name={getMindIconName(tag)} />
+                        <JudgeAssetIcon name={getMindIconName(tag)} />
                         <span>{tag}</span>
                       </li>
                     ))}
@@ -437,18 +570,16 @@ function JudgePageContent({
               </div>
               <div className="judge-share-actions">
                 <CommonButton type="button" variant="secondary" onClick={handleCopyShareText}>
-                  <span aria-hidden="true">□</span> 공유 문구 복사
+                  <JudgeAssetIcon name="copy" /> 공유 문구 복사
                 </CommonButton>
-                {canUseWebShare && (
-                  <CommonButton
-                    type="button"
-                    variant="primary"
-                    disabled={!canShareResult}
-                    onClick={handleShareResult}
-                  >
-                    <span aria-hidden="true">⌯</span> 공유하기
-                  </CommonButton>
-                )}
+                <CommonButton
+                  type="button"
+                  variant="primary"
+                  disabled={!canShareResult || !canUseWebShare}
+                  onClick={handleShareResult}
+                >
+                  <JudgeAssetIcon name="share" /> 공유하기
+                </CommonButton>
               </div>
               {shareMessage && (
                 <p className="disabled-notice judge-share-message" role="status">
@@ -459,29 +590,16 @@ function JudgePageContent({
 
             <aside className="surface-card judge-reference-card" aria-label="AI가 함께 참고한 영주 이야기">
               <h2>
-                <JudgeIcon name="book" />
+                <JudgeAssetIcon name="book" />
                 AI가 함께 참고한 영주 이야기
               </h2>
-              <ul>
-                {ragReferences.length > 0 ? (
-                  ragReferences.map((reference) => (
-                    <li key={`${reference.sourceType}:${reference.sourceId}`}>
-                      <JudgeIcon name="place" />
-                      {reference.title}
-                    </li>
-                  ))
-                ) : (
-                  <>
-                    <li>
-                      <JudgeIcon name="place" />
-                      엄격한 선비
-                    </li>
-                    <li>
-                      <JudgeIcon name="sprout" />
-                      기본 선비
-                    </li>
-                  </>
-                )}
+              <ul className="judge-reference-list">
+                {referenceCards.map((reference) => (
+                  <li key={reference.id}>
+                    <img src={reference.iconSrc} alt="" aria-hidden="true" />
+                    <span>{reference.title}</span>
+                  </li>
+                ))}
               </ul>
             </aside>
           </div>
@@ -491,51 +609,32 @@ function JudgePageContent({
   )
 }
 
-type JudgeIconName = 'book' | 'people' | 'place' | 'search' | 'sprout'
+type JudgeAssetIconName =
+  | 'book'
+  | 'copy'
+  | 'imageTitle'
+  | 'mood'
+  | 'people'
+  | 'search'
+  | 'section'
+  | 'send'
+  | 'share'
+  | 'thought'
 
-function JudgeIcon({ name }: { name: JudgeIconName }) {
+function JudgeAssetIcon({ name }: { name: JudgeAssetIconName }) {
   return (
-    <svg className={`judge-icon judge-icon--${name}`} viewBox="0 0 24 24" aria-hidden="true">
-      {name === 'sprout' && (
-        <>
-          <path d="M12 20c0-5.7 1.2-9.5 4.2-12.7" />
-          <path d="M12.3 12.2c-3.8-.6-5.9-2.8-6.8-6.6 4.3.2 6.8 2.2 6.8 6.6Z" />
-          <path d="M14.1 10.1c.8-3.4 3.1-5.3 6.5-5.6-.4 3.9-2.5 6.1-6.5 5.6Z" />
-        </>
-      )}
-      {name === 'book' && (
-        <>
-          <path d="M5 5.5c2.6-.8 4.7-.4 7 1.3v12c-2.3-1.7-4.4-2.1-7-1.3v-12Z" />
-          <path d="M19 5.5c-2.6-.8-4.7-.4-7 1.3v12c2.3-1.7 4.4-2.1 7-1.3v-12Z" />
-        </>
-      )}
-      {name === 'search' && (
-        <>
-          <circle cx="10.5" cy="10.5" r="5.5" />
-          <path d="m15 15 4 4" />
-        </>
-      )}
-      {name === 'people' && (
-        <>
-          <circle cx="9" cy="8" r="3" />
-          <circle cx="16.5" cy="9.5" r="2.5" />
-          <path d="M3.8 19c.7-3.1 2.6-4.7 5.2-4.7s4.5 1.6 5.2 4.7" />
-          <path d="M13.8 14.8c2.9-.5 5.1.9 5.9 4.2" />
-        </>
-      )}
-      {name === 'place' && (
-        <>
-          <path d="M4 19h16" />
-          <path d="M6 17V9l6-4 6 4v8" />
-          <path d="M9 17v-5h6v5" />
-          <path d="M7.5 9h9" />
-        </>
-      )}
-    </svg>
+    <img
+      className={`judge-icon judge-icon--${name}`}
+      src={judgeIconPaths[name]}
+      alt=""
+      aria-hidden="true"
+      loading="lazy"
+      decoding="async"
+    />
   )
 }
 
-function getMindIconName(tag: string): JudgeIconName {
+function getMindIconName(tag: string): JudgeAssetIconName {
   if (tag.includes('배움') || tag.includes('학문')) return 'book'
   if (tag.includes('소통') || tag.includes('관계')) return 'people'
   return 'search'
