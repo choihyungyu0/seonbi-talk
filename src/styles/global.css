@@ -7940,6 +7940,7 @@ a {
   width: 100%;
   aspect-ratio: 1.1 / 1;
   min-height: 0;
+  overflow: visible;
   border: 0;
   border-radius: 18px;
   background:
@@ -7961,14 +7962,19 @@ a {
 
 .wisdom-visual > img:not(.wisdom-visual-frame) {
   opacity: 1;
+  border-radius: 16px;
+  clip-path: inset(0 round 16px);
 }
 
 .wisdom-visual .wisdom-visual-frame {
   position: absolute;
-  inset: 0;
+  top: -12px;
+  right: -11px;
+  bottom: auto;
+  left: -11px;
   z-index: 4;
-  width: 100%;
-  height: 100%;
+  width: calc(100% + 22px);
+  height: calc(100% + 25px);
   min-height: 0;
   max-height: none;
   opacity: 1;
@@ -8046,10 +8052,36 @@ a {
 .judge-section-label,
 .judge-mode-field legend,
 .judge-reference-card h2 {
+  display: inline-flex;
+  width: fit-content;
+  max-width: 100%;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: flex-start;
   gap: 9px;
   color: #2e251d;
   font-size: 16px;
   font-weight: 950;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.judge-form .judge-section-label {
+  display: inline-flex;
+  width: fit-content;
+  max-width: 100%;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: flex-start;
+  margin-bottom: 0;
+  color: #2e251d;
+  font-weight: 950;
+}
+
+.judge-section-label span,
+.judge-mode-field legend span {
+  min-width: 0;
+  line-height: 1;
 }
 
 .judge-field-block,
@@ -8071,18 +8103,24 @@ a {
 }
 
 .judge-icon--thought {
-  width: 44px;
-  height: 34px;
+  width: 24px;
+  height: 24px;
+  transform: scale(1.42);
+  transform-origin: center;
 }
 
 .judge-icon--mood {
-  width: 36px;
-  height: 30px;
+  width: 25px;
+  height: 25px;
+  transform: scale(1.22);
+  transform-origin: center;
 }
 
 .judge-icon--imageTitle {
-  width: 46px;
-  height: 40px;
+  width: 25px;
+  height: 25px;
+  transform: scale(1.36);
+  transform-origin: center;
 }
 
 .judge-textarea-wrap {
@@ -8274,6 +8312,7 @@ a {
 .judge-mind-card li {
   min-width: 54px;
   min-height: 54px;
+  overflow: hidden;
   border: 1px solid rgba(189, 158, 102, 0.4);
   background:
     radial-gradient(circle at 40% 30%, rgba(255, 253, 249, 0.94), rgba(230, 219, 188, 0.72));
@@ -8284,8 +8323,14 @@ a {
 }
 
 .judge-mind-card .judge-icon {
-  width: 26px;
-  height: 26px;
+  width: 30px;
+  height: 30px;
+  transform: scale(1.65);
+  transform-origin: center;
+}
+
+.judge-mind-card .judge-icon--people {
+  transform: scale(2.15);
 }
 
 .judge-share-actions {

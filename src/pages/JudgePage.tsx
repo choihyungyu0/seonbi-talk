@@ -428,7 +428,7 @@ function JudgePageContent({
             <div className="judge-field-block">
               <label className="judge-section-label" htmlFor="judge-text">
                 <JudgeAssetIcon name="thought" />
-                지금 어떤 생각을 하고 계신가요?
+                <span>지금 어떤 생각을 하고 계신가요?</span>
               </label>
               <div className="judge-textarea-wrap">
                 <textarea
@@ -447,7 +447,7 @@ function JudgePageContent({
             <fieldset className="judge-mode-field">
               <legend>
                 <JudgeAssetIcon name="mood" />
-                분위기 선택
+                <span>분위기 선택</span>
               </legend>
               <div className="judge-mode-options">
                 {judgeModeOptions.map((option) => {
@@ -479,7 +479,7 @@ function JudgePageContent({
             <div className="judge-image-field">
               <p className="judge-section-label judge-image-title">
                 <JudgeAssetIcon name="imageTitle" />
-                사진으로도 한마디 받기
+                <span>사진으로도 한마디 받기</span>
               </p>
               <input
                 className="visually-hidden"
