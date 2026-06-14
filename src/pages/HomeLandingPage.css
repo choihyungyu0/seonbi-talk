@@ -5392,6 +5392,189 @@
   }
 }
 
+@media (min-width: 1200px) and (min-height: 860px) {
+  .home-journey-screen {
+    align-content: start;
+    padding: 26px 0 0;
+  }
+
+  .home-journey-screen .home-section-inner {
+    width: min(1760px, calc(100% - 96px));
+  }
+
+  .home-journey-heading {
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+
+  .home-journey-heading .home-badge--asset > img {
+    width: min(420px, 100%);
+  }
+
+  .home-journey-heading h2 {
+    max-width: none;
+    font-size: 4.1rem;
+    line-height: 1.08;
+    white-space: nowrap;
+  }
+
+  .home-journey-heading p {
+    max-width: 920px;
+    font-size: 1.12rem;
+    line-height: 1.58;
+  }
+
+  .home-journey-layout {
+    grid-template-columns: minmax(0, 1130px) minmax(460px, 500px);
+    justify-content: center;
+    gap: 34px;
+  }
+
+  .home-timeline {
+    gap: 24px;
+  }
+
+  .home-timeline::before {
+    right: 5%;
+    left: 5%;
+  }
+
+  .home-step-card {
+    min-height: 348px;
+    gap: 11px;
+    padding: 19px 18px 22px;
+  }
+
+  .home-step-number {
+    width: 54px;
+    height: 54px;
+    font-size: 1.1rem;
+  }
+
+  .home-step-card .home-visual-placeholder {
+    min-height: 130px;
+  }
+
+  .home-step-card .home-placeholder-symbol {
+    width: 132px;
+    height: 132px;
+  }
+
+  .home-step-card .home-placeholder-symbol img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  .home-step-card h3 {
+    font-size: 1.34rem;
+    line-height: 1.24;
+  }
+
+  .home-step-card p {
+    font-size: 0.96rem;
+    line-height: 1.62;
+  }
+
+  .home-experience-panel {
+    min-height: 558px;
+    margin-top: -66px;
+    gap: 14px;
+    padding: 24px 28px 26px;
+  }
+
+  .home-experience-panel h3 {
+    font-size: 1.72rem;
+    line-height: 1.2;
+  }
+
+  .home-experience-panel ul {
+    gap: 9px;
+  }
+
+  .home-experience-panel li {
+    grid-template-columns: 58px minmax(0, 1fr);
+    min-height: 60px;
+    gap: 14px;
+    padding: 8px 16px;
+    font-size: 0.98rem;
+  }
+
+  .home-experience-panel li img {
+    width: 48px;
+    height: 48px;
+  }
+
+  .home-stat-grid {
+    padding: 11px 0;
+  }
+
+  .home-stat-grid dd {
+    font-size: 1.84rem;
+  }
+
+  .home-stat-grid dt {
+    font-size: 0.9rem;
+  }
+
+  .home-experience-panel .home-ornament-button--asset {
+    height: 84px;
+  }
+
+  .home-experience-panel .home-ornament-button--light.home-ornament-button--asset {
+    height: 68px;
+  }
+
+  .home-experience-panel .home-ornament-button--asset img,
+  .home-experience-panel .home-ornament-button--light.home-ornament-button--asset img {
+    width: 100%;
+    height: 100%;
+    max-height: none;
+    object-fit: fill;
+  }
+
+  .home-slogan {
+    width: min(1220px, calc(100% - 96px));
+    margin-top: 22px;
+  }
+}
+
+@media (max-width: 640px) {
+  .home-journey-screen .home-stat-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0;
+    padding: 10px 0;
+  }
+
+  .home-journey-screen .home-stat-grid div + div {
+    border-left: 1px solid rgba(234, 214, 165, 0.3);
+  }
+
+  .home-journey-screen .home-stat-grid dt {
+    font-size: 0.7rem;
+  }
+
+  .home-journey-screen .home-stat-grid dd {
+    font-size: 1.34rem;
+  }
+
+  .home-journey-screen .home-experience-panel .home-ornament-button--asset {
+    height: 62px;
+  }
+
+  .home-journey-screen .home-experience-panel .home-ornament-button--light.home-ornament-button--asset {
+    height: 54px;
+  }
+
+  .home-journey-screen .home-experience-panel .home-ornament-button--asset img,
+  .home-journey-screen .home-experience-panel .home-ornament-button--light.home-ornament-button--asset img {
+    width: 100%;
+    height: 100%;
+    max-height: none;
+    object-fit: fill;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .home-atmosphere::before,
   .home-atmosphere::after,
