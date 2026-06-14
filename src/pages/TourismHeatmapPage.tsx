@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import DeckGL from '@deck.gl/react'
 import type { Color } from '@deck.gl/core'
-import { HexagonLayer } from '@deck.gl/aggregation-layers'
+import { ContourLayer, HeatmapLayer, HexagonLayer } from '@deck.gl/aggregation-layers'
+import { PathLayer, ScatterplotLayer, TextLayer } from '@deck.gl/layers'
 import MapboxMap, { NavigationControl } from 'react-map-gl/mapbox'
 import { Link, useSearchParams } from 'react-router-dom'
 import 'mapbox-gl/dist/mapbox-gl.css'
@@ -25,7 +26,7 @@ import {
   type YeongjuEnrichmentData,
 } from '../features/tourism/yeongjuEnrichment'
 
-type HeatmapMode = 'tourism' | 'facility' | 'festival'
+type HeatmapMode = 'demand' | 'facility' | 'gap' | 'route'
 type HeatmapCategory =
   | 'tour'
   | 'festival'
@@ -46,6 +47,27 @@ interface HeatmapPoint {
   weights: Record<HeatmapMode, number>
 }
 
+interface PlaceMarker {
+  id: string
+  name: string
+  category: string
+  coordinates: [number, number]
+  demandLevel: '높음' | '보통' | '낮음'
+  facilityLevel: '충분' | '보통' | '주의'
+  routeIncluded: boolean
+  description: string
+  suggestion: string
+}
+
+interface RouteFlow {
+  id: string
+  name: string
+  path: [number, number][]
+  color: Color
+  width: number
+  kind: 'base' | 'active'
+}
+
 interface HeatmapDataState {
   status: 'loading' | 'ready'
   points: HeatmapPoint[]
@@ -53,50 +75,68 @@ interface HeatmapDataState {
 }
 
 const mapboxToken = import.meta.env.VITE_MAPBOX_TOKEN as string | undefined
-const defaultRadiusMeters = 600
+const defaultRadiusMeters = 500
 const visualSampleSpread = 0.032
-const heatmapColorRange: Color[] = [
-  [49, 130, 189],
-  [107, 174, 214],
-  [189, 215, 231],
-  [254, 217, 118],
-  [253, 141, 60],
-  [227, 26, 28],
+const demandColorRange: Color[] = [
+  [30, 58, 95, 36],
+  [45, 212, 191, 96],
+  [250, 204, 21, 172],
+  [249, 115, 22, 228],
+]
+const facilityColorRange: Color[] = [
+  [30, 58, 95, 120],
+  [37, 99, 235, 160],
+  [45, 212, 191, 190],
+  [132, 204, 22, 210],
+  [250, 204, 21, 235],
 ]
 const heatmapModes: Record<
   HeatmapMode,
   {
     label: string
+    tabLabel: string
     metricLabel: string
     description: string
-    radius: number
-    elevationScale: number
+    layerName: string
+    mapNote: string
     colorRange: Color[]
   }
 > = {
-  tourism: {
-    label: '관광 집중도',
-    metricLabel: '예상 집중도',
-    description: '관광지와 문화시설 좌표를 묶어 영주 권역별 관광 수요 추정을 보여줍니다.',
-    radius: defaultRadiusMeters,
-    elevationScale: 6,
-    colorRange: heatmapColorRange,
+  demand: {
+    label: '관광 수요 추정',
+    tabLabel: '관광 수요',
+    metricLabel: '관광 수요 점수',
+    description: '공공데이터와 추천 가중치를 기반으로 관광 수요가 모일 가능성이 높은 권역을 표시합니다.',
+    layerName: 'HeatmapLayer',
+    mapNote: '부드러운 glow로 소수서원·선비촌, 무섬마을, 부석사 주변의 관광 수요 흐름을 보여줍니다.',
+    colorRange: demandColorRange,
   },
   facility: {
     label: '편의시설 밀도',
+    tabLabel: '편의시설 밀도',
     metricLabel: '편의시설 밀도',
     description: '주차장, 화장실, 숙박처럼 여행 편의를 받쳐주는 지점을 함께 묶습니다.',
-    radius: defaultRadiusMeters,
-    elevationScale: 6,
-    colorRange: heatmapColorRange,
+    layerName: 'HexagonLayer',
+    mapNote: '반경 안의 편의시설을 낮은 hexbin으로 집계해 과한 3D 기둥 느낌을 줄였습니다.',
+    colorRange: facilityColorRange,
   },
-  festival: {
-    label: '축제 동선',
-    metricLabel: '축제 동선 집중도',
-    description: '영주역과 주요 관광 거점을 잇는 축제 방문 흐름을 추정해 표시합니다.',
-    radius: defaultRadiusMeters,
-    elevationScale: 6,
-    colorRange: heatmapColorRange,
+  gap: {
+    label: '편의시설 공백',
+    tabLabel: '편의시설 공백',
+    metricLabel: '공백 점수',
+    description: '관광 매력은 높지만 화장실, 주차장, 숙박 접근성이 약한 권역을 붉은 영역으로 표시합니다.',
+    layerName: 'ContourLayer',
+    mapNote: 'ContourLayer가 관광 수요 대비 편의시설 보강이 필요한 영역을 반투명하게 묶어 보여줍니다.',
+    colorRange: facilityColorRange,
+  },
+  route: {
+    label: '추천 코스 흐름',
+    tabLabel: '추천 코스 흐름',
+    metricLabel: '코스 연결성',
+    description: 'AI가 생성한 코스 동선을 시간 순서대로 시뮬레이션합니다.',
+    layerName: 'PathLayer',
+    mapNote: '영주역에서 소수서원·선비촌을 거쳐 무섬마을로 이어지는 추천 코스 흐름을 표시합니다.',
+    colorRange: demandColorRange,
   },
 }
 
@@ -112,66 +152,159 @@ const yeongjuInitialViewState = {
 
 const fallbackHeatmapPoints: HeatmapPoint[] = [
   createFallbackPoint('sosu-seowon', '소수서원', 'tour', [128.5808, 36.9252], {
-    tourism: 10,
+    demand: 10,
     facility: 3,
-    festival: 8,
+    gap: 5,
+    route: 8,
   }),
   createFallbackPoint('seonbichon', '선비촌', 'course', [128.5816, 36.9237], {
-    tourism: 8,
+    demand: 8,
     facility: 4,
-    festival: 7,
+    gap: 4,
+    route: 9,
   }),
   createFallbackPoint('seonbi-world', '선비세상', 'festival', [128.5843, 36.9198], {
-    tourism: 9,
+    demand: 9,
     facility: 5,
-    festival: 9,
+    gap: 3,
+    route: 7,
   }),
   createFallbackPoint('museom-village', '무섬마을', 'tour', [128.6222, 36.7295], {
-    tourism: 8,
+    demand: 8,
     facility: 3,
-    festival: 7,
+    gap: 8,
+    route: 10,
   }),
   createFallbackPoint('buseoksa', '부석사', 'tour', [128.6878, 36.998], {
-    tourism: 10,
+    demand: 10,
     facility: 3,
-    festival: 6,
+    gap: 7,
+    route: 5,
   }),
   createFallbackPoint('yeongju-station', '영주역', 'festival', [128.6264, 36.8115], {
-    tourism: 4,
+    demand: 4,
     facility: 6,
-    festival: 10,
+    gap: 2,
+    route: 10,
   }),
   createFallbackPoint('sosu-parking', '소수서원 주차장', 'parking', [128.5797, 36.9258], {
-    tourism: 2,
+    demand: 2,
     facility: 8,
-    festival: 6,
+    gap: 1,
+    route: 6,
   }),
   createFallbackPoint('seonbichon-toilet', '선비촌 공중화장실', 'toilet', [128.5823, 36.9231], {
-    tourism: 2,
+    demand: 2,
     facility: 7,
-    festival: 6,
+    gap: 1,
+    route: 6,
   }),
   createFallbackPoint('seonbi-world-parking', '선비세상 주차장', 'parking', [128.585, 36.9202], {
-    tourism: 2,
+    demand: 2,
     facility: 8,
-    festival: 7,
+    gap: 1,
+    route: 7,
   }),
   createFallbackPoint('museom-toilet', '무섬마을 공중화장실', 'toilet', [128.6208, 36.7303], {
-    tourism: 2,
+    demand: 2,
     facility: 7,
-    festival: 5,
+    gap: 1,
+    route: 5,
   }),
   createFallbackPoint('buseoksa-parking', '부석사 주차장', 'parking', [128.6889, 36.9974], {
-    tourism: 2,
+    demand: 2,
     facility: 8,
-    festival: 4,
+    gap: 1,
+    route: 4,
   }),
   createFallbackPoint('yeongju-stay', '영주역 인근 숙박', 'lodging', [128.6248, 36.8099], {
-    tourism: 2,
+    demand: 2,
     facility: 8,
-    festival: 7,
+    gap: 1,
+    route: 7,
   }),
 ]
+const majorPlaceMarkers: PlaceMarker[] = [
+  {
+    id: 'yeongju-station',
+    name: '영주역',
+    category: '교통 거점',
+    coordinates: [128.6264, 36.8115],
+    demandLevel: '보통',
+    facilityLevel: '충분',
+    routeIncluded: true,
+    description: '추천 코스의 출발점이자 대중교통 진입 거점입니다.',
+    suggestion: '첫 화면에서 환승, 주차, 택시 승강장 안내를 함께 보여주면 코스 진입 부담이 줄어듭니다.',
+  },
+  {
+    id: 'sosu-seowon',
+    name: '소수서원',
+    category: '역사문화',
+    coordinates: [128.5808, 36.9252],
+    demandLevel: '높음',
+    facilityLevel: '보통',
+    routeIncluded: true,
+    description: '역사문화형 추천 코스에서 가장 강한 수요가 예상되는 핵심 지점입니다.',
+    suggestion: '부모님 동반 역사문화 코스의 1순위 권역으로 노출하기 좋습니다.',
+  },
+  {
+    id: 'seonbichon',
+    name: '선비촌',
+    category: '체험',
+    coordinates: [128.5816, 36.9237],
+    demandLevel: '높음',
+    facilityLevel: '보통',
+    routeIncluded: true,
+    description: '소수서원과 함께 묶이는 체험형 관광 권역입니다.',
+    suggestion: '소수서원 관람 뒤 체험 시간을 자연스럽게 이어주는 카드가 적합합니다.',
+  },
+  {
+    id: 'seonbi-world',
+    name: '선비세상',
+    category: '축제·체험',
+    coordinates: [128.5843, 36.9198],
+    demandLevel: '높음',
+    facilityLevel: '충분',
+    routeIncluded: false,
+    description: '축제 기간과 가족 체험형 수요가 함께 모이는 지점입니다.',
+    suggestion: '행사 기간에는 주차 안내와 혼잡 회피 동선을 먼저 보여주는 것이 좋습니다.',
+  },
+  {
+    id: 'museom-village',
+    name: '무섬마을',
+    category: '마을 산책',
+    coordinates: [128.6222, 36.7295],
+    demandLevel: '높음',
+    facilityLevel: '주의',
+    routeIncluded: true,
+    description: '사색형 코스 적합도가 높지만 숙박과 편의 안내 보강이 필요한 권역입니다.',
+    suggestion: '코스 상세에서 화장실, 주차장, 쉬는 장소 안내를 우선 노출하세요.',
+  },
+  {
+    id: 'buseoksa',
+    name: '부석사',
+    category: '사찰·문화유산',
+    coordinates: [128.6878, 36.998],
+    demandLevel: '높음',
+    facilityLevel: '주의',
+    routeIncluded: false,
+    description: '관광 매력도가 높고 체류 시간이 길지만 접근성 안내가 중요한 지점입니다.',
+    suggestion: '대중교통, 주차 후 도보 이동, 주변 휴식 지점을 한 카드에 묶어 보여주세요.',
+  },
+]
+const recommendedRoutePath: [number, number][] = [
+  [128.6264, 36.8115],
+  [128.5808, 36.9252],
+  [128.5816, 36.9237],
+  [128.6222, 36.7295],
+]
+const routeTimeline = [
+  { place: '영주역', note: '대중교통 진입과 코스 출발' },
+  { place: '소수서원', note: '역사문화 관람 핵심 권역' },
+  { place: '선비촌', note: '체험형 콘텐츠 연결' },
+  { place: '무섬마을', note: '사색형 마을 산책 마무리' },
+]
+const radiusOptions = [300, 500, 1000]
 const expandedFallbackHeatmapPoints = dedupeHeatmapPoints([
   ...fallbackHeatmapPoints,
   ...createVisualSamplePoints(fallbackHeatmapPoints),
@@ -183,6 +316,8 @@ export function TourismHeatmapPage() {
   const [selectedMode, setSelectedMode] = useState<HeatmapMode | null>(null)
   const activeMode = selectedMode ?? requestedMode
   const [radiusMeters, setRadiusMeters] = useState(defaultRadiusMeters)
+  const [selectedPlaceId, setSelectedPlaceId] = useState(majorPlaceMarkers[1].id)
+  const [routeProgress, setRouteProgress] = useState(0.2)
   const [dataState, setDataState] = useState<HeatmapDataState>({
     status: 'loading',
     points: expandedFallbackHeatmapPoints,
@@ -217,6 +352,22 @@ export function TourismHeatmapPage() {
     }
   }, [])
 
+  useEffect(() => {
+    if (activeMode !== 'route') return
+
+    let animationFrame = 0
+    const startedAt = performance.now()
+
+    function tick(now: number) {
+      setRouteProgress(((now - startedAt) / 5200) % 1)
+      animationFrame = requestAnimationFrame(tick)
+    }
+
+    animationFrame = requestAnimationFrame(tick)
+
+    return () => cancelAnimationFrame(animationFrame)
+  }, [activeMode])
+
   const modeConfig = heatmapModes[activeMode]
   const activePoints = useMemo(
     () => getModePoints(dataState.points, activeMode),
@@ -226,10 +377,14 @@ export function TourismHeatmapPage() {
     () => activePoints.reduce((sum, point) => sum + point.weights[activeMode], 0),
     [activeMode, activePoints],
   )
-  const apiPointCount = activePoints.filter((point) => point.source === 'TourAPI').length
   const localPointCount = activePoints.filter((point) => isLocalHeatmapSource(point.source)).length
   const fallbackPointCount = activePoints.filter((point) => point.source === 'fallback').length
   const samplePointCount = activePoints.filter((point) => point.source === 'visual-sample').length
+  const displaySummary = useMemo(() => createDisplaySummary(dataState.points), [dataState.points])
+  const selectedPlace = useMemo(
+    () => majorPlaceMarkers.find((place) => place.id === selectedPlaceId) ?? majorPlaceMarkers[1],
+    [selectedPlaceId],
+  )
   const topPoints = useMemo(
     () =>
       [...activePoints]
@@ -239,42 +394,167 @@ export function TourismHeatmapPage() {
     [activeMode, activePoints],
   )
   const layers = useMemo(() => {
-    if (activePoints.length === 0) return []
+    const dataLayers = []
+
+    if (activeMode === 'demand') {
+      dataLayers.push(
+        new HeatmapLayer<HeatmapPoint>({
+          id: 'yeongju-demand-heatmap-layer',
+          data: activePoints,
+          getPosition: (point) => point.coordinates,
+          getWeight: (point) => point.weights.demand,
+          colorRange: demandColorRange,
+          radiusPixels: 62,
+          intensity: 1.15,
+          threshold: 0.04,
+          aggregation: 'SUM',
+          pickable: false,
+        }),
+      )
+    }
+
+    if (activeMode === 'facility') {
+      dataLayers.push(
+        new HexagonLayer<HeatmapPoint>({
+          id: 'yeongju-facility-hexagon-layer',
+          data: activePoints,
+          getPosition: (point) => point.coordinates,
+          getColorWeight: (point) => point.weights.facility,
+          getElevationWeight: (point) => point.weights.facility,
+          colorRange: facilityColorRange,
+          colorAggregation: 'SUM',
+          elevationAggregation: 'SUM',
+          elevationScale: 4,
+          elevationRange: [0, 250],
+          extruded: true,
+          radius: radiusMeters,
+          coverage: 0.82,
+          upperPercentile: 95,
+          elevationUpperPercentile: 95,
+          pickable: true,
+          autoHighlight: true,
+          gpuAggregation: false,
+        }),
+      )
+    }
+
+    if (activeMode === 'gap') {
+      dataLayers.push(
+        new ContourLayer<HeatmapPoint>({
+          id: 'yeongju-gap-contour-layer',
+          data: activePoints,
+          getPosition: (point) => point.coordinates,
+          getWeight: (point) => point.weights.gap,
+          cellSize: radiusMeters,
+          aggregation: 'SUM',
+          contours: [
+            { threshold: [4, 7], color: [248, 113, 113, 72], zIndex: 0 },
+            { threshold: [7, 24], color: [220, 38, 38, 118], zIndex: 1 },
+            { threshold: 4, color: [185, 28, 28, 220], strokeWidth: 2, zIndex: 2 },
+          ],
+          pickable: true,
+          gpuAggregation: false,
+        }),
+      )
+    }
+
+    if (activeMode === 'route') {
+      const activePath = createRouteProgressPath(recommendedRoutePath, routeProgress)
+      const routeFlows: RouteFlow[] = [
+        {
+          id: 'yeongju-recommended-route-base',
+          name: '영주역 → 소수서원 → 선비촌 → 무섬마을',
+          path: recommendedRoutePath,
+          color: [20, 83, 45, 115],
+          width: 95,
+          kind: 'base',
+        },
+        {
+          id: 'yeongju-recommended-route-active',
+          name: 'AI 추천 코스 흐름',
+          path: activePath,
+          color: [250, 204, 21, 240],
+          width: 140,
+          kind: 'active',
+        },
+      ]
+
+      dataLayers.push(
+        new PathLayer<RouteFlow>({
+          id: 'yeongju-route-path-layer',
+          data: routeFlows,
+          getPath: (flow) => flow.path,
+          getColor: (flow) => flow.color,
+          getWidth: (flow) => flow.width,
+          widthUnits: 'meters',
+          widthMinPixels: 3,
+          widthMaxPixels: 14,
+          jointRounded: true,
+          capRounded: true,
+          pickable: true,
+        }),
+      )
+    }
 
     return [
-      new HexagonLayer<HeatmapPoint>({
-        id: `yeongju-${activeMode}-hexagon-layer`,
-        data: activePoints,
+      ...dataLayers,
+      new ScatterplotLayer<PlaceMarker>({
+        id: `yeongju-major-place-marker-${activeMode}`,
+        data: majorPlaceMarkers,
         getPosition: (point) => point.coordinates,
-        getColorWeight: (point) => point.weights[activeMode],
-        getElevationWeight: (point) => point.weights[activeMode],
-        colorRange: modeConfig.colorRange,
-        colorAggregation: 'SUM',
-        elevationAggregation: 'SUM',
-        elevationScale: modeConfig.elevationScale,
-        elevationRange: [0, 900],
-        extruded: true,
-        radius: radiusMeters,
-        coverage: 0.75,
-        upperPercentile: 98,
-        elevationUpperPercentile: 98,
+        getRadius: (place) => (place.id === selectedPlaceId ? 260 : 180),
+        radiusUnits: 'meters',
+        radiusMinPixels: 7,
+        radiusMaxPixels: 16,
+        stroked: true,
+        filled: true,
+        getFillColor: (place) => getMarkerFillColor(place, activeMode, selectedPlaceId),
+        getLineColor: (place) =>
+          place.id === selectedPlaceId ? [250, 204, 21, 255] : [255, 255, 255, 235],
+        getLineWidth: (place) => (place.id === selectedPlaceId ? 4 : 2),
+        lineWidthMinPixels: 1,
+        lineWidthMaxPixels: 4,
         pickable: true,
         autoHighlight: true,
-        gpuAggregation: false,
+        onClick: (info) => {
+          if (!info.object) return false
+          setSelectedPlaceId(info.object.id)
+          return true
+        },
+      }),
+      new TextLayer<PlaceMarker>({
+        id: `yeongju-major-place-label-${activeMode}`,
+        data: majorPlaceMarkers,
+        getPosition: (point) => point.coordinates,
+        getText: (place) => place.name,
+        getColor: (place) =>
+          place.id === selectedPlaceId ? [20, 83, 45, 255] : [30, 58, 95, 240],
+        getSize: (place) => (place.id === selectedPlaceId ? 15 : 13),
+        getTextAnchor: 'middle',
+        getAlignmentBaseline: 'bottom',
+        getPixelOffset: [0, -16],
+        characterSet: 'auto',
+        fontFamily: 'system-ui, "Malgun Gothic", "Apple SD Gothic Neo", sans-serif',
+        pickable: true,
+        onClick: (info) => {
+          if (!info.object) return false
+          setSelectedPlaceId(info.object.id)
+          return true
+        },
       }),
     ]
-  }, [activeMode, activePoints, modeConfig, radiusMeters])
+  }, [activeMode, activePoints, radiusMeters, routeProgress, selectedPlaceId])
 
   return (
     <AppLayout hideBottomNavigation>
       <section className="page-section page-container heatmap-page">
         <div className="section-heading center">
-          <StatusBadge>3D 히트맵</StatusBadge>
-          <h1>영주시 관광 집중도 3D 히트맵</h1>
+          <StatusBadge>공공데이터 기반 시각화</StatusBadge>
+          <h1>영주시 관광 데이터 레이어</h1>
           <p>
-            영주시 관광지, 주차장, 화장실, 숙박 좌표를 위도·경도 배열로 변환해
-            예상 집중도와 편의시설 밀도, 관광 수요 추정을 비교합니다. 데이터가 적을
-            때는 샘플 기반 시각화 포인트로 분포를 보강합니다.
+            공공데이터 기반 관광 수요, 편의시설 밀도, 추천 코스 흐름을 시각화합니다.
+            데이터가 적을 때는 기존 fallback 대표 지점과 샘플 기반 시각화 포인트로
+            분포를 보강합니다.
           </p>
         </div>
 
@@ -282,7 +562,7 @@ export function TourismHeatmapPage() {
           <div className="heatmap-mode-header">
             <div>
               <StatusBadge tone="brown">레이어 전환</StatusBadge>
-              <h2 id="heatmap-mode-title">지도 레이어 선택</h2>
+              <h2 id="heatmap-mode-title">관광 데이터 레이어</h2>
               <p>{modeConfig.description}</p>
             </div>
             <Link className="heatmap-3d-link" to="/tour-3d">
@@ -300,47 +580,106 @@ export function TourismHeatmapPage() {
                   aria-pressed={isActive}
                   onClick={() => setSelectedMode(mode as HeatmapMode)}
                 >
-                  {config.label}
+                  {config.tabLabel}
                 </button>
               )
             })}
           </div>
         </section>
 
+        <dl className="heatmap-summary-grid" aria-label="관광 데이터 레이어 요약">
+          <div className="surface-card heatmap-summary-card">
+            <dt>관광지</dt>
+            <dd>{displaySummary.tourismPlaces}</dd>
+          </div>
+          <div className="surface-card heatmap-summary-card">
+            <dt>편의시설</dt>
+            <dd>{displaySummary.facilities}</dd>
+          </div>
+          <div className="surface-card heatmap-summary-card">
+            <dt>추천 권역</dt>
+            <dd>{displaySummary.recommendedZones}</dd>
+          </div>
+          <div className="surface-card heatmap-summary-card">
+            <dt>{modeConfig.metricLabel}</dt>
+            <dd>{Math.round(totalWeight)}</dd>
+          </div>
+        </dl>
+
         <div className="heatmap-layout">
           <section className="surface-card heatmap-map-card" aria-labelledby="heatmap-map-title">
             <div className="map-panel-header">
               <div>
                 <h2 id="heatmap-map-title">{modeConfig.label}</h2>
-                <span>Mapbox + deck.gl HexagonLayer</span>
+                <span>Mapbox + deck.gl {modeConfig.layerName}</span>
               </div>
               <StatusBadge tone={samplePointCount > 0 || fallbackPointCount > 0 ? 'brown' : 'green'}>
-                {localPointCount > 0 ? '공공데이터 보강' : samplePointCount > 0 ? '샘플 기반 예상 집중도' : 'TourAPI 기반'}
+                {localPointCount > 0 ? '공공데이터 보강' : samplePointCount > 0 ? '샘플 기반 시각화' : 'TourAPI 기반'}
               </StatusBadge>
             </div>
             <p className="map-panel-note">
-              가까운 좌표는 반경 {radiusMeters.toLocaleString()}m 육각형으로 묶어 3D
-              기둥 높이로 표현합니다.
+              {modeConfig.mapNote}
             </p>
             <div className="heatmap-map-shell">
-              <div className="heatmap-map-controller" aria-label="지도 컨트롤러">
-                <strong>MAP CONTROLLER</strong>
-                <span>{modeConfig.metricLabel}</span>
-                <label>
-                  <span>Radius</span>
+              <div className="heatmap-map-controller" aria-label="관광 데이터 레이어 컨트롤러">
+                <strong>관광 데이터 레이어</strong>
+                <span>{modeConfig.label}</span>
+                <div className="heatmap-controller-section">
+                  <small>분석 모드</small>
+                  <div className="heatmap-controller-mode-grid">
+                    {Object.entries(heatmapModes).map(([mode, config]) => {
+                      const isActive = activeMode === mode
+                      return (
+                        <button
+                          key={`controller-${mode}`}
+                          type="button"
+                          className={isActive ? 'active' : ''}
+                          aria-pressed={isActive}
+                          onClick={() => setSelectedMode(mode as HeatmapMode)}
+                        >
+                          {config.tabLabel}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+                <div className="heatmap-controller-section">
+                  <small>분석 반경</small>
+                  <div className="heatmap-radius-chips">
+                    {radiusOptions.map((radius) => (
+                      <button
+                        key={radius}
+                        type="button"
+                        className={radiusMeters === radius ? 'active' : ''}
+                        onClick={() => setRadiusMeters(radius)}
+                      >
+                        {radius === 1000 ? '1km' : `${radius}m`}
+                      </button>
+                    ))}
+                  </div>
                   <input
                     type="range"
                     min="300"
-                    max="1200"
+                    max="1000"
                     step="50"
                     value={radiusMeters}
                     onChange={(event) => setRadiusMeters(Number(event.currentTarget.value))}
+                    aria-label="분석 반경"
                   />
-                </label>
-                <small>
-                  Radius - <output>{radiusMeters}</output> meters
+                  <small>
+                    현재 반경 <output>{radiusMeters.toLocaleString()}</output>m
+                  </small>
+                </div>
+                <div className="heatmap-controller-stats" aria-label="현재 표시 데이터">
+                  <small>현재 표시</small>
+                  <span>관광지 {displaySummary.tourismPlaces.toLocaleString()}개</span>
+                  <span>편의시설 {displaySummary.facilities.toLocaleString()}개</span>
+                  <span>추천 권역 {displaySummary.recommendedZones.toLocaleString()}개</span>
+                </div>
+                <p>{modeConfig.description}</p>
+                <small className="heatmap-controller-location-count">
+                  {activePoints.length.toLocaleString()}개 좌표 렌더링
                 </small>
-                <small>{activePoints.length.toLocaleString()} Locations</small>
               </div>
               {dataState.status === 'loading' && (
                 <div className="heatmap-loading-overlay">
@@ -352,11 +691,11 @@ export function TourismHeatmapPage() {
                   initialViewState={yeongjuInitialViewState}
                   controller
                   layers={layers}
-                  getTooltip={({ object }) => createHexagonTooltip(object, activeMode)}
+                  getTooltip={({ object }) => createDeckTooltip(object, activeMode)}
                 >
                   <MapboxMap
                     mapboxAccessToken={mapboxToken}
-                    mapStyle="mapbox://styles/mapbox/dark-v11"
+                    mapStyle="mapbox://styles/mapbox/light-v11"
                     reuseMaps
                   >
                     <NavigationControl position="top-right" showCompass />
@@ -374,14 +713,37 @@ export function TourismHeatmapPage() {
 
           <aside className="heatmap-side-panel" aria-label="히트맵 상세 정보">
             <section className="surface-card heatmap-info-card">
-              <StatusBadge>데이터</StatusBadge>
-              <h2>좌표 변환 기준</h2>
-              <p>
-                TourAPI의 mapX/mapY와 영주시 축제·주차장·관광지·맛집·안심식당·
-                민박·공중화장실 좌표를 [경도, 위도] 배열로 변환하고, 부족한
-                영역만 대표 지점 주변 샘플로 보강합니다.
-              </p>
+              <StatusBadge>AI 분석 요약</StatusBadge>
+              <h2>지금 봐야 할 권역</h2>
+              <ul className="heatmap-insight-list">
+                <li>소수서원·선비촌 권역은 역사문화 수요가 높습니다.</li>
+                <li>무섬마을은 사색형 코스 적합도가 높지만 숙박 연계가 약합니다.</li>
+                <li>축제 기간에는 선비세상 주변 주차 안내를 강화해야 합니다.</li>
+              </ul>
               {dataState.message && <p className="heatmap-data-message">{dataState.message}</p>}
+            </section>
+
+            <section className="surface-card heatmap-info-card heatmap-selected-place">
+              <StatusBadge tone="green">장소 정보</StatusBadge>
+              <h2>{selectedPlace.name}</h2>
+              <p>{selectedPlace.description}</p>
+              <dl className="heatmap-place-meta">
+                <div>
+                  <dt>관광 수요 추정</dt>
+                  <dd>{selectedPlace.demandLevel}</dd>
+                </div>
+                <div>
+                  <dt>편의시설</dt>
+                  <dd>{selectedPlace.facilityLevel}</dd>
+                </div>
+                <div>
+                  <dt>추천 코스 포함</dt>
+                  <dd>{selectedPlace.routeIncluded ? '예' : '아니오'}</dd>
+                </div>
+              </dl>
+              <p>
+                <strong>AI 제안:</strong> {selectedPlace.suggestion}
+              </p>
             </section>
 
             <section className="surface-card heatmap-info-card">
@@ -399,31 +761,36 @@ export function TourismHeatmapPage() {
                 ))}
               </ol>
             </section>
+
+            {activeMode === 'route' && (
+              <section className="surface-card heatmap-info-card">
+                <StatusBadge tone="green">코스 타임라인</StatusBadge>
+                <h2>영주역에서 무섬마을까지</h2>
+                <ol className="heatmap-route-timeline">
+                  {routeTimeline.map((step, index) => (
+                    <li key={step.place}>
+                      <em>{index + 1}</em>
+                      <span>
+                        <strong>{step.place}</strong>
+                        <small>{step.note}</small>
+                      </span>
+                    </li>
+                  ))}
+                </ol>
+              </section>
+            )}
+
+            <section className="surface-card heatmap-info-card">
+              <StatusBadge>추천 조치</StatusBadge>
+              <h2>운영 액션</h2>
+              <div className="heatmap-action-list">
+                <span>주차장 안내 강화</span>
+                <span>화장실 위치 우선 노출</span>
+                <span>무섬마을 대체 코스 추천</span>
+              </div>
+            </section>
           </aside>
         </div>
-
-        <dl className="heatmap-summary-grid" aria-label="히트맵 데이터 요약">
-          <div className="surface-card heatmap-summary-card">
-            <dt>{modeConfig.metricLabel}</dt>
-            <dd>{Math.round(totalWeight)}</dd>
-          </div>
-          <div className="surface-card heatmap-summary-card">
-            <dt>좌표 지점</dt>
-            <dd>{activePoints.length}</dd>
-          </div>
-          <div className="surface-card heatmap-summary-card">
-            <dt>TourAPI 재사용</dt>
-            <dd>{apiPointCount}</dd>
-          </div>
-          <div className="surface-card heatmap-summary-card">
-            <dt>공공데이터 보강</dt>
-            <dd>{localPointCount}</dd>
-          </div>
-          <div className="surface-card heatmap-summary-card">
-            <dt>샘플 기반</dt>
-            <dd>{samplePointCount}</dd>
-          </div>
-        </dl>
       </section>
     </AppLayout>
   )
@@ -500,9 +867,10 @@ function toParkingPoints(contents: TourismContent[]): HeatmapPoint[] {
       address: item.address,
       source: item.source ?? 'TourAPI',
       weights: normalizeWeights({
-        tourism: 2,
+        demand: 2,
         facility: 7,
-        festival: 4,
+        gap: 1,
+        route: 4,
       }),
     }
   })
@@ -516,9 +884,10 @@ function toEnrichmentHeatmapPoints(data: YeongjuEnrichmentData): HeatmapPoint[] 
     coordinates: data.visitorDemand.coordinates,
     source: 'SosuVisitorStats',
     weights: normalizeWeights({
-      tourism: data.visitorDemand.peakMonth.demandIndex,
+      demand: data.visitorDemand.peakMonth.demandIndex,
       facility: 4,
-      festival: 7,
+      gap: 4,
+      route: 7,
     }),
   }
 
@@ -534,9 +903,10 @@ function toEnrichmentHeatmapPoints(data: YeongjuEnrichmentData): HeatmapPoint[] 
         address: item.address,
         source: item.source,
         weights: normalizeWeights({
-          tourism: 8,
+          demand: 8,
           facility: item.parkingCapacity ? 5 : 3,
-          festival: 5,
+          gap: item.parkingCapacity ? 3 : 6,
+          route: 5,
         }),
       },
     ]
@@ -554,9 +924,10 @@ function toEnrichmentHeatmapPoints(data: YeongjuEnrichmentData): HeatmapPoint[] 
         address: item.address ?? item.venue,
         source: item.source,
         weights: normalizeWeights({
-          tourism: 6,
+          demand: 6,
           facility: 3,
-          festival: 10,
+          gap: 4,
+          route: 10,
         }),
       },
     ]
@@ -575,9 +946,10 @@ function toEnrichmentHeatmapPoints(data: YeongjuEnrichmentData): HeatmapPoint[] 
             address: data.officialSeonbiFestival.address,
             source: data.officialSeonbiFestival.source,
             weights: normalizeWeights({
-              tourism: 8,
+              demand: 8,
               facility: 5,
-              festival: 10,
+              gap: 3,
+              route: 10,
             }),
           },
         ]
@@ -595,9 +967,10 @@ function toEnrichmentHeatmapPoints(data: YeongjuEnrichmentData): HeatmapPoint[] 
         address: item.address,
         source: item.source,
         weights: normalizeWeights({
-          tourism: 2,
+          demand: 2,
           facility: clampNumber(4 + item.capacity / 80, 4, 10),
-          festival: item.title.includes('선비') || item.title.includes('소수') ? 7 : 4,
+          gap: 1,
+          route: item.title.includes('선비') || item.title.includes('소수') ? 7 : 4,
         }),
       },
     ]
@@ -614,9 +987,10 @@ function toEnrichmentHeatmapPoints(data: YeongjuEnrichmentData): HeatmapPoint[] 
         address: item.address,
         source: item.source,
         weights: normalizeWeights({
-          tourism: item.coordinateSource === 'known-place' ? 9 : 7,
+          demand: item.coordinateSource === 'known-place' ? 9 : 7,
           facility: 4,
-          festival: item.title.includes('선비') || item.title.includes('소수') ? 8 : 5,
+          gap: item.coordinateSource === 'known-place' ? 5 : 6,
+          route: item.title.includes('선비') || item.title.includes('소수') ? 8 : 5,
         }),
       },
     ]
@@ -644,9 +1018,10 @@ function toEnrichmentHeatmapPoints(data: YeongjuEnrichmentData): HeatmapPoint[] 
         address: item.address,
         source: item.source,
         weights: normalizeWeights({
-          tourism: 3,
+          demand: 3,
           facility: baseWeight,
-          festival: 6,
+          gap: 1,
+          route: 6,
         }),
       },
     ]
@@ -663,9 +1038,10 @@ function toEnrichmentHeatmapPoints(data: YeongjuEnrichmentData): HeatmapPoint[] 
         address: item.address,
         source: item.source,
         weights: normalizeWeights({
-          tourism: 2,
+          demand: 2,
           facility: clampNumber(5 + (item.roomCount ?? 0) / 2, 5, 10),
-          festival: 6,
+          gap: 1,
+          route: 6,
         }),
       },
     ]
@@ -682,13 +1058,14 @@ function toEnrichmentHeatmapPoints(data: YeongjuEnrichmentData): HeatmapPoint[] 
         address: item.address,
         source: item.source,
         weights: normalizeWeights({
-          tourism: 2,
+          demand: 2,
           facility: clampNumber(
             5 + item.disabledToiletCount / 2 + (item.emergencyBell ? 1 : 0),
             5,
             10,
           ),
-          festival: 5,
+          gap: 1,
+          route: 5,
         }),
       },
     ]
@@ -747,9 +1124,10 @@ function jitterAroundPoint(
       ],
       source: 'visual-sample',
       weights: normalizeWeights({
-        tourism: Math.min(sampleWeight, point.weights.tourism),
+        demand: Math.min(sampleWeight, point.weights.demand),
         facility: Math.min(sampleWeight, point.weights.facility),
-        festival: Math.min(sampleWeight, point.weights.festival),
+        gap: Math.min(sampleWeight, point.weights.gap),
+        route: Math.min(sampleWeight, point.weights.route),
       }),
     }
   })
@@ -778,17 +1156,20 @@ function dedupeHeatmapPoints(points: HeatmapPoint[]) {
 
 function getModePoints(points: HeatmapPoint[], mode: HeatmapMode) {
   const categoriesByMode: Record<HeatmapMode, HeatmapCategory[]> = {
-    tourism: ['tour', 'festival', 'course', 'rural'],
+    demand: ['tour', 'festival', 'course', 'rural'],
     facility: ['parking', 'toilet', 'lodging', 'food'],
-    festival: ['festival', 'tour', 'parking', 'toilet', 'food', 'rural'],
+    gap: ['tour', 'festival', 'course', 'rural'],
+    route: ['festival', 'tour', 'course', 'parking', 'toilet', 'food', 'rural'],
   }
 
   return points.filter((point) => categoriesByMode[mode].includes(point.category))
 }
 
 function getHeatmapMode(mode: string | null): HeatmapMode {
-  if (mode === 'facility' || mode === 'festival' || mode === 'tourism') return mode
-  return 'tourism'
+  if (mode === 'demand' || mode === 'facility' || mode === 'gap' || mode === 'route') return mode
+  if (mode === 'tourism') return 'demand'
+  if (mode === 'festival') return 'route'
+  return 'demand'
 }
 
 function createFallbackPoint(
@@ -823,33 +1204,34 @@ function getTourismCategory(
 
 function getApiWeights(category: HeatmapCategory): Record<HeatmapMode, number> {
   if (category === 'festival') {
-    return { tourism: 6, facility: 2, festival: 10 }
+    return { demand: 6, facility: 2, gap: 4, route: 10 }
   }
 
   if (category === 'lodging') {
-    return { tourism: 2, facility: 8, festival: 6 }
+    return { demand: 2, facility: 8, gap: 1, route: 6 }
   }
 
   if (category === 'food') {
-    return { tourism: 3, facility: 7, festival: 6 }
+    return { demand: 3, facility: 7, gap: 1, route: 6 }
   }
 
   if (category === 'rural') {
-    return { tourism: 7, facility: 4, festival: 5 }
+    return { demand: 7, facility: 4, gap: 6, route: 5 }
   }
 
   if (category === 'course') {
-    return { tourism: 8, facility: 3, festival: 7 }
+    return { demand: 8, facility: 3, gap: 5, route: 7 }
   }
 
-  return { tourism: 7, facility: 2, festival: 6 }
+  return { demand: 7, facility: 2, gap: 6, route: 6 }
 }
 
 function normalizeWeights(weights: Record<HeatmapMode, number>): Record<HeatmapMode, number> {
   return {
-    tourism: normalizeWeight(weights.tourism),
+    demand: normalizeWeight(weights.demand),
     facility: normalizeWeight(weights.facility),
-    festival: normalizeWeight(weights.festival),
+    gap: normalizeWeight(weights.gap),
+    route: normalizeWeight(weights.route),
   }
 }
 
@@ -914,36 +1296,198 @@ function createDataMessage(
   return `${apiPointCount}개 TourAPI 좌표와 영주시 보강 공공데이터 ${localPointCount}개를 적용했습니다.`
 }
 
-function createHexagonTooltip(object: unknown, activeMode: HeatmapMode) {
-  if (!object || typeof object !== 'object') return null
-
-  const bin = object as {
-    count?: number
-    elevationValue?: number
-    points?: HeatmapPoint[]
-  }
-  const points = bin.points ?? []
-  const names = points
-    .slice(0, 4)
-    .map((point) => escapeHtml(point.title))
-    .join(', ')
-  const label = heatmapModes[activeMode].metricLabel
+function createDisplaySummary(points: HeatmapPoint[]) {
+  const visiblePoints = points.filter((point) => point.source !== 'visual-sample')
+  const tourismPlaces = visiblePoints.filter((point) =>
+    ['tour', 'festival', 'course', 'rural'].includes(point.category),
+  ).length
+  const facilities = visiblePoints.filter((point) =>
+    ['parking', 'toilet', 'lodging', 'food'].includes(point.category),
+  ).length
 
   return {
-    html: `<strong>${heatmapModes[activeMode].label}</strong><br />${label}: ${Math.round(
+    tourismPlaces,
+    facilities,
+    recommendedZones: majorPlaceMarkers.length,
+  }
+}
+
+function getMarkerFillColor(
+  place: PlaceMarker,
+  activeMode: HeatmapMode,
+  selectedPlaceId: string,
+): Color {
+  if (place.id === selectedPlaceId) return [250, 204, 21, 245]
+  if (activeMode === 'gap' && place.facilityLevel === '주의') return [220, 38, 38, 220]
+  if (activeMode === 'facility') return [45, 212, 191, 220]
+  if (activeMode === 'route' && place.routeIncluded) return [20, 83, 45, 230]
+  return [30, 58, 95, 225]
+}
+
+function createRouteProgressPath(path: [number, number][], progress: number) {
+  if (path.length < 2) return path
+
+  const segmentLengths = path.slice(1).map((point, index) => {
+    const previous = path[index]
+    return Math.hypot(point[0] - previous[0], point[1] - previous[1])
+  })
+  const totalLength = segmentLengths.reduce((sum, value) => sum + value, 0)
+  const targetLength = totalLength * clampNumber(progress, 0.05, 1)
+  const progressPath: [number, number][] = [path[0]]
+  let accumulated = 0
+
+  for (let index = 0; index < segmentLengths.length; index += 1) {
+    const segmentLength = segmentLengths[index]
+    const start = path[index]
+    const end = path[index + 1]
+
+    if (accumulated + segmentLength <= targetLength) {
+      progressPath.push(end)
+      accumulated += segmentLength
+      continue
+    }
+
+    const ratio = (targetLength - accumulated) / segmentLength
+    progressPath.push([
+      roundCoordinate(start[0] + (end[0] - start[0]) * ratio),
+      roundCoordinate(start[1] + (end[1] - start[1]) * ratio),
+    ])
+    break
+  }
+
+  return progressPath.length > 1 ? progressPath : [path[0], path[1]]
+}
+
+function createDeckTooltip(object: unknown, activeMode: HeatmapMode) {
+  if (!isRecord(object)) return null
+
+  if (isPlaceMarker(object)) return createPlaceTooltip(object)
+  if (isRouteFlow(object)) return createRouteTooltip(object)
+  if (isHexagonBin(object)) return createFacilityTooltip(object, activeMode)
+  if (isContourObject(object)) return createGapTooltip()
+  if (isHeatmapPoint(object)) return createPointTooltip(object, activeMode)
+
+  return null
+}
+
+function createPlaceTooltip(place: PlaceMarker) {
+  return createTooltip(`
+    <strong>${escapeHtml(place.name)}</strong>
+    <span>${escapeHtml(place.category)}</span>
+    <hr />
+    <div>관광 수요 추정: ${place.demandLevel}</div>
+    <div>편의시설: ${place.facilityLevel}</div>
+    <div>추천 코스 포함: ${place.routeIncluded ? '예' : '아니오'}</div>
+    <p>AI 제안: ${escapeHtml(place.suggestion)}</p>
+  `)
+}
+
+function createRouteTooltip(route: RouteFlow) {
+  return createTooltip(`
+    <strong>${escapeHtml(route.name)}</strong>
+    <span>추천 코스 흐름</span>
+    <hr />
+    <div>영주역 → 소수서원 → 선비촌 → 무섬마을</div>
+    <p>AI가 생성한 코스 동선을 시간 순서대로 시뮬레이션합니다.</p>
+  `)
+}
+
+function createFacilityTooltip(
+  bin: { count?: number; elevationValue?: number; points: HeatmapPoint[] },
+  activeMode: HeatmapMode,
+) {
+  const counts = countFacilityCategories(bin.points)
+
+  return createTooltip(`
+    <strong>${escapeHtml(heatmapModes[activeMode].label)} 권역</strong>
+    <span>${escapeHtml(heatmapModes[activeMode].metricLabel)}: ${Math.round(
       bin.elevationValue ?? 0,
-    )}<br />좌표 지점: ${bin.count ?? points.length}<br />${names}`,
+    )}</span>
+    <hr />
+    <div>주차장: ${counts.parking}개</div>
+    <div>화장실: ${counts.toilet}개</div>
+    <div>숙박: ${counts.lodging}개</div>
+    <div>음식점: ${counts.food}개</div>
+    <p>AI 제안: 코스 상세에서 가까운 편의시설을 함께 노출하세요.</p>
+    <small>${bin.count ?? bin.points.length}개 좌표 집계</small>
+  `)
+}
+
+function createGapTooltip() {
+  return createTooltip(`
+    <strong>편의시설 공백 권역</strong>
+    <span>관광지는 있지만 편의시설 안내가 필요한 영역</span>
+    <hr />
+    <div>부족 항목: 화장실 / 주차장 / 숙박</div>
+    <p>AI 제안: 코스 상세에서 해당 편의시설 안내를 우선 노출하세요.</p>
+  `)
+}
+
+function createPointTooltip(point: HeatmapPoint, activeMode: HeatmapMode) {
+  return createTooltip(`
+    <strong>${escapeHtml(point.title)}</strong>
+    <span>${escapeHtml(getCategoryLabel(point.category))}</span>
+    <hr />
+    <div>${escapeHtml(heatmapModes[activeMode].metricLabel)}: ${point.weights[activeMode]}</div>
+    <div>데이터 출처: ${escapeHtml(getHeatmapSourceLabel(point.source))}</div>
+    <p>AI 제안: 주변 장소와 함께 묶어 코스 후보로 검토하세요.</p>
+  `)
+}
+
+function createTooltip(html: string) {
+  return {
+    html,
     style: {
       color: '#1c1b1b',
       backgroundColor: '#fffdf9',
-      border: '1px solid #e1ddd6',
-      borderRadius: '10px',
-      boxShadow: '0 12px 28px rgba(35, 47, 37, 0.14)',
+      border: '1px solid rgba(30, 58, 95, 0.18)',
+      borderRadius: '12px',
+      boxShadow: '0 18px 36px rgba(35, 47, 37, 0.18)',
       fontSize: '12px',
-      lineHeight: '1.5',
-      padding: '10px 12px',
+      lineHeight: '1.55',
+      maxWidth: '280px',
+      padding: '12px 14px',
     },
   }
+}
+
+function countFacilityCategories(points: HeatmapPoint[]) {
+  return points.reduce(
+    (counts, point) => {
+      if (point.category === 'parking') counts.parking += 1
+      if (point.category === 'toilet') counts.toilet += 1
+      if (point.category === 'lodging') counts.lodging += 1
+      if (point.category === 'food') counts.food += 1
+      return counts
+    },
+    { parking: 0, toilet: 0, lodging: 0, food: 0 },
+  )
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null
+}
+
+function isPlaceMarker(value: unknown): value is PlaceMarker {
+  return isRecord(value) && typeof value.name === 'string' && typeof value.suggestion === 'string'
+}
+
+function isRouteFlow(value: unknown): value is RouteFlow {
+  return isRecord(value) && typeof value.name === 'string' && Array.isArray(value.path)
+}
+
+function isHexagonBin(
+  value: unknown,
+): value is { count?: number; elevationValue?: number; points: HeatmapPoint[] } {
+  return isRecord(value) && Array.isArray(value.points)
+}
+
+function isContourObject(value: unknown) {
+  return isRecord(value) && isRecord(value.contour)
+}
+
+function isHeatmapPoint(value: unknown): value is HeatmapPoint {
+  return isRecord(value) && typeof value.title === 'string' && Array.isArray(value.coordinates)
 }
 
 function getCategoryLabel(category: HeatmapCategory) {

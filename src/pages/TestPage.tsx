@@ -1,7 +1,5 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { CommonButton } from '../components/common/CommonButton'
-import { StatusBadge } from '../components/common/StatusBadge'
 import { AppLayout } from '../components/layout/AppLayout'
 import { seonbiQuestions } from '../features/seonbi-test/questions'
 import { calculateTestResult } from '../features/seonbi-test/scoring'
@@ -9,6 +7,14 @@ import type { AnswerOption } from '../features/seonbi-test/types'
 import { saveTestResult } from '../lib/storage'
 
 const optionLabels = ['A', 'B', 'C', 'D']
+const testBadgeImage = '/images/stay/image-Photoroom (8).png'
+const progressMedallionImage = '/images/stay/image-Photoroom (5).png'
+const optionIllustrations = [
+  '/images/stay/image-Photoroom (3).png',
+  '/images/stay/image-Photoroom (4).png',
+  '/images/stay/image-Photoroom (6).png',
+  '/images/stay/image-Photoroom (7).png',
+]
 
 export function TestPage() {
   const navigate = useNavigate()
@@ -54,21 +60,31 @@ export function TestPage() {
   }
 
   return (
-    <AppLayout hideChatbot hideBottomNavigation>
-      <section className="page-section page-container test-page">
-        <div className="progress-row">
-          <span>
-            {currentStep} / {seonbiQuestions.length} 문항
-          </span>
-          <strong>{Math.round(progress)}% 완료</strong>
-        </div>
-        <div className="progress-track" aria-hidden="true">
-          <span style={{ width: `${progress}%` }} />
+    <AppLayout className="test-app-shell" hideChatbot hideBottomNavigation>
+      <section className="test-page">
+        <span className="test-side-ornament" aria-hidden="true" />
+        <div className="test-progress-shell">
+          <div className="progress-row">
+            <span>
+              {currentStep} / {seonbiQuestions.length} 문항
+            </span>
+            <strong>{Math.round(progress)}% 완료</strong>
+          </div>
+          <div className="progress-track" aria-hidden="true">
+            <span className="test-progress-fill" style={{ width: `${progress}%` }} />
+            <img
+              className="test-progress-medallion"
+              src={progressMedallionImage}
+              alt=""
+              style={{ left: `${progress}%` }}
+            />
+          </div>
         </div>
 
-        <article className="question-card surface-card">
-          <StatusBadge>선비유형 테스트</StatusBadge>
-          <h1>{question.prompt}</h1>
+        <article className="question-card test-question-card" aria-labelledby="test-question-title">
+          <img className="test-type-badge" src={testBadgeImage} alt="선비유형 테스트" />
+          <h1 id="test-question-title">{question.prompt}</h1>
+          <div className="test-title-divider" aria-hidden="true" />
           <div className="choice-list">
             {question.options.map((option, index) => (
               <button
@@ -76,26 +92,40 @@ export function TestPage() {
                 className={selectedAnswer?.id === option.id ? 'choice active' : 'choice'}
                 key={option.id}
                 onClick={() => selectAnswer(option)}
+                aria-pressed={selectedAnswer?.id === option.id}
               >
-                <span>{optionLabels[index]}</span>
-                {option.label}
+                <span className="test-choice-label">{optionLabels[index]}</span>
+                <span className="test-choice-text">{option.label}</span>
+                <img
+                  className="test-choice-illustration"
+                  src={optionIllustrations[index]}
+                  alt=""
+                  aria-hidden="true"
+                />
               </button>
             ))}
           </div>
         </article>
 
-        <div className="page-actions spread">
-          <CommonButton
+        <div className="page-actions spread test-page-actions">
+          <button
             type="button"
-            variant="secondary"
+            className="test-nav-button test-nav-button--previous"
             disabled={currentIndex === 0}
             onClick={goPrevious}
           >
+            <span className="test-nav-chevron test-nav-chevron--left" aria-hidden="true" />
             이전
-          </CommonButton>
-          <CommonButton type="button" disabled={!selectedAnswer} onClick={goNext}>
+          </button>
+          <button
+            type="button"
+            className="test-nav-button test-nav-button--next"
+            disabled={!selectedAnswer}
+            onClick={goNext}
+          >
             {isLastQuestion ? '결과 보기' : '다음'}
-          </CommonButton>
+            <span className="test-nav-chevron test-nav-chevron--right" aria-hidden="true" />
+          </button>
         </div>
       </section>
     </AppLayout>
