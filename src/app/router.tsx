@@ -1,7 +1,9 @@
+import { lazy, Suspense } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AdminPage } from '../pages/AdminPage'
 import { AdminLoginPage } from '../pages/AdminLoginPage'
 import { AuthCallbackPage } from '../pages/AuthCallbackPage'
+import { BrandLoading } from '../components/common/BrandLoading'
 import { CoursePage } from '../pages/CoursePage'
 import { ForgotPasswordPage } from '../pages/ForgotPasswordPage'
 import { GoogleTour3DPreviewPage } from '../pages/GoogleTour3DPreviewPage'
@@ -13,7 +15,12 @@ import { MyPage } from '../pages/MyPage'
 import { ResultPage } from '../pages/ResultPage'
 import { SignupPage } from '../pages/SignupPage'
 import { TestPage } from '../pages/TestPage'
-import { TourismHeatmapPage } from '../pages/TourismHeatmapPage'
+
+const TourismHeatmapPage = lazy(() =>
+  import('../pages/TourismHeatmapPage').then((module) => ({
+    default: module.TourismHeatmapPage,
+  })),
+)
 
 export function AppRouter() {
   return (
@@ -23,7 +30,14 @@ export function AppRouter() {
         <Route path="/test" element={<TestPage />} />
         <Route path="/result" element={<ResultPage />} />
         <Route path="/course" element={<CoursePage />} />
-        <Route path="/heatmap" element={<TourismHeatmapPage />} />
+        <Route
+          path="/heatmap"
+          element={
+            <Suspense fallback={<BrandLoading message="관광 데이터 레이어를 준비하는 중입니다." />}>
+              <TourismHeatmapPage />
+            </Suspense>
+          }
+        />
         <Route path="/tour-3d" element={<GoogleTour3DPreviewPage />} />
         <Route path="/ai-evidence-graph" element={<KnowledgeGraphPage />} />
         <Route path="/knowledge-graph" element={<KnowledgeGraphPage />} />

@@ -5,6 +5,7 @@ import { TopNavBar } from './TopNavBar'
 
 interface AppLayoutProps {
   children: ReactNode
+  className?: string
   hideNavigation?: boolean
   hideChatbot?: boolean
   hideBottomNavigation?: boolean
@@ -13,6 +14,7 @@ interface AppLayoutProps {
 
 export function AppLayout({
   children,
+  className = '',
   hideChatbot = false,
   hideBottomNavigation = false,
   hideNavigation = false,
@@ -22,6 +24,7 @@ export function AppLayout({
     'app-shell',
     adminMode ? 'app-shell--admin' : '',
     hideBottomNavigation || hideNavigation || adminMode ? 'app-shell--no-bottom-nav' : '',
+    className,
   ]
     .filter(Boolean)
     .join(' ')

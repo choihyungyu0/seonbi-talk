@@ -5,6 +5,11 @@ import type { ForceGraphMethods, LinkObject, NodeObject } from 'react-force-grap
 import * as THREE from 'three'
 import { StatusBadge } from '../components/common/StatusBadge'
 import { AppLayout } from '../components/layout/AppLayout'
+import {
+  loadSavedKnowledgeGraphs,
+  saveKnowledgeGraph,
+  type SavedKnowledgeGraph,
+} from '../utils/knowledgeGraphStorage'
 
 type KnowledgeNodeKind =
   | 'course'
@@ -30,6 +35,30 @@ type KnowledgeLinkKind =
 
 type HeatmapMode = 'tourism' | 'facility' | 'festival'
 type VisualState = 'normal' | 'focused' | 'related' | 'path' | 'faded'
+type ServiceNodeType =
+  | 'course'
+  | 'user_input'
+  | 'persona'
+  | 'tag'
+  | 'place'
+  | 'public_data'
+  | 'facility'
+  | 'risk'
+  | 'evidence'
+  | 'source'
+  | 'mission'
+  | 'coupon'
+type ServiceEdgeRelation =
+  | 'analyzed_as'
+  | 'recommends'
+  | 'supported_by'
+  | 'nearby'
+  | 'has_risk'
+  | 'alternative_to'
+  | 'belongs_to_course'
+  | 'uses_public_data'
+  | 'improves'
+type GraphMode = '3d' | '2d'
 
 interface PlaceDetail {
   placeType: string
@@ -77,6 +106,14 @@ interface KnowledgeLink {
   target: string
   label: KnowledgeLinkKind
   strength: number
+}
+
+type SavedSeonbiGraph = SavedKnowledgeGraph<KnowledgeNode, KnowledgeLink>
+
+interface PositionedKnowledgeNode extends KnowledgeNode {
+  x?: number
+  y?: number
+  z?: number
 }
 
 interface KnowledgeStage {
@@ -172,9 +209,9 @@ const graphStages: KnowledgeStage[] = [
   {
     label: '공공데이터 근거 연결',
     shortLabel: '데이터',
-    metric: '근거 18',
+    metric: '출처 7',
     status: '근거 연결',
-    log: 'TourAPI, 주차장, 화장실, 숙박, 축제·행사, 출처 노드를 연결했습니다.',
+    log: 'TourAPI와 영주시 축제, 소수서원 입장객, 주차장 표준데이터를 근거 노드로 연결했습니다.',
   },
   {
     label: '관광지 후보 매칭',
@@ -191,11 +228,11 @@ const graphStages: KnowledgeStage[] = [
     log: '이동거리, 숙박 연계, 화장실 공백, 도보 부담 같은 코스 약점을 분리했습니다.',
   },
   {
-    label: '최종 추천 근거망',
+    label: 'GraphRAG 추천 경로',
     shortLabel: '완성',
     metric: '노드 51',
     status: '추천 반영',
-    log: '소수서원-선비촌-무섬마을 코스를 최종 추천하고 대체 코스까지 정리했습니다.',
+    log: '사용자 조건과 공공데이터 근거를 연결해 추천 경로를 시각화합니다.',
   },
 ]
 
@@ -314,13 +351,13 @@ const knowledgeNodes: KnowledgeNode[] = [
   },
   {
     id: 'data-parking',
-    label: '영주시 주차장 데이터',
+    label: '영주시 주차장 데이터 94건',
     kind: 'data',
     stage: 2,
     score: 84,
     source: '공공데이터포털',
     summary: '자차 이동 조건에서 장소별 주차 가능성을 보조합니다.',
-    evidence: ['공영주차장 위치', '관광지 권역 매칭'],
+    evidence: ['전국주차장정보표준데이터 94건 적용', '공영주차장 위치', '관광지 권역 매칭'],
     impact: '부모님 동반 코스에서 소수서원·선비촌 권역을 안정 후보로 만들었습니다.',
     routeTarget: { heatmapMode: 'facility' },
   },
@@ -350,13 +387,13 @@ const knowledgeNodes: KnowledgeNode[] = [
   },
   {
     id: 'data-festival',
-    label: '축제·행사 데이터',
+    label: '영주시 축제 데이터 6건',
     kind: 'data',
     stage: 2,
     score: 72,
-    source: 'TourAPI 검색',
+    source: '영주시 문화축제 공공데이터',
     summary: '계절 행사와 동선 집중 구간을 보조 지표로 반영합니다.',
-    evidence: ['영주 축제 키워드', '행사 권역', '관광 동선 보정'],
+    evidence: ['영주 문화축제 6건', '행사 권역 대표 좌표', '관광 동선 보정'],
     impact: '조용한 여행 조건과 충돌하는 행사 중심 후보를 후순위로 보냈습니다.',
     routeTarget: { heatmapMode: 'festival' },
   },
@@ -512,9 +549,9 @@ const knowledgeNodes: KnowledgeNode[] = [
     kind: 'place',
     stage: 3,
     score: 94,
-    source: 'TourAPI',
+    source: 'TourAPI·소수서원 입장객 현황',
     summary: '사색형·역사문화 태그와 가장 강하게 연결되는 핵심 관광지입니다.',
-    evidence: ['유네스코 서원', '학문형 선비', '주차장 접근성 양호'],
+    evidence: ['2014-01-01~2026-06-01 입장객 4,535일치', '누적 입장객 2,329,192명', '주차장 접근성 양호'],
     impact: '최종 코스의 첫 지점으로 확정되어 전체 추천 신뢰도를 끌어올렸습니다.',
     placeDetails: {
       placeType: '역사문화 관광지',
@@ -1010,35 +1047,48 @@ const linkKindLabels: KnowledgeLinkKind[] = [
 ]
 
 const defaultScenario = '부모님과 조용한 역사 여행을 가고 싶어요. 자차로 이동하고 화장실과 주차장이 편했으면 좋겠습니다.'
+const finalGraphStageIndex = graphStages.length - 1
 
 export function KnowledgeGraphPage() {
   const graphHostRef = useRef<HTMLDivElement>(null)
   const graphRef = useRef<KnowledgeGraphMethods | undefined>(undefined)
   const hoveredNodeIdRef = useRef<string | null>(null)
   const { width, height } = useElementSize(graphHostRef)
-  const [activeStageIndex, setActiveStageIndex] = useState(0)
-  const [isPlaying, setIsPlaying] = useState(true)
-  const [selectedNodeId, setSelectedNodeId] = useState('user-request')
-  const [isTraceMode, setIsTraceMode] = useState(false)
+  const [activeStageIndex, setActiveStageIndex] = useState(finalGraphStageIndex)
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [selectedNodeId, setSelectedNodeId] = useState('course-main')
+  const [isTraceMode, setIsTraceMode] = useState(true)
   const [scenarioInput, setScenarioInput] = useState(defaultScenario)
   const [appliedScenario, setAppliedScenario] = useState(defaultScenario)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [nodeKindFilter, setNodeKindFilter] = useState<KnowledgeNodeKind | 'all'>('all')
+  const [expandedNodes, setExpandedNodes] = useState<KnowledgeNode[]>([])
+  const [expandedLinks, setExpandedLinks] = useState<KnowledgeLink[]>([])
+  const [commandMessage, setCommandMessage] = useState('AI 그래프 명령을 선택하면 현재 노드 주변 근거를 확장합니다.')
+  const [savedGraphs, setSavedGraphs] = useState<SavedSeonbiGraph[]>(() =>
+    loadSavedKnowledgeGraphs<KnowledgeNode, KnowledgeLink>(),
+  )
+  const [loadedGraph, setLoadedGraph] = useState<SavedSeonbiGraph | null>(null)
+  const [graphMode, setGraphMode] = useState<GraphMode>('3d')
 
   useEffect(() => {
     if (!isPlaying) return
 
-    const intervalId = window.setInterval(() => {
-      setActiveStageIndex((currentStage) => {
-        if (currentStage >= graphStages.length - 1) {
-          window.clearInterval(intervalId)
-          return currentStage
-        }
+    if (activeStageIndex >= finalGraphStageIndex) {
+      const finishTimeoutId = window.setTimeout(() => {
+        setSelectedNodeId('course-main')
+        setIsTraceMode(true)
+        setIsPlaying(false)
+      }, 0)
+      return () => window.clearTimeout(finishTimeoutId)
+    }
 
-        return currentStage + 1
-      })
-    }, 1800)
+    const timeoutId = window.setTimeout(() => {
+      setActiveStageIndex((currentStage) => Math.min(currentStage + 1, finalGraphStageIndex))
+    }, 1000)
 
-    return () => window.clearInterval(intervalId)
-  }, [isPlaying])
+    return () => window.clearTimeout(timeoutId)
+  }, [activeStageIndex, isPlaying])
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -1052,14 +1102,22 @@ export function KnowledgeGraphPage() {
     () => createPersonalizationProfile(appliedScenario),
     [appliedScenario],
   )
-  const personalizedNodes = useMemo(
+  const basePersonalizedNodes = useMemo(
     () => personalizeNodes(knowledgeNodes, personalizationProfile)
       .filter((node) => personalizationProfile.graphNodeIds.has(node.id)),
     [personalizationProfile],
   )
-  const personalizedLinks = useMemo(
+  const basePersonalizedLinks = useMemo(
     () => personalizeLinks(knowledgeLinks, personalizationProfile),
     [personalizationProfile],
+  )
+  const personalizedNodes = useMemo(
+    () => loadedGraph?.nodes ?? mergeKnowledgeNodes(basePersonalizedNodes, expandedNodes),
+    [basePersonalizedNodes, expandedNodes, loadedGraph],
+  )
+  const personalizedLinks = useMemo(
+    () => loadedGraph?.edges ?? mergeKnowledgeLinks(basePersonalizedLinks, expandedLinks),
+    [basePersonalizedLinks, expandedLinks, loadedGraph],
   )
   const visibleNodes = useMemo(
     () => personalizedNodes.filter((node) => node.stage <= activeStageIndex),
@@ -1077,7 +1135,9 @@ export function KnowledgeGraphPage() {
     [personalizedLinks, visibleNodeIds],
   )
   const selectedNode =
-    visibleNodes.find((node) => node.id === selectedNodeId) ?? visibleNodes[0]
+    personalizedNodes.find((node) => node.id === selectedNodeId) ??
+    visibleNodes[0] ??
+    personalizedNodes[0]
   const traceNodeIdSet = useMemo(
     () => new Set(personalizationProfile.traceNodeIds),
     [personalizationProfile.traceNodeIds],
@@ -1099,6 +1159,54 @@ export function KnowledgeGraphPage() {
     }),
     [visibleLinks, visibleNodes],
   )
+  const normalizedSearchQuery = searchQuery.trim().toLowerCase()
+  const searchMatchedNodeIds = useMemo(() => {
+    if (!normalizedSearchQuery) return new Set<string>()
+    return new Set(
+      personalizedNodes
+        .filter((node) =>
+          [
+            node.label,
+            node.summary,
+            node.source ?? '',
+            node.impact,
+            node.evidence.join(' '),
+          ]
+            .join(' ')
+            .toLowerCase()
+            .includes(normalizedSearchQuery),
+        )
+        .map((node) => node.id),
+    )
+  }, [normalizedSearchQuery, personalizedNodes])
+  const searchRelatedNodeIds = useMemo(() => {
+    const relatedNodeIds = new Set<string>()
+    if (searchMatchedNodeIds.size === 0) return relatedNodeIds
+    personalizedLinks.forEach((link) => {
+      if (searchMatchedNodeIds.has(link.source)) relatedNodeIds.add(link.target)
+      if (searchMatchedNodeIds.has(link.target)) relatedNodeIds.add(link.source)
+    })
+    return relatedNodeIds
+  }, [personalizedLinks, searchMatchedNodeIds])
+  const indexedNodes = useMemo(
+    () =>
+      personalizedNodes.filter((node) => {
+        const matchesKind = nodeKindFilter === 'all' || node.kind === nodeKindFilter
+        const matchesSearch =
+          !normalizedSearchQuery ||
+          searchMatchedNodeIds.has(node.id) ||
+          searchRelatedNodeIds.has(node.id)
+        return matchesKind && matchesSearch
+      }),
+    [
+      nodeKindFilter,
+      normalizedSearchQuery,
+      personalizedNodes,
+      searchMatchedNodeIds,
+      searchRelatedNodeIds,
+    ],
+  )
+  const indexedNodeGroups = useMemo(() => groupNodesByKind(indexedNodes), [indexedNodes])
   const activeStage = graphStages[activeStageIndex]
   const visibleLogs = graphStages.slice(0, activeStageIndex + 1)
   const selectedConnectedNodeLabels = selectedNode
@@ -1110,6 +1218,13 @@ export function KnowledgeGraphPage() {
   }, [isTraceMode, selectedNode?.id, traceLinkKeySet, traceNodeIdSet, visibleLinks])
 
   function getNodeVisualStateForId(nodeId: string) {
+    if (normalizedSearchQuery && !isTraceMode) {
+      if (nodeId === selectedNode?.id) return 'focused'
+      if (searchMatchedNodeIds.has(nodeId)) return 'related'
+      if (searchRelatedNodeIds.has(nodeId)) return 'related'
+      return 'faded'
+    }
+
     const focusedNodeId = getFocusedNodeId()
     const focusedNeighborIds = focusedNodeId
       ? getNeighborIds(focusedNodeId, visibleLinks)
@@ -1125,6 +1240,17 @@ export function KnowledgeGraphPage() {
   }
 
   function getLinkVisualStateForLink(link: RuntimeKnowledgeLink) {
+    if (normalizedSearchQuery && !isTraceMode) {
+      const sourceId = getLinkEndpointId(link.source)
+      const targetId = getLinkEndpointId(link.target)
+      const touchesSearch =
+        searchMatchedNodeIds.has(sourceId) ||
+        searchMatchedNodeIds.has(targetId) ||
+        searchRelatedNodeIds.has(sourceId) ||
+        searchRelatedNodeIds.has(targetId)
+      return touchesSearch ? 'related' : 'faded'
+    }
+
     const focusedNodeId = getFocusedNodeId()
     const focusedNeighborIds = focusedNodeId
       ? getNeighborIds(focusedNodeId, visibleLinks)
@@ -1149,6 +1275,7 @@ export function KnowledgeGraphPage() {
     hoveredNodeIdRef.current = null
     setIsTraceMode(false)
     setIsPlaying(true)
+    setLoadedGraph(null)
   }
 
   function selectStage(stageIndex: number) {
@@ -1159,20 +1286,126 @@ export function KnowledgeGraphPage() {
   }
 
   function toggleTraceMode() {
-    setActiveStageIndex(graphStages.length - 1)
+    setActiveStageIndex(finalGraphStageIndex)
     setSelectedNodeId('course-main')
     hoveredNodeIdRef.current = null
     setIsPlaying(false)
-    setIsTraceMode((current) => !current)
+    setIsTraceMode((current) => {
+      const nextMode = !current
+      if (nextMode) {
+        window.setTimeout(() => moveCameraToNode('course-main'), 80)
+      }
+      return nextMode
+    })
   }
 
   function handleScenarioChange(value: string) {
     setScenarioInput(value)
+    setLoadedGraph(null)
+    setExpandedNodes([])
+    setExpandedLinks([])
     setIsPlaying(false)
+    setIsTraceMode(true)
+    setActiveStageIndex(finalGraphStageIndex)
+    setSelectedNodeId('course-main')
+  }
+
+  function selectKnowledgeNode(nodeId: string, shouldMoveCamera = true) {
+    setSelectedNodeId(nodeId)
     setIsTraceMode(false)
-    setActiveStageIndex(graphStages.length - 1)
-    if (selectedNodeId === 'user-request' || selectedNodeId === 'course-main') return
+    setIsPlaying(false)
+    if (!shouldMoveCamera) return
+
+    window.setTimeout(() => moveCameraToNode(nodeId), 60)
+  }
+
+  function selectIndexedNode(nodeId: string) {
+    setSelectedNodeId(nodeId)
+    setIsTraceMode(false)
+    setIsPlaying(false)
+    hoveredNodeIdRef.current = null
+    window.setTimeout(() => moveCameraToNode(nodeId), 60)
+  }
+
+  function moveCameraToNode(nodeId: string) {
+    const renderedNode = graphData.nodes.find((node) => node.id === nodeId) as
+      | PositionedKnowledgeNode
+      | undefined
+    if (
+      !renderedNode ||
+      typeof renderedNode.x !== 'number' ||
+      typeof renderedNode.y !== 'number' ||
+      typeof renderedNode.z !== 'number'
+    ) {
+      return
+    }
+
+    graphRef.current?.cameraPosition(
+      {
+        x: renderedNode.x * 1.65,
+        y: renderedNode.y * 1.65,
+        z: renderedNode.z * 1.65 + 80,
+      },
+      { x: renderedNode.x, y: renderedNode.y, z: renderedNode.z },
+      950,
+    )
+  }
+
+  function replayGraphGrowth() {
+    setActiveStageIndex(0)
     setSelectedNodeId('user-request')
+    hoveredNodeIdRef.current = null
+    setIsTraceMode(false)
+    setLoadedGraph(null)
+    setIsPlaying(true)
+    setCommandMessage('Graph Growth Replay를 시작했습니다. 입력에서 완성까지 근거망이 단계별로 확장됩니다.')
+  }
+
+  function saveCurrentGraph() {
+    const nextGraphs = saveKnowledgeGraph<KnowledgeNode, KnowledgeLink>({
+      title: personalizationProfile.courseLabel,
+      nodes: personalizedNodes,
+      edges: personalizedLinks.filter(
+        (link) =>
+          personalizedNodes.some((node) => node.id === link.source) &&
+          personalizedNodes.some((node) => node.id === link.target),
+      ),
+    })
+    setSavedGraphs(nextGraphs)
+    setCommandMessage('현재 AI 선비길 그래프를 브라우저 저장소에 저장했습니다.')
+  }
+
+  function openSavedGraph(graph: SavedSeonbiGraph) {
+    setLoadedGraph(graph)
+    setScenarioInput(graph.title)
+    setAppliedScenario(graph.title)
+    setActiveStageIndex(finalGraphStageIndex)
+    setSelectedNodeId(graph.nodes[0]?.id ?? 'user-request')
+    setIsTraceMode(false)
+    setIsPlaying(false)
+    setCommandMessage(`${graph.title} 그래프 스냅샷을 다시 열었습니다.`)
+  }
+
+  function runAiCommand(command: 'expand' | 'risk' | 'alternative' | 'summary' | 'source') {
+    if (!selectedNode) return
+    if (command === 'summary') {
+      setCommandMessage(
+        `${selectedNode.label} 노드는 ${selectedConnectedNodeLabels.length}개 근거와 연결되어 있으며, ${personalizationProfile.courseLabel} 추천 판단에 반영됩니다.`,
+      )
+      return
+    }
+    if (command === 'source') {
+      setSearchQuery(selectedNode.source ?? 'TourAPI')
+      setCommandMessage('선택 노드와 관련된 출처 노드를 검색 결과로 강조했습니다.')
+      return
+    }
+
+    const expansion = createMockNodeExpansion(command, selectedNode, personalizedNodes.length)
+    setExpandedNodes((currentNodes) => mergeKnowledgeNodes(currentNodes, expansion.nodes))
+    setExpandedLinks((currentLinks) => mergeKnowledgeLinks(currentLinks, expansion.links))
+    setActiveStageIndex(finalGraphStageIndex)
+    setLoadedGraph(null)
+    setCommandMessage(expansion.explanation)
   }
 
   return (
@@ -1180,10 +1413,9 @@ export function KnowledgeGraphPage() {
       <section className="page-section page-container knowledge-graph-page">
         <div className="knowledge-graph-heading">
           <StatusBadge>Explainable AI</StatusBadge>
-          <h1>GraphRAG 기반 AI 추천 근거 그래프</h1>
+          <h1>AI가 이 코스를 추천한 이유</h1>
           <p>
-            사용자 입력에서 AI 태그, 공공데이터, 장소, 리스크, 최종 코스까지 이어지는
-            추천 판단 근거를 3D 관계망으로 추적합니다.
+            사용자 조건과 공공데이터 근거를 연결해 추천 경로를 시각화합니다.
           </p>
         </div>
 
@@ -1239,6 +1471,39 @@ export function KnowledgeGraphPage() {
           </div>
         </dl>
 
+        <section className="knowledge-workspace-toolbar" aria-label="그래프 워크스페이스 도구">
+          <div>
+            <StatusBadge tone="brown">AI 선비길 Knowledge Universe</StatusBadge>
+            <strong>{loadedGraph?.title ?? personalizationProfile.courseLabel}</strong>
+            <span>
+              {personalizedNodes.length} nodes · {personalizedLinks.length} edges · 저장 그래프 {savedGraphs.length}개
+            </span>
+          </div>
+          <div className="knowledge-toolbar-actions">
+            <button type="button" onClick={toggleTraceMode}>
+              {isTraceMode ? '전체 근거망 보기' : '추천 경로 보기'}
+            </button>
+            <button type="button" onClick={replayGraphGrowth}>
+              AI 생성 과정 다시 보기
+            </button>
+            <button type="button" onClick={saveCurrentGraph}>
+              저장
+            </button>
+            <button
+              type="button"
+              className="knowledge-disabled-button"
+              aria-disabled="true"
+              onClick={() => {
+                setGraphMode('2d')
+                setCommandMessage('2D 모드는 준비 중입니다. 현재는 3D 그래프 탐색을 제공합니다.')
+                window.setTimeout(() => setGraphMode('3d'), 600)
+              }}
+            >
+              {graphMode === '3d' ? '2D 전환 준비 중' : '3D로 복귀'}
+            </button>
+          </div>
+        </section>
+
         <section className="knowledge-stage-panel" aria-labelledby="knowledge-stage-title">
           <div>
             <StatusBadge tone="brown">GraphRAG Flow</StatusBadge>
@@ -1250,7 +1515,7 @@ export function KnowledgeGraphPage() {
               {isPlaying ? '일시정지' : '재생'}
             </button>
             <button type="button" onClick={toggleTraceMode}>
-              {isTraceMode ? '전체 근거 보기' : '추천 경로 추적'}
+              {isTraceMode ? '전체 근거망 보기' : '추천 경로 보기'}
             </button>
             <button type="button" onClick={resetGraph}>
               초기화
@@ -1274,16 +1539,136 @@ export function KnowledgeGraphPage() {
         </section>
 
         <div className="knowledge-graph-layout">
+          <aside className="knowledge-node-index" aria-label="노드 탐색">
+            <div className="knowledge-panel-heading">
+              <StatusBadge tone="neutral">Node Index</StatusBadge>
+              <strong>노드 탐색</strong>
+            </div>
+            <label className="knowledge-node-search">
+              <span>검색</span>
+              <input
+                type="search"
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.currentTarget.value)}
+                placeholder="예: 부모님, 소수서원, 주차장"
+              />
+            </label>
+            <div className="knowledge-filter-row" aria-label="노드 타입 필터">
+              <button
+                type="button"
+                className={nodeKindFilter === 'all' ? 'active' : ''}
+                onClick={() => setNodeKindFilter('all')}
+              >
+                전체
+              </button>
+              {(['course', 'tag', 'place', 'data', 'facility', 'risk'] as KnowledgeNodeKind[]).map(
+                (kind) => (
+                  <button
+                    type="button"
+                    key={kind}
+                    className={nodeKindFilter === kind ? 'active' : ''}
+                    onClick={() => setNodeKindFilter(kind)}
+                  >
+                    {nodeKindLabels[kind]}
+                  </button>
+                ),
+              )}
+            </div>
+            {searchMatchedNodeIds.size > 0 && (
+              <section className="knowledge-index-group knowledge-search-results">
+                <h3>검색 결과</h3>
+                <ul>
+                  {personalizedNodes
+                    .filter((node) => searchMatchedNodeIds.has(node.id))
+                    .sort((firstNode, secondNode) => {
+                      const firstLabelMatch = firstNode.label.toLowerCase().includes(normalizedSearchQuery)
+                      const secondLabelMatch = secondNode.label.toLowerCase().includes(normalizedSearchQuery)
+                      if (firstLabelMatch !== secondLabelMatch) return firstLabelMatch ? -1 : 1
+                      return (secondNode.score ?? 0) - (firstNode.score ?? 0)
+                    })
+                    .slice(0, 8)
+                    .map((node) => (
+                      <li key={`search-${node.id}`}>
+                        <button
+                          type="button"
+                          className={node.id === selectedNode?.id ? 'active' : ''}
+                          onPointerDown={() => selectIndexedNode(node.id)}
+                          onClick={() => selectIndexedNode(node.id)}
+                        >
+                          <i style={{ background: nodeColors[node.kind] }} />
+                          <span>{node.label}</span>
+                          {typeof node.score === 'number' && <em>{node.score}</em>}
+                        </button>
+                      </li>
+                    ))}
+                </ul>
+              </section>
+            )}
+            <div className="knowledge-index-groups">
+              {indexedNodeGroups.map((group) => (
+                <section className="knowledge-index-group" key={group.kind}>
+                  <h3>{nodeKindLabels[group.kind]}</h3>
+                  <ul>
+                    {group.nodes.map((node) => (
+                      <li key={node.id}>
+                        <button
+                          type="button"
+                          className={node.id === selectedNode?.id ? 'active' : ''}
+                          onPointerDown={() => selectIndexedNode(node.id)}
+                          onClick={() => selectIndexedNode(node.id)}
+                        >
+                          <i style={{ background: nodeColors[node.kind] }} />
+                          <span>{node.label}</span>
+                          {typeof node.score === 'number' && <em>{node.score}</em>}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              ))}
+            </div>
+
+            <section className="knowledge-library-panel">
+              <div className="knowledge-panel-heading">
+                <StatusBadge tone="brown">Graph Library</StatusBadge>
+                <strong>나의 AI 선비길 그래프</strong>
+              </div>
+              {savedGraphs.length > 0 ? (
+                <ul>
+                  {savedGraphs.map((graph) => (
+                    <li key={graph.id}>
+                      <button type="button" onClick={() => openSavedGraph(graph)}>
+                        <strong>{graph.title}</strong>
+                        <span>
+                          {new Date(graph.createdAt).toLocaleDateString('ko-KR')} · 노드 {graph.nodes.length}개
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p>저장된 그래프가 없습니다. 현재 추천 근거망을 저장해 다시 열 수 있습니다.</p>
+              )}
+            </section>
+          </aside>
+
           <section className="knowledge-graph-scene" aria-label="3D AI 추천 근거 그래프">
             <div className="knowledge-graph-scene-header">
               <div>
                 <span>3D SEONBI KNOWLEDGE GRAPH</span>
-                <strong>{isTraceMode ? '추천 경로 추적 중' : activeStage.label}</strong>
+                <strong>{isTraceMode ? 'GraphRAG 추천 경로' : activeStage.label}</strong>
               </div>
               <StatusBadge tone="neutral">
                 {visibleNodes.length} nodes · {visibleLinks.length} links
               </StatusBadge>
             </div>
+            {isTraceMode && (
+              <div className="knowledge-path-breadcrumb" aria-label="추천 경로 breadcrumb">
+                {personalizationProfile.traceNodeIds.map((nodeId) => (
+                  <span key={nodeId}>{getNodeLabel(nodeId, personalizedNodes)}</span>
+                ))}
+              </div>
+            )}
             <div className="knowledge-graph-host" ref={graphHostRef}>
               {width > 0 && height > 0 && (
                 <ForceGraph3D
@@ -1291,7 +1676,7 @@ export function KnowledgeGraphPage() {
                   ref={graphRef}
                   width={width}
                   height={height}
-                  backgroundColor="#05070d"
+                  backgroundColor="rgba(0,0,0,0)"
                   nodeLabel={(node) => createNodeTooltip(node as KnowledgeNode)}
                   nodeColor={(node) => {
                     const graphNode = node as KnowledgeNode
@@ -1317,8 +1702,15 @@ export function KnowledgeGraphPage() {
                     return getLinkParticles(graphLink, getLinkVisualStateForLink(graphLink))
                   }}
                   linkDirectionalParticleWidth={(link) =>
-                    0.9 + (link as RuntimeKnowledgeLink).strength * 1.5
+                    getLinkParticleWidth(
+                      link as RuntimeKnowledgeLink,
+                      getLinkVisualStateForLink(link as RuntimeKnowledgeLink),
+                    )
                   }
+                  linkDirectionalParticleColor={(link) => {
+                    const graphLink = link as RuntimeKnowledgeLink
+                    return getLinkColor(graphLink, getLinkVisualStateForLink(graphLink))
+                  }}
                   linkDirectionalParticleSpeed={(link) =>
                     0.0025 + (link as RuntimeKnowledgeLink).strength * 0.004
                   }
@@ -1329,7 +1721,7 @@ export function KnowledgeGraphPage() {
                   nodeThreeObjectExtend
                   showNavInfo={false}
                   cooldownTicks={90}
-                  enableNodeDrag
+                  enableNodeDrag={false}
                   onNodeHover={(node) => {
                     const nextNodeId = node ? (node as KnowledgeNode).id : null
                     if (hoveredNodeIdRef.current === nextNodeId) return
@@ -1337,9 +1729,7 @@ export function KnowledgeGraphPage() {
                     graphRef.current?.refresh?.()
                   }}
                   onNodeClick={(node) => {
-                    setSelectedNodeId((node as KnowledgeNode).id)
-                    setIsTraceMode(false)
-                    setIsPlaying(false)
+                    selectKnowledgeNode((node as KnowledgeNode).id, false)
                   }}
                 />
               )}
@@ -1350,6 +1740,17 @@ export function KnowledgeGraphPage() {
                 <span>{personalizationProfile.traceNodeIds.map((nodeId) => getNodeLabel(nodeId, personalizedNodes)).join(' → ')}</span>
               </div>
             )}
+            <details className="knowledge-graph-legend" open>
+              <summary>범례</summary>
+              <div>
+                {(['course', 'user', 'tag', 'place', 'data', 'facility', 'risk'] as KnowledgeNodeKind[]).map((kind) => (
+                  <span key={kind}>
+                    <i style={{ backgroundColor: nodeColors[kind] }} />
+                    {nodeKindLabels[kind]}
+                  </span>
+                ))}
+              </div>
+            </details>
           </section>
 
           <aside className="knowledge-side-panel" aria-label="AI 근거 상세">
@@ -1373,7 +1774,10 @@ export function KnowledgeGraphPage() {
               <dl className="knowledge-node-source">
                 <div>
                   <dt>노드 타입</dt>
-                  <dd>{selectedNode ? nodeKindLabels[selectedNode.kind] : '-'}</dd>
+                  <dd>
+                    {selectedNode ? nodeKindLabels[selectedNode.kind] : '-'}
+                    {selectedNode && ` · ${getServiceNodeType(selectedNode.kind)}`}
+                  </dd>
                 </div>
                 {selectedNode?.source && (
                   <div>
@@ -1396,7 +1800,11 @@ export function KnowledgeGraphPage() {
               </dl>
 
               {selectedNode?.kind === 'place' && selectedNode.placeDetails && (
-                <PlaceEvidenceCard node={selectedNode} details={selectedNode.placeDetails} />
+                <PlaceEvidenceCard
+                  node={selectedNode}
+                  details={selectedNode.placeDetails}
+                  evidenceCount={selectedConnectedNodeLabels.length}
+                />
               )}
 
               {selectedNode?.kind === 'risk' && selectedNode.riskDetails && (
@@ -1416,6 +1824,51 @@ export function KnowledgeGraphPage() {
                   </Link>
                 </div>
               )}
+            </section>
+
+            <section className="knowledge-ai-commands">
+              <div className="knowledge-panel-heading">
+                <StatusBadge tone="brown">AI Commands</StatusBadge>
+                <strong>그래프 확장 명령</strong>
+              </div>
+              <div className="knowledge-ai-command-grid">
+                <button type="button" onClick={() => runAiCommand('expand')}>
+                  관련 근거 확장
+                </button>
+                <button type="button" onClick={() => runAiCommand('risk')}>
+                  리스크 찾기
+                </button>
+                <button type="button" onClick={() => runAiCommand('alternative')}>
+                  대체 코스 생성
+                </button>
+                <button type="button" onClick={() => runAiCommand('summary')}>
+                  그래프 요약
+                </button>
+                <button type="button" onClick={() => runAiCommand('source')}>
+                  출처 보기
+                </button>
+              </div>
+              <p className="knowledge-command-message">{commandMessage}</p>
+            </section>
+
+            <section className="knowledge-schema-card">
+              <StatusBadge tone="neutral">Graph JSON</StatusBadge>
+              <dl>
+                <div>
+                  <dt>node.type</dt>
+                  <dd>{selectedNode ? getServiceNodeType(selectedNode.kind) : 'user_input'}</dd>
+                </div>
+                <div>
+                  <dt>edge.relation</dt>
+                  <dd>
+                    {visibleLinks
+                      .filter((link) => link.source === selectedNode?.id || link.target === selectedNode?.id)
+                      .slice(0, 3)
+                      .map((link) => getServiceEdgeRelation(link.label))
+                      .join(' · ') || 'supported_by'}
+                  </dd>
+                </div>
+              </dl>
             </section>
 
             <section className="knowledge-side-legend" aria-label="노드 색상 범례">
@@ -1508,9 +1961,11 @@ export function KnowledgeGraphPage() {
 function PlaceEvidenceCard({
   node,
   details,
+  evidenceCount,
 }: {
   node: KnowledgeNode
   details: PlaceDetail
+  evidenceCount: number
 }) {
   const mapTarget = details.mapPlaceId
     ? `/tour-3d?place=${details.mapPlaceId}`
@@ -1530,6 +1985,10 @@ function PlaceEvidenceCard({
         <div>
           <dt>공공데이터 출처</dt>
           <dd>{details.publicDataSource}</dd>
+        </div>
+        <div>
+          <dt>연결된 근거 수</dt>
+          <dd>{evidenceCount}개</dd>
         </div>
       </dl>
       <div className="knowledge-chip-list" aria-label="연결된 태그">
@@ -2143,6 +2602,165 @@ function getPlaceIdByLabel(placeLabel: string) {
   return knowledgeNodes.find((node) => node.kind === 'place' && node.label === placeLabel)?.id
 }
 
+function mergeKnowledgeNodes(baseNodes: KnowledgeNode[], nextNodes: KnowledgeNode[]) {
+  const nodeMap = new Map<string, KnowledgeNode>()
+  baseNodes.forEach((node) => nodeMap.set(node.id, node))
+  nextNodes.forEach((node) => nodeMap.set(node.id, node))
+  return Array.from(nodeMap.values())
+}
+
+function mergeKnowledgeLinks(baseLinks: KnowledgeLink[], nextLinks: KnowledgeLink[]) {
+  const linkMap = new Map<string, KnowledgeLink>()
+  baseLinks.forEach((link) => linkMap.set(`${link.source}-${link.target}-${link.label}`, link))
+  nextLinks.forEach((link) => linkMap.set(`${link.source}-${link.target}-${link.label}`, link))
+  return Array.from(linkMap.values())
+}
+
+function groupNodesByKind(nodes: KnowledgeNode[]) {
+  const orderedKinds: KnowledgeNodeKind[] = [
+    'course',
+    'user',
+    'tag',
+    'place',
+    'data',
+    'facility',
+    'risk',
+    'evidence',
+    'source',
+  ]
+
+  return orderedKinds
+    .map((kind) => ({
+      kind,
+      nodes: nodes
+        .filter((node) => node.kind === kind)
+        .sort((firstNode, secondNode) => (secondNode.score ?? 0) - (firstNode.score ?? 0)),
+    }))
+    .filter((group) => group.nodes.length > 0)
+}
+
+function getServiceNodeType(kind: KnowledgeNodeKind): ServiceNodeType {
+  const kindMap: Record<KnowledgeNodeKind, ServiceNodeType> = {
+    course: 'course',
+    user: 'user_input',
+    tag: 'tag',
+    place: 'place',
+    data: 'public_data',
+    facility: 'facility',
+    risk: 'risk',
+    evidence: 'evidence',
+    source: 'source',
+  }
+  return kindMap[kind]
+}
+
+function getServiceEdgeRelation(kind: KnowledgeLinkKind): ServiceEdgeRelation {
+  const relationMap: Record<KnowledgeLinkKind, ServiceEdgeRelation> = {
+    입력됨: 'analyzed_as',
+    분석됨: 'analyzed_as',
+    추천됨: 'recommends',
+    근거: 'supported_by',
+    보완: 'improves',
+    위험: 'has_risk',
+    대체: 'alternative_to',
+    출처: 'uses_public_data',
+    연결: 'nearby',
+  }
+  return relationMap[kind]
+}
+
+function createMockNodeExpansion(
+  command: 'expand' | 'risk' | 'alternative',
+  selectedNode: KnowledgeNode,
+  nodeCount: number,
+) {
+  const suffix = `${selectedNode.id}-${command}-${nodeCount}`
+
+  if (command === 'risk') {
+    const riskNode: KnowledgeNode = {
+      id: `${suffix}-risk`,
+      label: `${selectedNode.label} 보정 리스크`,
+      kind: 'risk',
+      stage: 4,
+      score: 64,
+      source: 'AI 리스크 분석',
+      summary: '선택 노드 주변에서 추가 확인이 필요한 이동·편의 리스크입니다.',
+      evidence: ['공공데이터 기반 추정', '추천 동선 보정 필요'],
+      impact: '최종 코스 순서와 대체 코스 제안에 반영됩니다.',
+      riskDetails: {
+        riskLevel: '보통',
+        affectedPlaces: [selectedNode.label],
+        aiAlternative: '해당 지점 전후에 휴식 또는 교통 거점을 배치합니다.',
+        courseChange: '무리한 연속 이동을 줄이고 인접 장소를 먼저 연결합니다.',
+      },
+    }
+
+    return {
+      nodes: [riskNode],
+      links: [
+        { source: selectedNode.id, target: riskNode.id, label: '위험', strength: 0.78 },
+        { source: riskNode.id, target: 'evidence-risk-adjust', label: '근거', strength: 0.72 },
+      ] as KnowledgeLink[],
+      explanation: `${selectedNode.label} 주변 리스크 노드를 추가했습니다.`,
+    }
+  }
+
+  if (command === 'alternative') {
+    const courseNode: KnowledgeNode = {
+      id: `${suffix}-course`,
+      label: `${selectedNode.label} 대체 코스`,
+      kind: 'course',
+      stage: 5,
+      score: 76,
+      source: 'AI 대체 코스 생성',
+      summary: '선택 노드의 조건을 유지하면서 부담을 낮춘 대체 추천입니다.',
+      evidence: ['선택 노드 조건 유지', '리스크 회피', '공공데이터 기반 추정'],
+      impact: '원 코스가 날씨·이동 조건과 맞지 않을 때 대안으로 제시됩니다.',
+    }
+
+    return {
+      nodes: [courseNode],
+      links: [
+        { source: selectedNode.id, target: courseNode.id, label: '대체', strength: 0.82 },
+        { source: courseNode.id, target: 'course-main', label: '보완', strength: 0.68 },
+      ] as KnowledgeLink[],
+      explanation: `${selectedNode.label} 기준 대체 코스를 생성했습니다.`,
+    }
+  }
+
+  const evidenceNode: KnowledgeNode = {
+    id: `${suffix}-evidence`,
+    label: `${selectedNode.label} 추가 근거`,
+    kind: 'evidence',
+    stage: Math.max(2, selectedNode.stage),
+    score: 82,
+    source: 'AI 근거 확장',
+    summary: '선택 노드와 연결된 공공데이터·태그·장소 맥락을 추가로 구조화했습니다.',
+    evidence: ['관련 태그 재검토', '공공데이터 기반 추정', 'GraphRAG 추천 경로 확장'],
+    impact: '선택 노드의 추천 신뢰도를 보강하고 연결 설명을 늘립니다.',
+  }
+  const sourceNode: KnowledgeNode = {
+    id: `${suffix}-source`,
+    label: `${selectedNode.label} 출처 메모`,
+    kind: 'source',
+    stage: 2,
+    score: 78,
+    source: 'AI Data Sidebar',
+    summary: '추후 API 연결 시 원문 문서와 공공데이터 링크를 붙일 출처 노드입니다.',
+    evidence: ['Graph JSON schema placeholder', 'sourceUrl 연결 예정'],
+    impact: 'AI가 생성한 노드의 출처 추적성을 높입니다.',
+  }
+
+  return {
+    nodes: [evidenceNode, sourceNode],
+    links: [
+      { source: selectedNode.id, target: evidenceNode.id, label: '근거', strength: 0.84 },
+      { source: evidenceNode.id, target: sourceNode.id, label: '출처', strength: 0.72 },
+    ] as KnowledgeLink[],
+    explanation: `${selectedNode.label} 주변에 관련 근거와 출처 메모 노드를 추가했습니다.`,
+  }
+}
+
 function clamp(value: number, minimum: number, maximum: number) {
   return Math.min(maximum, Math.max(minimum, value))
 }
@@ -2268,8 +2886,9 @@ function createLinkKey(source: string, target: string) {
 }
 
 function getNodeValue(node: KnowledgeNode, visualState: VisualState) {
-  const visualBonus = visualState === 'focused' || visualState === 'path' ? 1.34 : 1
-  if (node.kind === 'course') return 19 * visualBonus
+  const visualBonus = visualState === 'focused' || visualState === 'path' ? 1.45 : 1
+  if (node.id === 'course-main') return 58 * visualBonus
+  if (node.kind === 'course') return 28 * visualBonus
   if (node.kind === 'evidence') return 14 * visualBonus
   if (node.kind === 'user') return 13 * visualBonus
   if (node.score) return Math.max(6, node.score / 9) * visualBonus
@@ -2303,7 +2922,7 @@ function getLinkLegendColor(kind: KnowledgeLinkKind) {
 }
 
 function getLinkWidth(link: RuntimeKnowledgeLink, visualState: VisualState) {
-  if (visualState === 'path') return 4
+  if (visualState === 'path') return 5.4
   if (visualState === 'related') return 2.6
   if (visualState === 'faded') return 0.35
   if (link.label === '위험') return 1.2 + link.strength * 2.2
@@ -2311,10 +2930,17 @@ function getLinkWidth(link: RuntimeKnowledgeLink, visualState: VisualState) {
 }
 
 function getLinkParticles(link: RuntimeKnowledgeLink, visualState: VisualState) {
-  if (visualState === 'path') return 4
+  if (visualState === 'path') return 8
   if (visualState === 'related') return 2
   if (visualState === 'faded') return 0
   return link.label === '추천됨' || link.label === '근거' ? 1 : 0
+}
+
+function getLinkParticleWidth(link: RuntimeKnowledgeLink, visualState: VisualState) {
+  if (visualState === 'path') return 3.4
+  if (visualState === 'related') return 1.9
+  if (link.label === '위험') return 2.4
+  return 0.9 + link.strength * 1.5
 }
 
 function createNodeTooltip(node: KnowledgeNode) {
@@ -2327,29 +2953,41 @@ function createNodeLabel(node: KnowledgeNode, visualState: VisualState) {
   const canvas = document.createElement('canvas')
   const context = canvas.getContext('2d')
   const label = node.label
-  const fontSize = node.kind === 'course' ? 34 : 27
-  const paddingX = 26
-  const paddingY = 14
+  const fontSize = node.id === 'course-main' ? 40 : node.kind === 'course' ? 34 : 28
+  const icon = getNodeIconLabel(node.kind)
+  const paddingX = 36
+  const paddingY = node.id === 'course-main' ? 24 : 16
   const scale = 2
   const isDimmed = visualState === 'faded'
   const isHighlighted = visualState === 'focused' || visualState === 'path'
+  const isMainCourse = node.id === 'course-main'
 
   canvas.width = 560
-  canvas.height = 144
+  canvas.height = 176
 
   if (!context) return new THREE.Object3D()
 
   context.scale(scale, scale)
   context.font = `800 ${fontSize / scale}px Manrope, sans-serif`
   const measuredWidth = context.measureText(label).width
-  const boxWidth = Math.max(98, Math.min(250, measuredWidth + paddingX))
-  const boxHeight = 34 + paddingY / 2
-  const color = isHighlighted ? '#fff2a8' : nodeColors[node.kind]
+  const boxWidth = Math.max(isMainCourse ? 152 : 112, Math.min(270, measuredWidth + paddingX + 24))
+  const boxHeight = isMainCourse ? 52 : 38 + paddingY / 2
+  const color = isMainCourse ? '#f3c95f' : isHighlighted ? '#fff2a8' : nodeColors[node.kind]
 
   context.clearRect(0, 0, canvas.width, canvas.height)
   context.globalAlpha = isDimmed ? 0.38 : 1
-  context.shadowColor = isHighlighted ? color : 'transparent'
-  context.shadowBlur = isHighlighted ? 18 : 0
+  if (isMainCourse) {
+    context.shadowColor = '#f3c95f'
+    context.shadowBlur = 26
+    context.strokeStyle = 'rgba(243, 201, 95, 0.36)'
+    context.lineWidth = 3
+    context.beginPath()
+    context.ellipse(boxWidth / 2, boxHeight / 2 + 8, boxWidth / 2 + 20, boxHeight / 2 + 14, 0, 0, Math.PI * 2)
+    context.stroke()
+  }
+
+  context.shadowColor = isHighlighted || isMainCourse ? color : 'transparent'
+  context.shadowBlur = isHighlighted || isMainCourse ? 18 : 0
   context.fillStyle = isHighlighted ? 'rgba(29, 31, 22, 0.9)' : 'rgba(5, 7, 13, 0.78)'
   roundRect(context, 0, 5, boxWidth, boxHeight, 7)
   context.fill()
@@ -2360,10 +2998,15 @@ function createNodeLabel(node: KnowledgeNode, visualState: VisualState) {
   context.stroke()
   context.fillStyle = color
   context.beginPath()
-  context.arc(14, boxHeight / 2 + 5, isHighlighted ? 5.6 : 4.5, 0, Math.PI * 2)
+  context.arc(17, boxHeight / 2 + 5, isHighlighted || isMainCourse ? 6.2 : 4.8, 0, Math.PI * 2)
   context.fill()
+  context.fillStyle = isDimmed ? 'rgba(5, 7, 13, 0.72)' : '#07100d'
+  context.font = '900 7px Manrope, sans-serif'
+  context.textAlign = 'center'
+  context.fillText(icon, 17, boxHeight / 2 + 7.5)
+  context.textAlign = 'start'
   context.fillStyle = isDimmed ? 'rgba(248, 250, 252, 0.64)' : '#f8fafc'
-  context.fillText(label, 25, 26)
+  context.fillText(label, 33, isMainCourse ? 34 : 28)
 
   const texture = new THREE.CanvasTexture(canvas)
   texture.needsUpdate = true
@@ -2374,11 +3017,23 @@ function createNodeLabel(node: KnowledgeNode, visualState: VisualState) {
     opacity: isDimmed ? 0.46 : 1,
   })
   const sprite = new THREE.Sprite(material)
-  const scaleFactor = isHighlighted ? 0.138 : 0.12
+  const scaleFactor = isMainCourse ? 0.18 : isHighlighted ? 0.145 : 0.12
   sprite.scale.set(boxWidth * scaleFactor, boxHeight * scaleFactor, 1)
-  sprite.position.set(0, node.kind === 'course' ? 19 : 12, 0)
+  sprite.position.set(0, isMainCourse ? 33 : node.kind === 'course' ? 21 : 13, 0)
 
   return sprite
+}
+
+function getNodeIconLabel(kind: KnowledgeNodeKind) {
+  if (kind === 'course') return 'GO'
+  if (kind === 'user') return 'ME'
+  if (kind === 'tag') return 'TAG'
+  if (kind === 'place') return 'PIN'
+  if (kind === 'data') return 'DB'
+  if (kind === 'facility') return 'OK'
+  if (kind === 'risk') return '!'
+  if (kind === 'evidence') return 'AI'
+  return 'SRC'
 }
 
 function roundRect(
