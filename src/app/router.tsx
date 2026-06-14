@@ -7,7 +7,7 @@ import { BrandLoading } from '../components/common/BrandLoading'
 import { CoursePage } from '../pages/CoursePage'
 import { ForgotPasswordPage } from '../pages/ForgotPasswordPage'
 import { GoogleTour3DPreviewPage } from '../pages/GoogleTour3DPreviewPage'
-import { HomePage } from '../pages/HomePage'
+import { HomeLandingPage } from '../pages/HomeLandingPage'
 import { JudgePage } from '../pages/JudgePage'
 import { KnowledgeGraphPage } from '../pages/KnowledgeGraphPage'
 import { LoginPage } from '../pages/LoginPage'
@@ -26,7 +26,7 @@ export function AppRouter() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<HomePage />} />
+        <Route path="/" element={<HomeLandingPage />} />
         <Route path="/test" element={<TestPage />} />
         <Route path="/result" element={<ResultPage />} />
         <Route path="/course" element={<CoursePage />} />
