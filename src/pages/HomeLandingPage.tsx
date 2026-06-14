@@ -78,10 +78,15 @@ const HOME_ASSETS = {
   heroMapButtonPanel: '/images/home/image-Photoroom (14).png',
   heroNextStopPanel: '/images/home/image-Photoroom (16).png',
   heroAiCourseFrame: '/images/home/image-Photoroom (10).png',
+  heroShowcaseSnapshot: '/images/home/target-hero-showcase.png',
   heroTypePreview: '/images/home/image-Photoroom (3).png',
   heroCoursePreview: '/images/home/image-Photoroom (50).png',
   heroHeatmapPreview: '/images/home/image-Photoroom (8).png',
   heroGraphPreview: '/images/home/image-Photoroom (24).png',
+  targetTeaserType: '/images/home/target-teaser-type.png',
+  targetTeaserCourse: '/images/home/target-teaser-course.png',
+  targetTeaserHeatmap: '/images/home/target-teaser-heatmap.png',
+  targetTeaserGraph: '/images/home/target-teaser-graph.png',
   paperFrameWide: '/images/home/image-Photoroom (32).png',
   paperFrameDark: '/images/home/image-Photoroom (28).png',
   paperFrameLight: '/images/home/image-Photoroom (29).png',
@@ -213,7 +218,7 @@ const heroFeatureCards: FeatureTeaser[] = [
     to: '/test',
     variant: 'seonbi-type',
     label: 'Seonbi type artwork placeholder',
-    emptyVisual: true,
+    imageSrc: HOME_ASSETS.targetTeaserType,
   },
   {
     title: '3D 코스 프리뷰',
@@ -221,7 +226,7 @@ const heroFeatureCards: FeatureTeaser[] = [
     to: '/tour-3d',
     variant: 'course3d',
     label: '3D course preview image placeholder',
-    emptyVisual: true,
+    imageSrc: HOME_ASSETS.targetTeaserCourse,
   },
   {
     title: '관광 히트맵',
@@ -229,7 +234,7 @@ const heroFeatureCards: FeatureTeaser[] = [
     to: '/heatmap',
     variant: 'heatmap',
     label: 'Heatmap preview placeholder',
-    emptyVisual: true,
+    imageSrc: HOME_ASSETS.targetTeaserHeatmap,
   },
   {
     title: 'AI 근거 그래프',
@@ -237,7 +242,7 @@ const heroFeatureCards: FeatureTeaser[] = [
     to: '/knowledge-graph',
     variant: 'graph',
     label: 'Knowledge graph preview placeholder',
-    emptyVisual: true,
+    imageSrc: HOME_ASSETS.targetTeaserGraph,
   },
 ]
 
@@ -824,6 +829,12 @@ function HeroProductShowcase() {
   return (
     <div className="home-product-showcase" aria-label="AI 추천 코스 미리보기">
       <div className="home-product-photo-slot" aria-label="추후 삽입할 1번째 화면 대표 사진 영역">
+        <img
+          className="home-product-showcase-snapshot"
+          src={HOME_ASSETS.heroShowcaseSnapshot}
+          alt=""
+          aria-hidden="true"
+        />
         <img src={HOME_ASSETS.heroFrame} alt="" aria-hidden="true" />
       </div>
       <div className="home-route-line" aria-hidden="true">
