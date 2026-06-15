@@ -1,4 +1,10 @@
-import { useEffect, useMemo, useState, type CSSProperties } from 'react'
+import {
+  useEffect,
+  useMemo,
+  useState,
+  type CSSProperties,
+  type ImgHTMLAttributes,
+} from 'react'
 import { Link } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
 import './HomeLandingPage.css'
@@ -52,86 +58,86 @@ interface SeonbiProfile {
 
 const HOME_ASSETS = {
   logo: '/images/brand/logo-mark.webp',
-  bgHero: '/images/home/652ce35e-db13-42b7-846d-e4ab8176aa41.png',
-  bgType: '/images/home/c41773fd-ba94-42f3-9ce3-3ece892fb14a.png',
-  bgCore: '/images/home/0b3dfd67-3928-4689-8b6f-918d9b69aef0.png',
-  bgJourney: '/images/home/cb7a766a-f956-457a-81d8-6b86bef53c85.png',
-  bgMist: '/images/home/d5441123-5014-4911-87f8-63bfae44d413.png',
-  frameTallLight: '/images/home/1 (2).png',
-  heroFrame: '/images/home/image-Photoroom (9).png',
-  heroBadgeFrame: '/images/home/image-Photoroom (11).png',
-  microStrip: '/images/home/ChatGPT Image 2026년 6월 14일 오후 02_02_36.png',
-  primaryTestButton: '/images/home/image-Photoroom (33).png',
-  primaryTestButtonWithTassel: '/images/home/image-Photoroom (59).png',
-  secondaryCourseButton: '/images/home/2f21d5b4-ddad-43e7-a288-1cd2824b0202.png',
-  secondaryCourseButtonPlain: '/images/home/image-Photoroom (60).png',
-  typeBadge: '/images/home/image-Photoroom (34).png',
-  typeCourseButton: '/images/home/image-Photoroom (35).png',
-  journeyBadge: '/images/home/image-Photoroom (46).png',
-  previewPill: '/images/home/image-Photoroom (7).png',
-  zoomControl: '/images/home/10cc0692-3d55-44c9-bfe5-3c9270fd2acf.png',
-  heroChoicePanel: '/images/home/image-Photoroom (21).png',
-  heroChoicePanelAlt: '/images/home/image-Photoroom (30).png',
-  heroWeatherPanel: '/images/home/image-Photoroom (23).png',
-  heroAudioPanel: '/images/home/image-Photoroom (12).png',
-  heroEvidencePanel: '/images/home/image-Photoroom (13).png',
-  heroMapButtonPanel: '/images/home/image-Photoroom (14).png',
-  heroNextStopPanel: '/images/home/image-Photoroom (16).png',
-  heroAiCourseFrame: '/images/home/image-Photoroom (10).png',
-  heroShowcaseSnapshot: '/images/home/target-hero-showcase.png',
-  heroTypePreview: '/images/home/image-Photoroom (3).png',
-  heroCoursePreview: '/images/home/image-Photoroom (50).png',
-  heroHeatmapPreview: '/images/home/image-Photoroom (8).png',
-  heroGraphPreview: '/images/home/image-Photoroom (24).png',
-  targetTeaserType: '/images/home/target-teaser-type.png',
-  targetTeaserCourse: '/images/home/target-teaser-course.png',
-  targetTeaserHeatmap: '/images/home/target-teaser-heatmap.png',
-  targetTeaserGraph: '/images/home/target-teaser-graph.png',
-  paperFrameWide: '/images/home/image-Photoroom (32).png',
-  paperFrameDark: '/images/home/image-Photoroom (28).png',
-  paperFrameLight: '/images/home/image-Photoroom (29).png',
-  paperFrameTall: '/images/home/image-Photoroom (58).png',
-  paperFrameTallAlt: '/images/home/image-Photoroom (57).png',
-  resultFrame: '/images/home/image-Photoroom (31).png',
-  characterToegye: '/images/home/1c51baf4-d604-48f7-8a09-ca0ab1c1d982.png',
-  characterYulgok: '/images/home/3da4cd9c-2865-4ffb-afc9-ab284de979b7.png',
-  characterCheosa: '/images/home/62ac8f05-5f95-4cd7-b58f-70c2bf586f03.png',
-  characterUguk: '/images/home/381c59e0-22e6-4c8a-9bc6-20981a00970e.png',
-  iconBook: '/images/home/image-Photoroom (17).png',
-  iconPerson: '/images/home/image-Photoroom (18).png',
-  iconMeditation: '/images/home/image-Photoroom (19).png',
-  iconCar: '/images/home/image-Photoroom (20).png',
-  iconTarget: '/images/home/image-Photoroom (22).png',
-  iconBookMedal: '/images/home/image-Photoroom (24).png',
-  iconMountain: '/images/home/image-Photoroom (25).png',
-  iconShield: '/images/home/image-Photoroom (26).png',
-  iconDiary: '/images/home/image-Photoroom (27).png',
-  iconChart: '/images/home/image-Photoroom (3).png',
-  iconCompass3d: '/images/home/image-Photoroom (4).png',
-  iconPavilion: '/images/home/image-Photoroom (5).png',
-  iconDatabase: '/images/home/image-Photoroom (6).png',
-  iconTrophy: '/images/home/image-Photoroom (8).png',
-  iconSettings: '/images/home/image-Photoroom (15).png',
-  iconSolo: '/images/home/image-Photoroom (36).png',
-  iconFriend: '/images/home/image-Photoroom (37).png',
-  iconParent: '/images/home/image-Photoroom (38).png',
-  iconFamily: '/images/home/image-Photoroom (39).png',
-  iconNature: '/images/home/image-Photoroom (40).png',
-  iconFishing: '/images/home/image-Photoroom (41).png',
-  iconActivity: '/images/home/image-Photoroom (44).png',
-  iconHealing: '/images/home/image-Photoroom (43).png',
-  iconPractice: '/images/home/image-Photoroom (45).png',
-  iconCulture: '/images/home/image-Photoroom (42).png',
-  iconCompassTiny: '/images/home/image-Photoroom (47).png',
-  stepScroll: '/images/home/image-Photoroom (48).png',
-  stepPortrait: '/images/home/image-Photoroom (49).png',
-  stepCourse: '/images/home/image-Photoroom (50).png',
-  stepPouch: '/images/home/image-Photoroom (51).png',
-  stepDiary: '/images/home/image-Photoroom (52).png',
-  panelUser: '/images/home/image-Photoroom (53).png',
-  panelPalace: '/images/home/image-Photoroom (54).png',
-  panelBook: '/images/home/image-Photoroom (55).png',
-  panelBrush: '/images/home/image-Photoroom (56).png',
+  bgHero: '/images/home/optimized/652ce35e-db13-42b7-846d-e4ab8176aa41.webp',
+  bgType: '/images/home/optimized/c41773fd-ba94-42f3-9ce3-3ece892fb14a.webp',
+  bgCore: '/images/home/optimized/0b3dfd67-3928-4689-8b6f-918d9b69aef0.webp',
+  bgJourney: '/images/home/optimized/cb7a766a-f956-457a-81d8-6b86bef53c85.webp',
+  bgMist: '/images/home/optimized/d5441123-5014-4911-87f8-63bfae44d413.webp',
+  frameTallLight: '/images/home/optimized/1 (2).webp',
+  heroFrame: '/images/home/optimized/image-Photoroom (9).webp',
+  heroBadgeFrame: '/images/home/optimized/image-Photoroom (11).webp',
+  microStrip: '/images/home/optimized/ChatGPT Image 2026년 6월 14일 오후 02_02_36.webp',
+  primaryTestButton: '/images/home/optimized/image-Photoroom (33).webp',
+  primaryTestButtonWithTassel: '/images/home/optimized/image-Photoroom (59).webp',
+  secondaryCourseButton: '/images/home/optimized/2f21d5b4-ddad-43e7-a288-1cd2824b0202.webp',
+  secondaryCourseButtonPlain: '/images/home/optimized/image-Photoroom (60).webp',
+  typeBadge: '/images/home/optimized/image-Photoroom (34).webp',
+  typeCourseButton: '/images/home/optimized/image-Photoroom (35).webp',
+  journeyBadge: '/images/home/optimized/image-Photoroom (46).webp',
+  previewPill: '/images/home/optimized/image-Photoroom (7).webp',
+  zoomControl: '/images/home/optimized/10cc0692-3d55-44c9-bfe5-3c9270fd2acf.webp',
+  heroChoicePanel: '/images/home/optimized/image-Photoroom (21).webp',
+  heroChoicePanelAlt: '/images/home/optimized/image-Photoroom (30).webp',
+  heroWeatherPanel: '/images/home/optimized/image-Photoroom (23).webp',
+  heroAudioPanel: '/images/home/optimized/image-Photoroom (12).webp',
+  heroEvidencePanel: '/images/home/optimized/image-Photoroom (13).webp',
+  heroMapButtonPanel: '/images/home/optimized/image-Photoroom (14).webp',
+  heroNextStopPanel: '/images/home/optimized/image-Photoroom (16).webp',
+  heroAiCourseFrame: '/images/home/optimized/image-Photoroom (10).webp',
+  heroShowcaseSnapshot: '/images/home/optimized/target-hero-showcase.webp',
+  heroTypePreview: '/images/home/optimized/image-Photoroom (3).webp',
+  heroCoursePreview: '/images/home/optimized/image-Photoroom (50).webp',
+  heroHeatmapPreview: '/images/home/optimized/image-Photoroom (8).webp',
+  heroGraphPreview: '/images/home/optimized/image-Photoroom (24).webp',
+  targetTeaserType: '/images/home/optimized/target-teaser-type.webp',
+  targetTeaserCourse: '/images/home/optimized/target-teaser-course.webp',
+  targetTeaserHeatmap: '/images/home/optimized/target-teaser-heatmap.webp',
+  targetTeaserGraph: '/images/home/optimized/target-teaser-graph.webp',
+  paperFrameWide: '/images/home/optimized/image-Photoroom (32).webp',
+  paperFrameDark: '/images/home/optimized/image-Photoroom (28).webp',
+  paperFrameLight: '/images/home/optimized/image-Photoroom (29).webp',
+  paperFrameTall: '/images/home/optimized/image-Photoroom (58).webp',
+  paperFrameTallAlt: '/images/home/optimized/image-Photoroom (57).webp',
+  resultFrame: '/images/home/optimized/image-Photoroom (31).webp',
+  characterToegye: '/images/home/optimized/1c51baf4-d604-48f7-8a09-ca0ab1c1d982.webp',
+  characterYulgok: '/images/home/optimized/3da4cd9c-2865-4ffb-afc9-ab284de979b7.webp',
+  characterCheosa: '/images/home/optimized/62ac8f05-5f95-4cd7-b58f-70c2bf586f03.webp',
+  characterUguk: '/images/home/optimized/381c59e0-22e6-4c8a-9bc6-20981a00970e.webp',
+  iconBook: '/images/home/optimized/image-Photoroom (17).webp',
+  iconPerson: '/images/home/optimized/image-Photoroom (18).webp',
+  iconMeditation: '/images/home/optimized/image-Photoroom (19).webp',
+  iconCar: '/images/home/optimized/image-Photoroom (20).webp',
+  iconTarget: '/images/home/optimized/image-Photoroom (22).webp',
+  iconBookMedal: '/images/home/optimized/image-Photoroom (24).webp',
+  iconMountain: '/images/home/optimized/image-Photoroom (25).webp',
+  iconShield: '/images/home/optimized/image-Photoroom (26).webp',
+  iconDiary: '/images/home/optimized/image-Photoroom (27).webp',
+  iconChart: '/images/home/optimized/image-Photoroom (3).webp',
+  iconCompass3d: '/images/home/optimized/image-Photoroom (4).webp',
+  iconPavilion: '/images/home/optimized/image-Photoroom (5).webp',
+  iconDatabase: '/images/home/optimized/image-Photoroom (6).webp',
+  iconTrophy: '/images/home/optimized/image-Photoroom (8).webp',
+  iconSettings: '/images/home/optimized/image-Photoroom (15).webp',
+  iconSolo: '/images/home/optimized/image-Photoroom (36).webp',
+  iconFriend: '/images/home/optimized/image-Photoroom (37).webp',
+  iconParent: '/images/home/optimized/image-Photoroom (38).webp',
+  iconFamily: '/images/home/optimized/image-Photoroom (39).webp',
+  iconNature: '/images/home/optimized/image-Photoroom (40).webp',
+  iconFishing: '/images/home/optimized/image-Photoroom (41).webp',
+  iconActivity: '/images/home/optimized/image-Photoroom (44).webp',
+  iconHealing: '/images/home/optimized/image-Photoroom (43).webp',
+  iconPractice: '/images/home/optimized/image-Photoroom (45).webp',
+  iconCulture: '/images/home/optimized/image-Photoroom (42).webp',
+  iconCompassTiny: '/images/home/optimized/image-Photoroom (47).webp',
+  stepScroll: '/images/home/optimized/image-Photoroom (48).webp',
+  stepPortrait: '/images/home/optimized/image-Photoroom (49).webp',
+  stepCourse: '/images/home/optimized/image-Photoroom (50).webp',
+  stepPouch: '/images/home/optimized/image-Photoroom (51).webp',
+  stepDiary: '/images/home/optimized/image-Photoroom (52).webp',
+  panelUser: '/images/home/optimized/image-Photoroom (53).webp',
+  panelPalace: '/images/home/optimized/image-Photoroom (54).webp',
+  panelBook: '/images/home/optimized/image-Photoroom (55).webp',
+  panelBrush: '/images/home/optimized/image-Photoroom (56).webp',
 }
 
 const snapSections = [
@@ -143,6 +149,11 @@ const snapSections = [
 
 const companionOptions = ['혼자', '친구', '부모님', '아이와']
 const keywordOptions = ['조용함', '체험', '역사문화', '힐링', '실천형', '자연']
+
+type HomeImageProps = ImgHTMLAttributes<HTMLImageElement> & {
+  eager?: boolean
+  priority?: boolean
+}
 
 const companionOptionIcons: Record<string, string> = {
   혼자: HOME_ASSETS.iconSolo,
@@ -484,7 +495,9 @@ export function HomeLandingPage() {
           <div className="home-atmosphere" aria-hidden="true" />
           <div className="home-section-inner home-hero-grid">
             <div className="home-hero-copy">
-              <Badge imageSrc={HOME_ASSETS.heroBadgeFrame}>AI 문화 여행 플랫폼</Badge>
+              <Badge imageSrc={HOME_ASSETS.heroBadgeFrame} eager>
+                AI 문화 여행 플랫폼
+              </Badge>
               <h1>
                 AI가 설계하는
                 <span>영주의 선비길</span>
@@ -498,6 +511,7 @@ export function HomeLandingPage() {
                   imageSrc={HOME_ASSETS.primaryTestButton}
                   to="/test"
                   variant="primary"
+                  eager
                 >
                   선비 테스트 시작하기
                 </OrnamentalButton>
@@ -505,12 +519,13 @@ export function HomeLandingPage() {
                   imageSrc={HOME_ASSETS.secondaryCourseButton}
                   to="/course"
                   variant="secondary"
+                  eager
                 >
                   추천 코스 둘러보기
                 </OrnamentalButton>
               </div>
               <ul className="home-micro-strip" aria-label="핵심 미리보기">
-                <img src={HOME_ASSETS.microStrip} alt="" aria-hidden="true" />
+                <HomeImage src={HOME_ASSETS.microStrip} alt="" aria-hidden="true" eager />
                 {[
                   ['유형별 선비 콘텐츠', HOME_ASSETS.iconPerson],
                   ['3D 코스 프리뷰', HOME_ASSETS.iconTarget],
@@ -518,7 +533,7 @@ export function HomeLandingPage() {
                   ['여행 기록 저장', HOME_ASSETS.iconBook],
                 ].map(([label, icon]) => (
                   <li key={label}>
-                    <img src={icon} alt="" aria-hidden="true" />
+                    <HomeImage src={icon} alt="" aria-hidden="true" eager />
                     <span>{label}</span>
                   </li>
                 ))}
@@ -573,7 +588,7 @@ export function HomeLandingPage() {
                       onClick={() => setSelectedCompanion(option)}
                       key={option}
                     >
-                      <img src={companionOptionIcons[option]} alt="" aria-hidden="true" />
+                      <HomeImage src={companionOptionIcons[option]} alt="" aria-hidden="true" />
                       {option}
                     </button>
                   ))}
@@ -590,7 +605,7 @@ export function HomeLandingPage() {
                       onClick={() => toggleKeyword(option)}
                       key={option}
                     >
-                      <img src={keywordOptionIcons[option]} alt="" aria-hidden="true" />
+                      <HomeImage src={keywordOptionIcons[option]} alt="" aria-hidden="true" />
                       {option}
                     </button>
                   ))}
@@ -651,7 +666,7 @@ export function HomeLandingPage() {
               >
                 <div className="home-feature-title-row">
                   <span className="home-feature-icon">
-                    <img src={feature.icon} alt="" aria-hidden="true" />
+                    <HomeImage src={feature.icon} alt="" aria-hidden="true" />
                   </span>
                   <h3>{feature.title}</h3>
                 </div>
@@ -672,7 +687,7 @@ export function HomeLandingPage() {
                 key={title}
                 style={{ '--home-stagger': `${index * 80}ms` } as CSSProperties}
               >
-                <img src={icon} alt="" aria-hidden="true" />
+                <HomeImage src={icon} alt="" aria-hidden="true" />
                 <strong>{title}</strong>
                 <span>{description}</span>
               </div>
@@ -714,7 +729,7 @@ export function HomeLandingPage() {
               <ul>
                 {experienceItems.map(([item, icon]) => (
                   <li key={item}>
-                    <img src={icon} alt="" aria-hidden="true" />
+                    <HomeImage src={icon} alt="" aria-hidden="true" />
                     <span>{item}</span>
                   </li>
                 ))}
@@ -753,7 +768,7 @@ export function HomeLandingPage() {
           </div>
 
           <div className="home-section-inner home-slogan">
-            <img src={HOME_ASSETS.iconCompassTiny} alt="" aria-hidden="true" />
+            <HomeImage src={HOME_ASSETS.iconCompassTiny} alt="" aria-hidden="true" />
             <p>
               영주의 선비 정신을 따라, 나를 이해하고 세상을 만나는 여정을 시작하세요.
               <span>데이터 기반 · AI 맞춤 추천 · 문화여행 경험</span>
@@ -767,16 +782,22 @@ export function HomeLandingPage() {
 
 function Badge({
   children,
+  eager = false,
   imageSrc,
   textMode = 'overlay',
 }: {
   children: string
+  eager?: boolean
   imageSrc?: string
   textMode?: 'overlay' | 'hidden'
 }) {
   return (
     <span className={imageSrc ? 'home-badge home-badge--asset' : 'home-badge'}>
-      {imageSrc ? <img src={imageSrc} alt="" aria-hidden="true" /> : <span aria-hidden="true" />}
+      {imageSrc ? (
+        <HomeImage src={imageSrc} alt="" aria-hidden="true" eager={eager} />
+      ) : (
+        <span aria-hidden="true" />
+      )}
       <span className={imageSrc && textMode === 'hidden' ? 'home-sr-only' : ''}>
         {children}
       </span>
@@ -785,14 +806,34 @@ function Badge({
   )
 }
 
+function HomeImage({
+  decoding,
+  eager = false,
+  fetchPriority,
+  loading,
+  priority = false,
+  ...props
+}: HomeImageProps) {
+  return (
+    <img
+      {...props}
+      decoding={decoding ?? 'async'}
+      fetchPriority={fetchPriority ?? (priority ? 'high' : undefined)}
+      loading={loading ?? (eager || priority ? 'eager' : 'lazy')}
+    />
+  )
+}
+
 function OrnamentalButton({
   children,
+  eager = false,
   full = false,
   imageSrc,
   to,
   variant,
 }: {
   children: string
+  eager?: boolean
   full?: boolean
   imageSrc?: string
   to: string
@@ -812,7 +853,7 @@ function OrnamentalButton({
     >
       {imageSrc ? (
         <>
-          <img src={imageSrc} alt="" aria-hidden="true" />
+          <HomeImage src={imageSrc} alt="" aria-hidden="true" eager={eager} />
           <span className="home-sr-only">{children}</span>
         </>
       ) : (
@@ -829,13 +870,14 @@ function HeroProductShowcase() {
   return (
     <div className="home-product-showcase" aria-label="AI 추천 코스 미리보기">
       <div className="home-product-photo-slot" aria-label="추후 삽입할 1번째 화면 대표 사진 영역">
-        <img
+        <HomeImage
           className="home-product-showcase-snapshot"
           src={HOME_ASSETS.heroShowcaseSnapshot}
           alt=""
           aria-hidden="true"
+          priority
         />
-        <img src={HOME_ASSETS.heroFrame} alt="" aria-hidden="true" />
+        <HomeImage src={HOME_ASSETS.heroFrame} alt="" aria-hidden="true" eager />
       </div>
       <div className="home-route-line" aria-hidden="true">
         <span />
@@ -844,7 +886,7 @@ function HeroProductShowcase() {
       </div>
 
       <div className="home-showcase-top-card">
-        <img src={HOME_ASSETS.heroChoicePanel} alt="" aria-hidden="true" />
+        <HomeImage src={HOME_ASSETS.heroChoicePanel} alt="" aria-hidden="true" eager />
         <strong>나의 여행 성향 선택</strong>
         <div>
           {[
@@ -854,7 +896,7 @@ function HeroProductShowcase() {
             ['자차', HOME_ASSETS.iconCar],
           ].map(([chip, icon]) => (
             <span key={chip}>
-              <img src={icon} alt="" aria-hidden="true" />
+              <HomeImage src={icon} alt="" aria-hidden="true" eager />
               {chip}
             </span>
           ))}
@@ -862,12 +904,12 @@ function HeroProductShowcase() {
       </div>
 
       <div className="home-showcase-weather-card" aria-label="영주시 현재 날씨">
-        <img src={HOME_ASSETS.heroWeatherPanel} alt="" aria-hidden="true" />
+        <HomeImage src={HOME_ASSETS.heroWeatherPanel} alt="" aria-hidden="true" eager />
         <span className="home-sr-only">영주시 24도</span>
       </div>
 
       <article className="home-ai-course-card">
-        <img src={HOME_ASSETS.heroAiCourseFrame} alt="" aria-hidden="true" />
+        <HomeImage src={HOME_ASSETS.heroAiCourseFrame} alt="" aria-hidden="true" eager />
         <h2>AI 추천 코스</h2>
         <strong>소수서원 → 선비촌 → 무섬마을</strong>
         <p>추천 신뢰도</p>
@@ -883,7 +925,7 @@ function HeroProductShowcase() {
             ['숙박', HOME_ASSETS.iconBook],
           ].map(([chip, icon]) => (
             <span key={chip}>
-              <img src={icon} alt="" aria-hidden="true" />
+              <HomeImage src={icon} alt="" aria-hidden="true" eager />
               {chip}
             </span>
           ))}
@@ -892,7 +934,7 @@ function HeroProductShowcase() {
       </article>
 
       <article className="home-next-stop-card">
-        <img src={HOME_ASSETS.heroNextStopPanel} alt="" aria-hidden="true" />
+        <HomeImage src={HOME_ASSETS.heroNextStopPanel} alt="" aria-hidden="true" eager />
         <span>다음 목적지</span>
         <strong>선비촌</strong>
         <p>1.8km · 8분</p>
@@ -901,7 +943,7 @@ function HeroProductShowcase() {
 
       <div className="home-showcase-side">
         <article>
-          <img src={HOME_ASSETS.heroAudioPanel} alt="" aria-hidden="true" />
+          <HomeImage src={HOME_ASSETS.heroAudioPanel} alt="" aria-hidden="true" eager />
           <h2>AI 추천 해설</h2>
           <p>소수서원은 우리나라 최초의 사액으로, 선비 정신의 중심지입니다.</p>
           <div className="home-waveform" aria-hidden="true">
@@ -911,7 +953,7 @@ function HeroProductShowcase() {
           </div>
         </article>
         <article>
-          <img src={HOME_ASSETS.heroEvidencePanel} alt="" aria-hidden="true" />
+          <HomeImage src={HOME_ASSETS.heroEvidencePanel} alt="" aria-hidden="true" eager />
           <h2>AI 근거</h2>
           <dl>
             <div>
@@ -932,9 +974,9 @@ function HeroProductShowcase() {
       </div>
 
       <div className="home-showcase-controls" aria-hidden="true">
-        <img src={HOME_ASSETS.heroMapButtonPanel} alt="" />
-        <img src={HOME_ASSETS.iconSettings} alt="" />
-        <img src={HOME_ASSETS.zoomControl} alt="" />
+        <HomeImage src={HOME_ASSETS.heroMapButtonPanel} alt="" eager />
+        <HomeImage src={HOME_ASSETS.iconSettings} alt="" eager />
+        <HomeImage src={HOME_ASSETS.zoomControl} alt="" eager />
       </div>
     </div>
   )
@@ -999,7 +1041,7 @@ function CoreFeaturePreview({ variant }: { variant: VisualVariant }) {
   if (variant === 'course3d') {
     return (
       <div className="home-core-preview home-core-preview--course" aria-hidden="true">
-        <img className="home-core-course-art" src={HOME_ASSETS.stepCourse} alt="" />
+        <HomeImage className="home-core-course-art" src={HOME_ASSETS.stepCourse} alt="" />
         <div className="home-core-route-line">
           <span>소수서원</span>
           <span>부석사</span>
@@ -1037,7 +1079,7 @@ function CoreFeaturePreview({ variant }: { variant: VisualVariant }) {
     return (
       <div className="home-core-preview home-core-preview--graph" aria-hidden="true">
         <div className="home-core-graph-center">
-          <img src={HOME_ASSETS.iconCulture} alt="" />
+          <HomeImage src={HOME_ASSETS.iconCulture} alt="" />
           <strong>부석사</strong>
         </div>
         {[
@@ -1048,7 +1090,7 @@ function CoreFeaturePreview({ variant }: { variant: VisualVariant }) {
           ['체험 가치', '0.87', HOME_ASSETS.iconPerson],
         ].map(([title, score, icon]) => (
           <div className="home-core-graph-node" key={title}>
-            <img src={icon} alt="" />
+            <HomeImage src={icon} alt="" />
             <span>{title}</span>
             <b>{score}</b>
           </div>
@@ -1076,7 +1118,7 @@ function CoreFeaturePreview({ variant }: { variant: VisualVariant }) {
         <time>2024.05.15</time>
         <h4>부석사에서의 사색</h4>
         <p>산사의 고요한 풍경 속에서 자연과 전통의 어울림이 아름다움에 마음이 편안해졌습니다.</p>
-        <img src={HOME_ASSETS.stepCourse} alt="" />
+        <HomeImage src={HOME_ASSETS.stepCourse} alt="" />
         <span>부석사 · 안심일</span>
       </article>
     </div>
@@ -1086,7 +1128,7 @@ function CoreFeaturePreview({ variant }: { variant: VisualVariant }) {
 function ResultPanel({ profile }: { profile: SeonbiProfile }) {
   return (
     <aside className={`home-result-panel home-result-panel--${profile.tone}`} key={profile.key}>
-      <img className="home-result-frame-art" src={HOME_ASSETS.resultFrame} alt="" aria-hidden="true" />
+      <HomeImage className="home-result-frame-art" src={HOME_ASSETS.resultFrame} alt="" aria-hidden="true" />
       <span>AI 추천 유형</span>
       <h3>{profile.resultTitle}</h3>
       <p>{profile.detail}</p>
@@ -1129,7 +1171,7 @@ function SeonbiTypeCard({
       <div className="home-type-card-copy">
         {!highlighted && (
           <span className="home-type-icon">
-            <img src={profile.icon} alt="" aria-hidden="true" />
+            <HomeImage src={profile.icon} alt="" aria-hidden="true" />
           </span>
         )}
         <h3>{profile.title}</h3>
@@ -1176,7 +1218,7 @@ function VisualPlaceholder({
       <span className="home-corner home-corner--bottom-left" aria-hidden="true" />
       <span className="home-corner home-corner--bottom-right" aria-hidden="true" />
       {imageSrc ? (
-        <img className="home-visual-image" src={imageSrc} alt="" aria-hidden="true" />
+        <HomeImage className="home-visual-image" src={imageSrc} alt="" aria-hidden="true" />
       ) : empty ? null : (
         renderPlaceholderArt(variant, icon)
       )}
@@ -1235,7 +1277,7 @@ function renderPlaceholderArt(variant: VisualVariant, icon?: string) {
 
   return (
     <div className="home-placeholder-symbol" aria-hidden="true">
-      {icon ? <img src={icon} alt="" /> : <span />}
+      {icon ? <HomeImage src={icon} alt="" /> : <span />}
     </div>
   )
 }

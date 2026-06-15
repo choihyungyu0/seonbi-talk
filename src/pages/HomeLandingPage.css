@@ -207,28 +207,28 @@
 .home-hero-screen {
   background-image:
     linear-gradient(90deg, rgba(247, 241, 230, 0.2), rgba(247, 241, 230, 0.02)),
-    url('/images/home/652ce35e-db13-42b7-846d-e4ab8176aa41.png');
+    url('/images/home/optimized/652ce35e-db13-42b7-846d-e4ab8176aa41.webp');
   background-position: center;
 }
 
 .home-type-screen {
   background-image:
     linear-gradient(90deg, rgba(247, 241, 230, 0.08), rgba(247, 241, 230, 0.04)),
-    url('/images/home/c41773fd-ba94-42f3-9ce3-3ece892fb14a.png');
+    url('/images/home/optimized/c41773fd-ba94-42f3-9ce3-3ece892fb14a.webp');
   background-position: center;
 }
 
 .home-core-screen {
   background-image:
     linear-gradient(180deg, rgba(247, 241, 230, 0.16), rgba(247, 241, 230, 0.04)),
-    url('/images/home/0b3dfd67-3928-4689-8b6f-918d9b69aef0.png');
+    url('/images/home/optimized/0b3dfd67-3928-4689-8b6f-918d9b69aef0.webp');
   background-position: center;
 }
 
 .home-journey-screen {
   background-image:
     linear-gradient(180deg, rgba(247, 241, 230, 0.12), rgba(247, 241, 230, 0.02)),
-    url('/images/home/cb7a766a-f956-457a-81d8-6b86bef53c85.png');
+    url('/images/home/optimized/cb7a766a-f956-457a-81d8-6b86bef53c85.webp');
   background-position: center bottom;
 }
 
@@ -240,7 +240,7 @@
   z-index: 1;
   height: 24%;
   pointer-events: none;
-  background: url('/images/home/d5441123-5014-4911-87f8-63bfae44d413.png') center bottom / cover no-repeat;
+  background: url('/images/home/optimized/d5441123-5014-4911-87f8-63bfae44d413.webp') center bottom / cover no-repeat;
   content: '';
   opacity: 0.24;
 }
@@ -1877,7 +1877,7 @@
   border-color: rgba(199, 155, 69, 0.36);
   background:
     linear-gradient(135deg, rgba(255, 250, 240, 0.72), rgba(234, 214, 165, 0.18)),
-    url('/images/home/image-Photoroom (32).png') center / 100% 100% no-repeat;
+    url('/images/home/optimized/image-Photoroom (32).webp') center / 100% 100% no-repeat;
 }
 
 .home-visual-image {
@@ -1893,7 +1893,7 @@
 .home-type-card .home-visual-placeholder--image {
   background:
     linear-gradient(135deg, rgba(255, 250, 240, 0.6), rgba(255, 250, 240, 0.22)),
-    url('/images/home/image-Photoroom (29).png') center / contain no-repeat;
+    url('/images/home/optimized/image-Photoroom (29).webp') center / contain no-repeat;
 }
 
 .home-type-card--highlighted .home-visual-placeholder--image {
@@ -1911,7 +1911,7 @@
   border: 0;
   background:
     linear-gradient(135deg, rgba(255, 250, 240, 0.7), rgba(255, 250, 240, 0.28)),
-    url('/images/home/image-Photoroom (28).png') center / 100% 100% no-repeat;
+    url('/images/home/optimized/image-Photoroom (28).webp') center / 100% 100% no-repeat;
 }
 
 .home-core-card .home-visual-placeholder--empty {
@@ -2243,27 +2243,27 @@
 .home-slogan {
   background:
     linear-gradient(135deg, rgba(255, 250, 240, 0.78), rgba(255, 250, 240, 0.54)),
-    url('/images/home/image-Photoroom (32).png') center / 100% 100% no-repeat;
+    url('/images/home/optimized/image-Photoroom (32).webp') center / 100% 100% no-repeat;
 }
 
 .home-type-card {
   border: 0;
   background:
     linear-gradient(135deg, rgba(255, 250, 240, 0.8), rgba(255, 250, 240, 0.62)),
-    url('/images/home/image-Photoroom (58).png') center / 100% 100% no-repeat;
+    url('/images/home/optimized/image-Photoroom (58).webp') center / 100% 100% no-repeat;
 }
 
 .home-type-card--highlighted {
   background:
     linear-gradient(90deg, rgba(18, 60, 45, 0.96), rgba(18, 60, 45, 0.58)),
-    url('/images/home/image-Photoroom (57).png') center / 100% 100% no-repeat;
+    url('/images/home/optimized/image-Photoroom (57).webp') center / 100% 100% no-repeat;
 }
 
 .home-step-card {
   border: 0;
   background:
     linear-gradient(135deg, rgba(255, 250, 240, 0.82), rgba(255, 250, 240, 0.64)),
-    url('/images/home/1 (2).png') center / 100% 100% no-repeat;
+    url('/images/home/optimized/1 (2).webp') center / 100% 100% no-repeat;
 }
 
 .home-result-panel {
@@ -2310,7 +2310,7 @@
   border: 0;
   background:
     linear-gradient(135deg, rgba(18, 60, 45, 0.94), rgba(18, 60, 45, 0.78)),
-    url('/images/home/image-Photoroom (10).png') center / 100% 100% no-repeat;
+    url('/images/home/optimized/image-Photoroom (10).webp') center / 100% 100% no-repeat;
 }
 
 .home-experience-panel li {
@@ -2378,7 +2378,7 @@
     width: 64px;
     height: 64px;
     border: 0;
-    background: url('/images/home/target-logo-mark.png') center / contain no-repeat;
+    background: url('/images/home/optimized/target-logo-mark.webp') center / contain no-repeat;
     box-shadow: none;
   }
 
@@ -2392,7 +2392,7 @@
     border: 0;
     padding: 0;
     color: transparent;
-    background: url('/images/home/target-signup-button.png') center / 100% 100% no-repeat;
+    background: url('/images/home/optimized/target-signup-button.webp') center / 100% 100% no-repeat;
     box-shadow: none;
   }
 
@@ -2498,7 +2498,7 @@
 
   .home-product-photo-slot {
     background:
-      url('/images/home/target-hero-showcase.png') center / 100% 100% no-repeat;
+      url('/images/home/optimized/target-hero-showcase.webp') center / 100% 100% no-repeat;
     box-shadow:
       0 26px 50px rgba(33, 24, 10, 0.18),
       0 0 0 1px rgba(255, 250, 240, 0.16);
@@ -2694,19 +2694,19 @@
   }
 
   .home-teaser-card:nth-child(1) {
-    background-image: url('/images/home/target-teaser-type.png');
+    background-image: url('/images/home/optimized/target-teaser-type.webp');
   }
 
   .home-teaser-card:nth-child(2) {
-    background-image: url('/images/home/target-teaser-course.png');
+    background-image: url('/images/home/optimized/target-teaser-course.webp');
   }
 
   .home-teaser-card:nth-child(3) {
-    background-image: url('/images/home/target-teaser-heatmap.png');
+    background-image: url('/images/home/optimized/target-teaser-heatmap.webp');
   }
 
   .home-teaser-card:nth-child(4) {
-    background-image: url('/images/home/target-teaser-graph.png');
+    background-image: url('/images/home/optimized/target-teaser-graph.webp');
   }
 
   .home-teaser-card > div {
@@ -3708,7 +3708,7 @@
   padding: 18px 30px;
   background:
     linear-gradient(135deg, rgba(255, 250, 240, 0.58), rgba(255, 250, 240, 0.16)),
-    url('/images/home/image-Photoroom (32).png') center / 100% 100% no-repeat;
+    url('/images/home/optimized/image-Photoroom (32).webp') center / 100% 100% no-repeat;
   box-shadow: 0 18px 32px rgba(33, 24, 10, 0.12);
 }
 
@@ -3928,7 +3928,7 @@
   padding: 28px;
   background:
     linear-gradient(180deg, rgba(255, 250, 240, 0.94), rgba(255, 250, 240, 0.58)),
-    url('/images/home/image-Photoroom (58).png') center / 100% 100% no-repeat;
+    url('/images/home/optimized/image-Photoroom (58).webp') center / 100% 100% no-repeat;
   box-shadow:
     0 16px 26px rgba(33, 24, 10, 0.15),
     inset 0 0 0 1px rgba(255, 255, 255, 0.54);
@@ -3965,7 +3965,7 @@
   width: auto;
   height: auto;
   border: 0;
-  background: url('/images/home/image-Photoroom (28).png') center / 100% 100% no-repeat;
+  background: url('/images/home/optimized/image-Photoroom (28).webp') center / 100% 100% no-repeat;
   content: '';
   pointer-events: none;
 }
@@ -4471,7 +4471,7 @@
   padding: 24px 24px 18px;
   background:
     linear-gradient(135deg, rgba(255, 250, 240, 0.86), rgba(255, 250, 240, 0.62)),
-    url('/images/home/image-Photoroom (32).png') center / 100% 100% no-repeat;
+    url('/images/home/optimized/image-Photoroom (32).webp') center / 100% 100% no-repeat;
   box-shadow:
     0 18px 34px rgba(33, 24, 10, 0.15),
     inset 0 0 0 1px rgba(255, 255, 255, 0.48);
@@ -4617,7 +4617,7 @@
 .home-core-preview--heatmap {
   background:
     linear-gradient(135deg, rgba(7, 25, 20, 0.86), rgba(12, 35, 30, 0.82)),
-    url('/images/home/cb7a766a-f956-457a-81d8-6b86bef53c85.png') center / cover no-repeat;
+    url('/images/home/optimized/cb7a766a-f956-457a-81d8-6b86bef53c85.webp') center / cover no-repeat;
 }
 
 .home-core-map-shape {
@@ -4724,7 +4724,7 @@
 .home-core-preview--course {
   background:
     linear-gradient(135deg, rgba(6, 27, 22, 0.52), rgba(12, 35, 30, 0.42)),
-    url('/images/home/cb7a766a-f956-457a-81d8-6b86bef53c85.png') center / cover no-repeat;
+    url('/images/home/optimized/cb7a766a-f956-457a-81d8-6b86bef53c85.webp') center / cover no-repeat;
 }
 
 .home-core-course-art {
@@ -5041,7 +5041,7 @@
   color: var(--seonbi-ink);
   background:
     linear-gradient(135deg, rgba(255, 250, 240, 0.94), rgba(255, 250, 240, 0.78)),
-    url('/images/home/image-Photoroom (32).png') center / 100% 100% no-repeat;
+    url('/images/home/optimized/image-Photoroom (32).webp') center / 100% 100% no-repeat;
 }
 
 .home-core-preview--diary h4 {
@@ -5078,7 +5078,7 @@
   padding: 24px 30px;
   background:
     linear-gradient(135deg, rgba(255, 250, 240, 0.84), rgba(255, 250, 240, 0.6)),
-    url('/images/home/image-Photoroom (32).png') center / 100% 100% no-repeat;
+    url('/images/home/optimized/image-Photoroom (32).webp') center / 100% 100% no-repeat;
   box-shadow: 0 16px 30px rgba(33, 24, 10, 0.13);
 }
 
