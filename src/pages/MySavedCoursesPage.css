@@ -155,7 +155,8 @@
   gap: 18px;
 }
 
-.my-saved-sidebar button {
+.my-saved-sidebar button,
+.my-saved-sidebar a {
   position: relative;
   display: grid;
   grid-template-columns: 42px minmax(0, 1fr);
@@ -173,22 +174,26 @@
   font-weight: 950;
   line-height: 1.1;
   text-align: left;
-  cursor: default;
+  text-decoration: none;
+  cursor: pointer;
   word-break: keep-all;
 }
 
-.my-saved-sidebar button + button {
+.my-saved-sidebar button + button,
+.my-saved-sidebar a + a {
   box-shadow: 0 -1px 0 rgba(231, 194, 110, 0.13);
 }
 
-.my-saved-sidebar button img {
+.my-saved-sidebar button img,
+.my-saved-sidebar a img {
   width: 40px;
   height: 40px;
   object-fit: contain;
   filter: drop-shadow(0 7px 8px rgba(0, 0, 0, 0.28));
 }
 
-.my-saved-sidebar button.is-active {
+.my-saved-sidebar button.is-active,
+.my-saved-sidebar a.is-active {
   border-color: rgba(251, 213, 111, 0.96);
   color: #fff1bf;
   background:
@@ -201,7 +206,9 @@
 }
 
 .my-saved-sidebar button.is-active::before,
-.my-saved-sidebar button.is-active::after {
+.my-saved-sidebar button.is-active::after,
+.my-saved-sidebar a.is-active::before,
+.my-saved-sidebar a.is-active::after {
   position: absolute;
   top: 50%;
   width: 11px;
@@ -212,11 +219,13 @@
   transform: translateY(-50%) rotate(45deg);
 }
 
-.my-saved-sidebar button.is-active::before {
+.my-saved-sidebar button.is-active::before,
+.my-saved-sidebar a.is-active::before {
   left: -6px;
 }
 
-.my-saved-sidebar button.is-active::after {
+.my-saved-sidebar button.is-active::after,
+.my-saved-sidebar a.is-active::after {
   right: -6px;
 }
 

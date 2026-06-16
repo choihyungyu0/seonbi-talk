@@ -76,10 +76,10 @@ const summaryCards: StatCard[] = [
 ]
 
 const sidebarItems = [
-  { label: '나의 선비길 기록', icon: assets.statJourney, active: true },
-  { label: '나의 한마디', icon: assets.sidebarReflection, active: false },
-  { label: '획득 배지', icon: assets.statBadge, active: false },
-  { label: '저장한 코스', icon: assets.sidebarCourse, active: false },
+  { label: '나의 선비길 기록', icon: assets.statJourney, to: '/mypage/records', active: true },
+  { label: '나의 한마디', icon: assets.sidebarReflection, to: '/mypage/one-line', active: false },
+  { label: '획득 배지', icon: assets.statBadge, to: '/mypage/badges', active: false },
+  { label: '저장한 코스', icon: assets.sidebarCourse, to: '/mypage/saved-courses', active: false },
 ]
 
 const journeyStops = [
@@ -241,15 +241,15 @@ function MyPageSidebar() {
         <h2>마이페이지</h2>
         <nav>
           {sidebarItems.map((item) => (
-            <button
+            <Link
               className={item.active ? 'is-active' : undefined}
               key={item.label}
-              type="button"
+              to={item.to}
               aria-current={item.active ? 'page' : undefined}
             >
               <img src={imageAsset(item.icon)} alt="" />
               <span>{item.label}</span>
-            </button>
+            </Link>
           ))}
         </nav>
       </div>

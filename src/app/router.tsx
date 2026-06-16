@@ -13,7 +13,10 @@ import { KnowledgeGraphPage } from '../pages/KnowledgeGraphPage'
 import { LoginPage } from '../pages/LoginPage'
 import { MissionCompletePage } from '../pages/MissionCompletePage'
 import { MissionReflectionPage } from '../pages/MissionReflectionPage'
-import { MyPage } from '../pages/MyPage'
+import { MyEarnedBadgesPage } from '../pages/MyEarnedBadgesPage'
+import { MyOneLineArchivePage } from '../pages/MyOneLineArchivePage'
+import { MyPage as MySavedCoursesPage } from '../pages/MySavedCoursesScreen'
+import { MyPage as MySeonbiRecordsPage } from '../pages/MySeonbiRecordsPage'
 import { ResultPage } from '../pages/ResultPage'
 import { SignupPage } from '../pages/SignupPage'
 import { TestPage } from '../pages/TestPage'
@@ -54,7 +57,11 @@ export function AppRouter() {
         <Route path="/ai-evidence-graph" element={<KnowledgeGraphPage />} />
         <Route path="/knowledge-graph" element={<KnowledgeGraphPage />} />
         <Route path="/judge" element={<JudgePage />} />
-        <Route path="/mypage" element={<MyPage />} />
+        <Route path="/mypage" element={<Navigate to="/mypage/records" replace />} />
+        <Route path="/mypage/records" element={<MySeonbiRecordsPage />} />
+        <Route path="/mypage/one-line" element={<MyOneLineArchivePage />} />
+        <Route path="/mypage/badges" element={<MyEarnedBadgesPage />} />
+        <Route path="/mypage/saved-courses" element={<MySavedCoursesPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/auth/callback" element={<AuthCallbackPage />} />
         <Route path="/signup" element={<SignupPage />} />

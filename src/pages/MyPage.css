@@ -159,7 +159,8 @@
   gap: 18px;
 }
 
-.my-one-line-sidebar button {
+.my-one-line-sidebar button,
+.my-one-line-sidebar a {
   position: relative;
   display: grid;
   grid-template-columns: 42px minmax(0, 1fr);
@@ -176,27 +177,32 @@
   font-weight: 950;
   line-height: 1.1;
   text-align: left;
-  cursor: default;
+  text-decoration: none;
+  cursor: pointer;
   word-break: keep-all;
 }
 
-.my-one-line-sidebar button:not(.is-active) {
+.my-one-line-sidebar button:not(.is-active),
+.my-one-line-sidebar a:not(.is-active) {
   background:
     linear-gradient(180deg, rgba(2, 35, 25, 0.34), rgba(2, 27, 20, 0.18));
 }
 
-.my-one-line-sidebar button + button {
+.my-one-line-sidebar button + button,
+.my-one-line-sidebar a + a {
   box-shadow: 0 -1px 0 rgba(231, 194, 110, 0.13);
 }
 
-.my-one-line-sidebar button img {
+.my-one-line-sidebar button img,
+.my-one-line-sidebar a img {
   width: 40px;
   height: 40px;
   object-fit: contain;
   filter: drop-shadow(0 7px 8px rgba(0, 0, 0, 0.28));
 }
 
-.my-one-line-sidebar button.is-active {
+.my-one-line-sidebar button.is-active,
+.my-one-line-sidebar a.is-active {
   border-color: rgba(251, 213, 111, 0.95);
   color: #fff1bf;
   background:
@@ -209,7 +215,9 @@
 }
 
 .my-one-line-sidebar button.is-active::before,
-.my-one-line-sidebar button.is-active::after {
+.my-one-line-sidebar button.is-active::after,
+.my-one-line-sidebar a.is-active::before,
+.my-one-line-sidebar a.is-active::after {
   position: absolute;
   top: 50%;
   width: 11px;
@@ -220,11 +228,13 @@
   transform: translateY(-50%) rotate(45deg);
 }
 
-.my-one-line-sidebar button.is-active::before {
+.my-one-line-sidebar button.is-active::before,
+.my-one-line-sidebar a.is-active::before {
   left: -6px;
 }
 
-.my-one-line-sidebar button.is-active::after {
+.my-one-line-sidebar button.is-active::after,
+.my-one-line-sidebar a.is-active::after {
   right: -6px;
 }
 
@@ -1358,7 +1368,8 @@
   gap: 18px;
 }
 
-.my-records-sidebar button {
+.my-records-sidebar button,
+.my-records-sidebar a {
   position: relative;
   display: grid;
   grid-template-columns: 42px minmax(0, 1fr);
@@ -1375,27 +1386,32 @@
   font-weight: 950;
   line-height: 1.1;
   text-align: left;
-  cursor: default;
+  text-decoration: none;
+  cursor: pointer;
   word-break: keep-all;
 }
 
-.my-records-sidebar button:not(.is-active) {
+.my-records-sidebar button:not(.is-active),
+.my-records-sidebar a:not(.is-active) {
   background:
     linear-gradient(180deg, rgba(2, 35, 25, 0.34), rgba(2, 27, 20, 0.18));
 }
 
-.my-records-sidebar button + button {
+.my-records-sidebar button + button,
+.my-records-sidebar a + a {
   box-shadow: 0 -1px 0 rgba(231, 194, 110, 0.13);
 }
 
-.my-records-sidebar button img {
+.my-records-sidebar button img,
+.my-records-sidebar a img {
   width: 40px;
   height: 40px;
   object-fit: contain;
   filter: drop-shadow(0 7px 8px rgba(0, 0, 0, 0.28));
 }
 
-.my-records-sidebar button.is-active {
+.my-records-sidebar button.is-active,
+.my-records-sidebar a.is-active {
   border-color: rgba(251, 213, 111, 0.95);
   color: #fff1bf;
   background:
@@ -1408,7 +1424,9 @@
 }
 
 .my-records-sidebar button.is-active::before,
-.my-records-sidebar button.is-active::after {
+.my-records-sidebar button.is-active::after,
+.my-records-sidebar a.is-active::before,
+.my-records-sidebar a.is-active::after {
   position: absolute;
   top: 50%;
   width: 11px;
@@ -1419,11 +1437,13 @@
   transform: translateY(-50%) rotate(45deg);
 }
 
-.my-records-sidebar button.is-active::before {
+.my-records-sidebar button.is-active::before,
+.my-records-sidebar a.is-active::before {
   left: -6px;
 }
 
-.my-records-sidebar button.is-active::after {
+.my-records-sidebar button.is-active::after,
+.my-records-sidebar a.is-active::after {
   right: -6px;
 }
 

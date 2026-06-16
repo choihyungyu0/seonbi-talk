@@ -101,10 +101,10 @@ const badgeData = {
 }
 
 const sidebarItems = [
-  { label: '나의 선비길 기록', asset: assets.recordIcon, active: false },
-  { label: '나의 한마디', asset: assets.reflectionIcon, active: false },
-  { label: '획득 배지', asset: assets.badgeIcon, active: true },
-  { label: '저장한 코스', asset: assets.savedIcon, active: false },
+  { label: '나의 선비길 기록', asset: assets.recordIcon, to: '/mypage/records', active: false },
+  { label: '나의 한마디', asset: assets.reflectionIcon, to: '/mypage/one-line', active: false },
+  { label: '획득 배지', asset: assets.badgeIcon, to: '/mypage/badges', active: true },
+  { label: '저장한 코스', asset: assets.savedIcon, to: '/mypage/saved-courses', active: false },
 ]
 
 const badgeFilters = ['전체', '획득', '미획득', '완주', '희귀']
@@ -194,15 +194,15 @@ function MyPageSidebar() {
         <h2>마이페이지</h2>
         <nav aria-label="마이페이지 세부 메뉴">
           {sidebarItems.map((item) => (
-            <button
+            <Link
               className={item.active ? 'is-active' : ''}
               key={item.label}
-              type="button"
+              to={item.to}
               aria-current={item.active ? 'page' : undefined}
             >
               <img src={imageAsset(item.asset)} alt="" />
               <span>{item.label}</span>
-            </button>
+            </Link>
           ))}
         </nav>
       </div>

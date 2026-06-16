@@ -144,7 +144,8 @@
   gap: 18px;
 }
 
-.my-badges-sidebar button {
+.my-badges-sidebar button,
+.my-badges-sidebar a {
   position: relative;
   display: grid;
   grid-template-columns: 38px minmax(0, 1fr);
@@ -161,21 +162,25 @@
   font-weight: 900;
   letter-spacing: 0;
   text-align: left;
-  cursor: default;
+  text-decoration: none;
+  cursor: pointer;
 }
 
-.my-badges-sidebar button + button {
+.my-badges-sidebar button + button,
+.my-badges-sidebar a + a {
   box-shadow: 0 -1px 0 rgba(230, 200, 127, 0.14);
 }
 
-.my-badges-sidebar button img {
+.my-badges-sidebar button img,
+.my-badges-sidebar a img {
   width: 36px;
   height: 36px;
   object-fit: contain;
   filter: drop-shadow(0 7px 8px rgba(0, 0, 0, 0.28));
 }
 
-.my-badges-sidebar button.is-active {
+.my-badges-sidebar button.is-active,
+.my-badges-sidebar a.is-active {
   border-color: rgba(247, 204, 91, 0.95);
   color: #fff5c7;
   background: linear-gradient(90deg, rgba(9, 61, 44, 0.96), rgba(4, 41, 31, 0.98));
@@ -186,7 +191,8 @@
     0 0 16px rgba(235, 190, 84, 0.24);
 }
 
-.my-badges-sidebar button.is-active::after {
+.my-badges-sidebar button.is-active::after,
+.my-badges-sidebar a.is-active::after {
   position: absolute;
   top: 50%;
   right: -11px;

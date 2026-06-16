@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
+import { seonbiTypes, type SeonbiType } from '../features/seonbi-test/types'
 
 type GoogleMaps3DLoadStatus = 'idle' | 'loading' | 'ready' | 'missing-key' | 'error'
 
@@ -357,6 +358,68 @@ const recommendationReasons = [
   '마지막에 선비의 한마디 기록 미션을 배치해 여행 경험을 저장할 수 있습니다.',
 ]
 
+const coursePreviewCopy: Record<
+  SeonbiType,
+  {
+    courseName: string
+    title: string
+    subtitle: string
+    routeLabel: string
+    style: string
+    target: string
+    reasons: string[]
+  }
+> = {
+  toegye: {
+    courseName: '퇴계형 사색 코스',
+    title: '퇴계형 선비길',
+    subtitle: '깊은 성찰과 배움을 따라 걷는 영주의 3D 문화 여정',
+    routeLabel: '소수서원 → 선비촌 → 부석사 → 무섬마을 → 선비의 한마디',
+    style: '조용한 배움 · 서원 탐방 · 사색 기록',
+    target: '퇴계형 선비에게 어울리는 배움과 성찰 중심 코스',
+    reasons: recommendationReasons,
+  },
+  yulgok: {
+    courseName: '율곡형 실용 탐구 코스',
+    title: '율곡형 선비길',
+    subtitle: '계획과 실행을 연결하는 영주의 3D 실용 탐구 여정',
+    routeLabel: '소수서원 → 선비촌 → 부석사 → 무섬마을 → 선비의 한마디',
+    style: '계획형 동선 · 문화 거점 · 데이터 기반 선택',
+    target: '율곡형 선비에게 어울리는 실행과 탐구 중심 코스',
+    reasons: [
+      '소수서원과 선비촌을 중심으로 배움과 실제 체험이 이어지는 동선을 구성했습니다.',
+      '부석사와 무섬마을을 연결해 이동 효율과 장소 의미를 함께 확인하도록 설계했습니다.',
+      '마지막 기록 미션에서 오늘의 선택과 다음 실행 계획을 정리할 수 있습니다.',
+    ],
+  },
+  cheosa: {
+    courseName: '처사형 자연 사색 코스',
+    title: '처사형 선비길',
+    subtitle: '자연과 고요함을 따라 천천히 머무는 영주의 3D 사색 여정',
+    routeLabel: '소수서원 → 선비촌 → 부석사 → 무섬마을 → 선비의 한마디',
+    style: '자연 풍경 · 느린 산책 · 마음 비움',
+    target: '처사형 선비에게 어울리는 자연과 여유 중심 코스',
+    reasons: [
+      '부석사와 무섬마을의 고요한 풍경을 중심으로 느린 여행감을 강화했습니다.',
+      '소수서원과 선비촌을 앞쪽에 두어 조용한 배움 뒤 자연 사색으로 이어지게 했습니다.',
+      '마지막 기록 미션에서 마음에 남은 풍경과 생각을 한 문장으로 저장할 수 있습니다.',
+    ],
+  },
+  uguk: {
+    courseName: '우국형 역사 실천 코스',
+    title: '우국형 선비길',
+    subtitle: '역사와 책임의 감각을 따라 움직이는 영주의 3D 실천 여정',
+    routeLabel: '소수서원 → 선비촌 → 부석사 → 무섬마을 → 선비의 한마디',
+    style: '역사 해설 · 공동체 가치 · 실천 기록',
+    target: '우국형 선비에게 어울리는 책임과 실천 중심 코스',
+    reasons: [
+      '소수서원과 선비촌을 통해 선비 정신의 공적 의미를 먼저 확인하도록 구성했습니다.',
+      '부석사와 무섬마을을 연결해 장소가 품은 역사와 공동체의 이야기를 따라갑니다.',
+      '마지막 기록 미션에서 오늘의 배움을 행동과 책임의 언어로 남길 수 있습니다.',
+    ],
+  },
+}
+
 const evidenceChips = ['TourAPI', '역사문화', '편의시설', '이동 거리', '사용자 성향']
 
 const legendItems = [
@@ -509,6 +572,15 @@ function imageAsset(fileName: string) {
   return encodeURI(`/images/new/${fileName}`)
 }
 
+function getCourseType(value: string | null | undefined): SeonbiType {
+  if (!value) return 'toegye'
+  const normalizedValue = value.toLowerCase()
+  const exactType = seonbiTypes.find((type) => type === normalizedValue)
+  if (exactType) return exactType
+
+  return seonbiTypes.find((type) => normalizedValue.includes(type)) ?? 'toegye'
+}
+
 function isMissionSpotId(spotId: string | null | undefined): spotId is MissionSpotId {
   return routePreviewStops.some((stop) => stop.spotId === spotId)
 }
@@ -521,6 +593,8 @@ export function GoogleTour3DPreviewPage() {
   const markerElementsRef = useRef<Map<string, GoogleMap3DMarkerElement>>(new Map())
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
+  const courseType = getCourseType(searchParams.get('course'))
+  const courseCopy = coursePreviewCopy[courseType]
   const isMissionMode = searchParams.get('mode') === 'mission'
   const requestedPlaceId = searchParams.get('place')
   const requestedSpot = useMemo(
@@ -541,7 +615,7 @@ export function GoogleTour3DPreviewPage() {
   )
   const [isCourseSaved, setIsCourseSaved] = useState(() => {
     try {
-      return window.localStorage.getItem('yeongju-toegye-3d-course-saved') === 'true'
+      return window.localStorage.getItem(`yeongju-${courseType}-3d-course-saved`) === 'true'
     } catch {
       return false
     }
@@ -586,11 +660,17 @@ export function GoogleTour3DPreviewPage() {
   }))
   const currentMissionCompletionRoute = `/mission-complete/${currentMissionId}`
   const nextMissionRoute = nextMissionStop
-    ? `/tour-3d?mode=mission&place=${nextMissionStop.spotId}`
+    ? `/tour-3d?mode=mission&place=${nextMissionStop.spotId}&course=${courseType}`
     : currentMissionCompletionRoute
   const previousMissionRoute = previousMissionStop
-    ? `/tour-3d?mode=mission&place=${previousMissionStop.spotId}`
-    : '/tour-3d'
+    ? `/tour-3d?mode=mission&place=${previousMissionStop.spotId}&course=${courseType}`
+    : `/tour-3d?course=${courseType}`
+  const currentSummaryRows = summaryRows.map((row) => {
+    if (row.label === '코스명') return { ...row, value: courseCopy.courseName }
+    if (row.label === '여행 스타일') return { ...row, value: courseCopy.style }
+    if (row.label === '추천 대상') return { ...row, value: courseCopy.target }
+    return row
+  })
 
   useEffect(() => {
     let isDisposed = false
@@ -752,12 +832,12 @@ export function GoogleTour3DPreviewPage() {
 
   function saveCourse() {
     try {
-      window.localStorage.setItem('yeongju-toegye-3d-course-saved', 'true')
+      window.localStorage.setItem(`yeongju-${courseType}-3d-course-saved`, 'true')
     } catch {
       // Saving is progressive enhancement; the UI state still confirms the action.
     }
     setIsCourseSaved(true)
-    setSaveStatusMessage('퇴계형 사색 코스를 저장했습니다.')
+    setSaveStatusMessage(`${courseCopy.courseName}를 저장했습니다.`)
   }
 
   if (isMissionMode) {
@@ -772,7 +852,7 @@ export function GoogleTour3DPreviewPage() {
               <img src={imageAsset('image-removebg-preview (83).png')} alt="" />
               코스 진행
             </span>
-            <h1 id="tour3d-mission-title">퇴계형 선비길 미션 진행</h1>
+            <h1 id="tour3d-mission-title">{courseCopy.title} 미션 진행</h1>
             <p>{currentMissionStop.name}에서 이어지는 배움과 성찰의 여정</p>
 
             <div className="tour3d-mission-progress-shell">
@@ -1047,8 +1127,8 @@ export function GoogleTour3DPreviewPage() {
             <img src={imageAsset('image-Photoroom (40).png')} alt="" />
             3D 코스 프리뷰
           </span>
-          <h1>퇴계형 선비길 3D 코스 미리보기</h1>
-          <p>깊은 성찰과 배움을 따라 걷는 영주의 3D 문화 여정</p>
+          <h1>{courseCopy.title} 3D 코스 미리보기</h1>
+          <p>{courseCopy.subtitle}</p>
         </section>
 
         <section className="tour3d-preview-grid">
@@ -1160,9 +1240,9 @@ export function GoogleTour3DPreviewPage() {
                 </button>
               </div>
 
-              <article className="tour3d-route-card" aria-label="퇴계형 사색 코스 정보">
-                <span>퇴계형 사색 코스</span>
-                <strong>소수서원 → 선비촌 → 부석사 → 무섬마을 → 선비의 한마디</strong>
+              <article className="tour3d-route-card" aria-label={`${courseCopy.courseName} 정보`}>
+                <span>{courseCopy.courseName}</span>
+                <strong>{courseCopy.routeLabel}</strong>
                 <dl>
                   <div>
                     <dt>예상 소요</dt>
@@ -1204,11 +1284,11 @@ export function GoogleTour3DPreviewPage() {
           <aside className="tour3d-summary-panel" aria-label="AI 추천 코스 요약">
             <div className="tour3d-panel-heading">
               <span>AI 추천 코스 요약</span>
-              <h2>퇴계형 사색 코스</h2>
+              <h2>{courseCopy.courseName}</h2>
             </div>
 
             <dl className="tour3d-summary-list">
-              {summaryRows.map((row) => (
+              {currentSummaryRows.map((row) => (
                 <div key={row.label}>
                   <dt>
                     <img src={imageAsset(row.icon)} alt="" />
@@ -1222,7 +1302,7 @@ export function GoogleTour3DPreviewPage() {
             <section className="tour3d-reason-panel" aria-labelledby="tour3d-reason-title">
               <h3 id="tour3d-reason-title">AI가 이 코스를 추천한 이유</h3>
               <ul>
-                {recommendationReasons.map((reason) => (
+                {courseCopy.reasons.map((reason) => (
                   <li key={reason}>{reason}</li>
                 ))}
               </ul>
@@ -1267,14 +1347,14 @@ export function GoogleTour3DPreviewPage() {
           <button
             type="button"
             className="tour3d-action-button tour3d-action-button--back"
-            onClick={() => navigate('/result')}
+            onClick={() => navigate(`/test/result/${courseType}`)}
           >
             이전으로
           </button>
           <button
             type="button"
             className="tour3d-action-button tour3d-action-button--primary"
-            onClick={() => navigate('/tour-3d?mode=mission&place=sosu-seowon')}
+            onClick={() => navigate(`/tour-3d?mode=mission&place=sosu-seowon&course=${courseType}`)}
           >
             이 코스로 시작하기
           </button>

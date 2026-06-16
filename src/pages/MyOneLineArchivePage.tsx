@@ -105,10 +105,10 @@ const myOneLineData = {
 }
 
 const sidebarItems = [
-  { label: '나의 선비길 기록', asset: assets.totalIcon, active: false },
-  { label: '나의 한마디', asset: 'image-Photoroom (69).png', active: true },
-  { label: '획득 배지', asset: assets.badgeIcon, active: false },
-  { label: '저장한 코스', asset: assets.courseIcon, active: false },
+  { label: '나의 선비길 기록', asset: assets.totalIcon, to: '/mypage/records', active: false },
+  { label: '나의 한마디', asset: 'image-Photoroom (69).png', to: '/mypage/one-line', active: true },
+  { label: '획득 배지', asset: assets.badgeIcon, to: '/mypage/badges', active: false },
+  { label: '저장한 코스', asset: assets.courseIcon, to: '/mypage/saved-courses', active: false },
 ]
 
 function imageAsset(fileName: string) {
@@ -212,15 +212,15 @@ function MyPageSidebar() {
         <h2>마이페이지</h2>
         <nav aria-label="마이페이지 세부 메뉴">
           {sidebarItems.map((item) => (
-            <button
+            <Link
               className={item.active ? 'is-active' : ''}
               key={item.label}
-              type="button"
+              to={item.to}
               aria-current={item.active ? 'page' : undefined}
             >
               <img src={imageAsset(item.asset)} alt="" />
               <span>{item.label}</span>
-            </button>
+            </Link>
           ))}
         </nav>
       </div>
