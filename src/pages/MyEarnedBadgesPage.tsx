@@ -8,6 +8,8 @@ import {
 } from '../features/auth/authApi'
 import './MyBadgeArchivePage.css'
 
+export { MyPage } from './MySeonbiRecordsPage'
+
 interface BadgeRecord {
   id: string
   name: string
@@ -111,7 +113,7 @@ function imageAsset(fileName: string) {
   return encodeURI(`/images/new/${fileName}`)
 }
 
-export function MyPage() {
+export function MyEarnedBadgesPage() {
   const [user, setUser] = useState<AuthUser | null>(() => getStoredAuthUser())
   const [shareMessage, setShareMessage] = useState('')
   const navigate = useNavigate()

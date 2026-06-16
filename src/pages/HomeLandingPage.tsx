@@ -153,7 +153,11 @@ const keywordOptions = ['조용함', '체험', '역사문화', '힐링', '실천
 type HomeImageProps = ImgHTMLAttributes<HTMLImageElement> & {
   eager?: boolean
   priority?: boolean
+  responsiveWidths?: readonly number[]
 }
+
+const HOME_OPTIMIZED_IMAGE_PREFIX = '/images/home/optimized/'
+const HOME_RESPONSIVE_IMAGE_PREFIX = '/images/home/responsive/'
 
 const companionOptionIcons: Record<string, string> = {
   혼자: HOME_ASSETS.iconSolo,
@@ -393,10 +397,14 @@ export function HomeLandingPage() {
     const initialSection =
       sections.find((section) => section.id === snapSections[0].id) ?? sections[0]
     initialSection.classList.add('is-visible')
+    initialSection.classList.add('is-background-ready')
 
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     if (prefersReducedMotion || !('IntersectionObserver' in window)) {
-      sections.forEach((section) => section.classList.add('is-visible'))
+      sections.forEach((section) => {
+        section.classList.add('is-visible')
+        section.classList.add('is-background-ready')
+      })
       return
     }
 
@@ -430,6 +438,7 @@ export function HomeLandingPage() {
         entries.forEach((entry) => {
           if (!entry.isIntersecting) return
           entry.target.classList.add('is-visible')
+          entry.target.classList.add('is-background-ready')
 
           const section = entry.target as HTMLElement
           if (section.id) {
@@ -444,7 +453,23 @@ export function HomeLandingPage() {
       },
     )
 
+    const backgroundObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return
+          entry.target.classList.add('is-background-ready')
+          backgroundObserver.unobserve(entry.target)
+        })
+      },
+      {
+        root: usesDesktopSnap ? container : null,
+        rootMargin: '45% 0px',
+        threshold: 0,
+      },
+    )
+
     sections.forEach((section) => observer.observe(section))
+    sections.forEach((section) => backgroundObserver.observe(section))
     handleTrackedScroll()
     const scrollTarget = usesDesktopSnap && container ? container : window
     const activeSectionIntervalId = window.setInterval(updateActiveSectionFromScroll, 350)
@@ -452,6 +477,7 @@ export function HomeLandingPage() {
 
     return () => {
       observer.disconnect()
+      backgroundObserver.disconnect()
       scrollTarget.removeEventListener('scroll', handleTrackedScroll)
       window.clearInterval(activeSectionIntervalId)
       if (scrollFrameId) {
@@ -812,16 +838,44 @@ function HomeImage({
   fetchPriority,
   loading,
   priority = false,
+  responsiveWidths,
+  sizes,
+  src,
+  srcSet,
   ...props
 }: HomeImageProps) {
+  const responsiveSrcSet =
+    typeof src === 'string' && responsiveWidths
+      ? getHomeResponsiveSrcSet(src, responsiveWidths)
+      : undefined
+
   return (
     <img
       {...props}
+      sizes={sizes}
+      src={src}
+      srcSet={srcSet ?? responsiveSrcSet}
       decoding={decoding ?? 'async'}
       fetchPriority={fetchPriority ?? (priority ? 'high' : undefined)}
       loading={loading ?? (eager || priority ? 'eager' : 'lazy')}
     />
   )
+}
+
+function getHomeResponsiveSrcSet(src: string, widths: readonly number[]) {
+  if (!src.startsWith(HOME_OPTIMIZED_IMAGE_PREFIX) || !src.endsWith('.webp')) {
+    return undefined
+  }
+
+  const fileName = src.slice(HOME_OPTIMIZED_IMAGE_PREFIX.length)
+  const baseName = fileName.slice(0, -'.webp'.length)
+
+  return widths
+    .map((width) => {
+      const responsiveSrc = `${HOME_RESPONSIVE_IMAGE_PREFIX}${baseName}-${width}.webp`
+      return `${encodeURI(responsiveSrc)} ${width}w`
+    })
+    .join(', ')
 }
 
 function OrnamentalButton({
@@ -876,6 +930,8 @@ function HeroProductShowcase() {
           alt=""
           aria-hidden="true"
           priority
+          responsiveWidths={[480, 960]}
+          sizes="(min-width: 1200px) 54vw, 92vw"
         />
         <HomeImage src={HOME_ASSETS.heroFrame} alt="" aria-hidden="true" eager />
       </div>
@@ -886,7 +942,14 @@ function HeroProductShowcase() {
       </div>
 
       <div className="home-showcase-top-card">
-        <HomeImage src={HOME_ASSETS.heroChoicePanel} alt="" aria-hidden="true" eager />
+        <HomeImage
+          src={HOME_ASSETS.heroChoicePanel}
+          alt=""
+          aria-hidden="true"
+          eager
+          responsiveWidths={[480, 960, 1440]}
+          sizes="(min-width: 1200px) 24vw, 82vw"
+        />
         <strong>나의 여행 성향 선택</strong>
         <div>
           {[
@@ -904,12 +967,26 @@ function HeroProductShowcase() {
       </div>
 
       <div className="home-showcase-weather-card" aria-label="영주시 현재 날씨">
-        <HomeImage src={HOME_ASSETS.heroWeatherPanel} alt="" aria-hidden="true" eager />
+        <HomeImage
+          src={HOME_ASSETS.heroWeatherPanel}
+          alt=""
+          aria-hidden="true"
+          eager
+          responsiveWidths={[480, 960, 1440]}
+          sizes="(min-width: 1200px) 12vw, 48vw"
+        />
         <span className="home-sr-only">영주시 24도</span>
       </div>
 
       <article className="home-ai-course-card">
-        <HomeImage src={HOME_ASSETS.heroAiCourseFrame} alt="" aria-hidden="true" eager />
+        <HomeImage
+          src={HOME_ASSETS.heroAiCourseFrame}
+          alt=""
+          aria-hidden="true"
+          eager
+          responsiveWidths={[480, 960, 1440]}
+          sizes="(min-width: 1200px) 24vw, 82vw"
+        />
         <h2>AI 추천 코스</h2>
         <strong>소수서원 → 선비촌 → 무섬마을</strong>
         <p>추천 신뢰도</p>
@@ -934,7 +1011,14 @@ function HeroProductShowcase() {
       </article>
 
       <article className="home-next-stop-card">
-        <HomeImage src={HOME_ASSETS.heroNextStopPanel} alt="" aria-hidden="true" eager />
+        <HomeImage
+          src={HOME_ASSETS.heroNextStopPanel}
+          alt=""
+          aria-hidden="true"
+          eager
+          responsiveWidths={[480, 960]}
+          sizes="(min-width: 1200px) 15vw, 64vw"
+        />
         <span>다음 목적지</span>
         <strong>선비촌</strong>
         <p>1.8km · 8분</p>
@@ -943,7 +1027,14 @@ function HeroProductShowcase() {
 
       <div className="home-showcase-side">
         <article>
-          <HomeImage src={HOME_ASSETS.heroAudioPanel} alt="" aria-hidden="true" eager />
+          <HomeImage
+            src={HOME_ASSETS.heroAudioPanel}
+            alt=""
+            aria-hidden="true"
+            eager
+            responsiveWidths={[480, 960]}
+            sizes="(min-width: 1200px) 16vw, 76vw"
+          />
           <h2>AI 추천 해설</h2>
           <p>소수서원은 우리나라 최초의 사액으로, 선비 정신의 중심지입니다.</p>
           <div className="home-waveform" aria-hidden="true">
@@ -953,7 +1044,14 @@ function HeroProductShowcase() {
           </div>
         </article>
         <article>
-          <HomeImage src={HOME_ASSETS.heroEvidencePanel} alt="" aria-hidden="true" eager />
+          <HomeImage
+            src={HOME_ASSETS.heroEvidencePanel}
+            alt=""
+            aria-hidden="true"
+            eager
+            responsiveWidths={[480, 960]}
+            sizes="(min-width: 1200px) 16vw, 76vw"
+          />
           <h2>AI 근거</h2>
           <dl>
             <div>
@@ -974,7 +1072,13 @@ function HeroProductShowcase() {
       </div>
 
       <div className="home-showcase-controls" aria-hidden="true">
-        <HomeImage src={HOME_ASSETS.heroMapButtonPanel} alt="" eager />
+        <HomeImage
+          src={HOME_ASSETS.heroMapButtonPanel}
+          alt=""
+          eager
+          responsiveWidths={[480, 960, 1440]}
+          sizes="(min-width: 1200px) 18vw, 70vw"
+        />
         <HomeImage src={HOME_ASSETS.iconSettings} alt="" eager />
         <HomeImage src={HOME_ASSETS.zoomControl} alt="" eager />
       </div>
@@ -1041,7 +1145,13 @@ function CoreFeaturePreview({ variant }: { variant: VisualVariant }) {
   if (variant === 'course3d') {
     return (
       <div className="home-core-preview home-core-preview--course" aria-hidden="true">
-        <HomeImage className="home-core-course-art" src={HOME_ASSETS.stepCourse} alt="" />
+        <HomeImage
+          className="home-core-course-art"
+          src={HOME_ASSETS.stepCourse}
+          alt=""
+          responsiveWidths={[480, 960]}
+          sizes="(min-width: 1200px) 24vw, 82vw"
+        />
         <div className="home-core-route-line">
           <span>소수서원</span>
           <span>부석사</span>
@@ -1118,7 +1228,12 @@ function CoreFeaturePreview({ variant }: { variant: VisualVariant }) {
         <time>2024.05.15</time>
         <h4>부석사에서의 사색</h4>
         <p>산사의 고요한 풍경 속에서 자연과 전통의 어울림이 아름다움에 마음이 편안해졌습니다.</p>
-        <HomeImage src={HOME_ASSETS.stepCourse} alt="" />
+        <HomeImage
+          src={HOME_ASSETS.stepCourse}
+          alt=""
+          responsiveWidths={[480, 960]}
+          sizes="(min-width: 1200px) 18vw, 80vw"
+        />
         <span>부석사 · 안심일</span>
       </article>
     </div>
