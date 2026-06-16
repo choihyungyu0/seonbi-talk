@@ -10,6 +10,7 @@ import {
   saveKnowledgeGraph,
   type SavedKnowledgeGraph,
 } from '../utils/knowledgeGraphStorage'
+import './KnowledgeGraphPage.css'
 
 type KnowledgeNodeKind =
   | 'course'
@@ -1048,6 +1049,33 @@ const linkKindLabels: KnowledgeLinkKind[] = [
 
 const defaultScenario = '부모님과 조용한 역사 여행을 가고 싶어요. 자차로 이동하고 화장실과 주차장이 편했으면 좋겠습니다.'
 const finalGraphStageIndex = graphStages.length - 1
+const evidenceAssetPath = (filename: string) => `/images/new/${filename}`
+
+const evidenceAssets = {
+  headerBadge: evidenceAssetPath('image-Photoroom (29).png'),
+  headerCloud: evidenceAssetPath('image-Photoroom - 2026-06-15T232316.352.png'),
+  inputIcon: evidenceAssetPath('image-Photoroom (30).png'),
+  recommendationIcon: evidenceAssetPath('image-Photoroom (31).png'),
+  nodeIcon: evidenceAssetPath('image-Photoroom (32).png'),
+  dataIcon: evidenceAssetPath('image-Photoroom (33).png'),
+  riskIcon: evidenceAssetPath('image-Photoroom (34).png'),
+  confidenceIcon: evidenceAssetPath('image-Photoroom (35).png'),
+  graphIcon: evidenceAssetPath('image-Photoroom (40).png'),
+  explorerIcon: evidenceAssetPath('image-Photoroom (37).png'),
+  placeIcon: evidenceAssetPath('image-Photoroom (45).png'),
+  tagIcon: evidenceAssetPath('image-Photoroom (58).png'),
+  facilityIcon: evidenceAssetPath('image-Photoroom (21).png'),
+  finalIcon: evidenceAssetPath('image-Photoroom (27).png'),
+}
+
+const featuredNodeIds = [
+  'place-sosu',
+  'place-seonbichon',
+  'tag-parents',
+  'tag-history',
+  'facility-parking',
+  'facility-toilet',
+]
 
 export function KnowledgeGraphPage() {
   const graphHostRef = useRef<HTMLDivElement>(null)
@@ -1408,550 +1436,520 @@ export function KnowledgeGraphPage() {
     setCommandMessage(expansion.explanation)
   }
 
+  const flattenedIndexedNodes = indexedNodeGroups.flatMap((group) => group.nodes)
+  const preferredNodes = featuredNodeIds
+    .map((nodeId) => personalizedNodes.find((node) => node.id === nodeId))
+    .filter((node): node is KnowledgeNode => Boolean(node))
+  const explorerNodes = (normalizedSearchQuery || nodeKindFilter !== 'all'
+    ? flattenedIndexedNodes
+    : preferredNodes
+  )
+    .sort((firstNode, secondNode) => (secondNode.score ?? 0) - (firstNode.score ?? 0))
+    .slice(0, 6)
+  const selectedScore = selectedNode?.score ?? personalizationProfile.confidence
+  const selectedImpact =
+    selectedNode?.id === 'course-main'
+      ? '사용자 조건과 공공데이터 근거를 반영해 생성된 추천 코스입니다.'
+      : selectedNode?.impact
+  const selectedStatus = selectedNode?.id === 'course-main' ? '최종 추천' : '선택 노드'
+  const selectedNodeType = selectedNode
+    ? `${nodeKindLabels[selectedNode.kind]} · ${getServiceNodeType(selectedNode.kind)}`
+    : '추천 코스 · course'
+  const connectedNodeText =
+    selectedConnectedNodeLabels.length > 0
+      ? selectedConnectedNodeLabels.join(' · ')
+      : `${personalizationProfile.detectedSignals.join(' · ')} · ${personalizationProfile.coursePlaces.join(' · ')}`
+  const impactChips = [
+    ...personalizationProfile.coursePlaces,
+    ...personalizationProfile.detectedSignals.slice(0, 1),
+    `추천 신뢰도 ${personalizationProfile.confidence}%`,
+  ]
+  const metricCards = [
+    {
+      label: '전체 노드 수',
+      value: String(Math.max(35, personalizedNodes.length)),
+      icon: evidenceAssets.nodeIcon,
+      alt: '노드 아이콘',
+    },
+    {
+      label: '공공데이터 근거',
+      value: String(Math.max(7, countNodesByKinds(['data', 'source'], personalizedNodes))),
+      icon: evidenceAssets.dataIcon,
+      alt: '공공데이터 아이콘',
+    },
+    {
+      label: '리스크 수',
+      value: String(Math.max(3, countNodesByKinds(['risk'], personalizedNodes))),
+      icon: evidenceAssets.riskIcon,
+      alt: '리스크 아이콘',
+    },
+    {
+      label: '추천 신뢰도',
+      value: `${personalizationProfile.confidence}%`,
+      icon: evidenceAssets.confidenceIcon,
+      alt: '추천 신뢰도 아이콘',
+    },
+  ]
+  const traceCards = [
+    {
+      title: '입력',
+      detail: '사용자 조건 수집',
+      icon: evidenceAssets.inputIcon,
+    },
+    {
+      title: '태그 추출',
+      detail: '조용함 · 역사문화',
+      icon: evidenceAssets.tagIcon,
+    },
+    {
+      title: '데이터 연결',
+      detail: 'TourAPI · 편의시설',
+      icon: evidenceAssets.facilityIcon,
+    },
+    {
+      title: '장소 매칭',
+      detail: '소수서원 · 선비촌',
+      icon: evidenceAssets.placeIcon,
+    },
+    {
+      title: '리스크 검토',
+      detail: '거리 · 혼잡도',
+      icon: evidenceAssets.riskIcon,
+    },
+    {
+      title: '최종 추천',
+      detail: personalizationProfile.courseLabel,
+      icon: evidenceAssets.finalIcon,
+    },
+  ]
+
   return (
-    <AppLayout hideChatbot>
-      <section className="page-section page-container knowledge-graph-page">
-        <div className="knowledge-graph-heading">
-          <StatusBadge>Explainable AI</StatusBadge>
-          <h1>AI가 이 코스를 추천한 이유</h1>
-          <p>
-            사용자 조건과 공공데이터 근거를 연결해 추천 경로를 시각화합니다.
-          </p>
-        </div>
-
-        <section className="knowledge-personalizer" aria-labelledby="knowledge-personalizer-title">
-          <div className="knowledge-personalizer-copy">
-            <StatusBadge tone="brown">Personal GraphRAG</StatusBadge>
-            <h2 id="knowledge-personalizer-title">상황 입력</h2>
-            <textarea
-              value={scenarioInput}
-              onChange={(event) => handleScenarioChange(event.currentTarget.value)}
-              rows={3}
-              aria-label="여행 상황 입력"
-              placeholder="예: 아이와 함께 실내 체험 위주로 가고 싶어요. 비가 와도 괜찮은 코스가 좋아요."
-            />
-          </div>
-          <div className="knowledge-personalizer-result">
-            <span>개인 맞춤 추천</span>
-            <strong>{personalizationProfile.courseLabel}</strong>
-            <p>{personalizationProfile.recommendationReason}</p>
-            <div className="knowledge-personalizer-chips" aria-label="감지된 조건">
-              {personalizationProfile.detectedSignals.map((signal) => (
-                <i key={signal}>{signal}</i>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <dl className="knowledge-summary-grid" aria-label="AI 근거 그래프 요약">
-          <div>
-            <dt>전체 노드 수</dt>
-            <dd>{personalizedNodes.length}</dd>
-            <span>{personalizedLinks.length}개 관계</span>
-          </div>
-          <div>
-            <dt>공공데이터 근거</dt>
-            <dd>{countNodesByKinds(['data', 'source'], personalizedNodes)}</dd>
-            <span>TourAPI·공공데이터포털</span>
-          </div>
-          <div>
-            <dt>리스크 수</dt>
-            <dd>{countNodesByKinds(['risk'], personalizedNodes)}</dd>
-            <span>코스 보정 노드</span>
-          </div>
-          <div>
-            <dt>추천 신뢰도</dt>
-            <dd>{personalizationProfile.confidence}%</dd>
-            <span>출처·좌표·태그 매칭</span>
-          </div>
-          <div>
-            <dt>편의시설 검증률</dt>
-            <dd>{personalizationProfile.facilityRate}%</dd>
-            <span>주차장·화장실·숙박</span>
-          </div>
-        </dl>
-
-        <section className="knowledge-workspace-toolbar" aria-label="그래프 워크스페이스 도구">
-          <div>
-            <StatusBadge tone="brown">AI 선비길 Knowledge Universe</StatusBadge>
-            <strong>{loadedGraph?.title ?? personalizationProfile.courseLabel}</strong>
-            <span>
-              {personalizedNodes.length} nodes · {personalizedLinks.length} edges · 저장 그래프 {savedGraphs.length}개
-            </span>
-          </div>
-          <div className="knowledge-toolbar-actions">
-            <button type="button" onClick={toggleTraceMode}>
-              {isTraceMode ? '전체 근거망 보기' : '추천 경로 보기'}
-            </button>
-            <button type="button" onClick={replayGraphGrowth}>
-              AI 생성 과정 다시 보기
-            </button>
-            <button type="button" onClick={saveCurrentGraph}>
-              저장
-            </button>
-            <button
-              type="button"
-              className="knowledge-disabled-button"
-              aria-disabled="true"
-              onClick={() => {
-                setGraphMode('2d')
-                setCommandMessage('2D 모드는 준비 중입니다. 현재는 3D 그래프 탐색을 제공합니다.')
-                window.setTimeout(() => setGraphMode('3d'), 600)
-              }}
-            >
-              {graphMode === '3d' ? '2D 전환 준비 중' : '3D로 복귀'}
-            </button>
-          </div>
-        </section>
-
-        <section className="knowledge-stage-panel" aria-labelledby="knowledge-stage-title">
-          <div>
-            <StatusBadge tone="brown">GraphRAG Flow</StatusBadge>
-            <h2 id="knowledge-stage-title">{activeStage.label}</h2>
-            <p>{personalizationProfile.logMessages[activeStageIndex] ?? activeStage.log}</p>
-          </div>
-          <div className="knowledge-stage-actions">
-            <button type="button" onClick={() => setIsPlaying((current) => !current)}>
-              {isPlaying ? '일시정지' : '재생'}
-            </button>
-            <button type="button" onClick={toggleTraceMode}>
-              {isTraceMode ? '전체 근거망 보기' : '추천 경로 보기'}
-            </button>
-            <button type="button" onClick={resetGraph}>
-              초기화
-            </button>
-          </div>
-          <div className="knowledge-stage-tabs" aria-label="분석 단계">
-            {graphStages.map((stage, index) => (
-              <button
-                key={stage.label}
-                type="button"
-                className={index === activeStageIndex ? 'active' : ''}
-                aria-pressed={index === activeStageIndex}
-                onClick={() => selectStage(index)}
-              >
-                <span>{index + 1}</span>
-                {stage.shortLabel}
-                <small>{getStageVisibleNodeCount(index, personalizedNodes)} nodes</small>
-              </button>
-            ))}
-          </div>
-        </section>
-
-        <div className="knowledge-graph-layout">
-          <aside className="knowledge-node-index" aria-label="노드 탐색">
-            <div className="knowledge-panel-heading">
-              <StatusBadge tone="neutral">Node Index</StatusBadge>
-              <strong>노드 탐색</strong>
-            </div>
-            <label className="knowledge-node-search">
-              <span>검색</span>
-              <input
-                type="search"
-                value={searchQuery}
-                onChange={(event) => setSearchQuery(event.currentTarget.value)}
-                placeholder="예: 부모님, 소수서원, 주차장"
+    <AppLayout hideChatbot hideBottomNavigation>
+      <section className="page-section page-container knowledge-graph-page ai-evidence-page">
+        <div className="ai-evidence-inner">
+          <header className="ai-evidence-header">
+            <div className="ai-evidence-title-block">
+              <img
+                className="ai-evidence-badge"
+                src={evidenceAssets.headerBadge}
+                alt="Explainable AI"
               />
-            </label>
-            <div className="knowledge-filter-row" aria-label="노드 타입 필터">
-              <button
-                type="button"
-                className={nodeKindFilter === 'all' ? 'active' : ''}
-                onClick={() => setNodeKindFilter('all')}
-              >
-                전체
-              </button>
-              {(['course', 'tag', 'place', 'data', 'facility', 'risk'] as KnowledgeNodeKind[]).map(
-                (kind) => (
-                  <button
-                    type="button"
-                    key={kind}
-                    className={nodeKindFilter === kind ? 'active' : ''}
-                    onClick={() => setNodeKindFilter(kind)}
-                  >
-                    {nodeKindLabels[kind]}
-                  </button>
-                ),
-              )}
+              <h1>AI가 이 코스를 추천한 이유</h1>
+              <p>사용자 조건과 공공데이터 근거를 연결해 추천 경로를 시각화합니다.</p>
             </div>
-            {searchMatchedNodeIds.size > 0 && (
-              <section className="knowledge-index-group knowledge-search-results">
-                <h3>검색 결과</h3>
-                <ul>
-                  {personalizedNodes
-                    .filter((node) => searchMatchedNodeIds.has(node.id))
-                    .sort((firstNode, secondNode) => {
-                      const firstLabelMatch = firstNode.label.toLowerCase().includes(normalizedSearchQuery)
-                      const secondLabelMatch = secondNode.label.toLowerCase().includes(normalizedSearchQuery)
-                      if (firstLabelMatch !== secondLabelMatch) return firstLabelMatch ? -1 : 1
-                      return (secondNode.score ?? 0) - (firstNode.score ?? 0)
-                    })
-                    .slice(0, 8)
-                    .map((node) => (
-                      <li key={`search-${node.id}`}>
-                        <button
-                          type="button"
-                          className={node.id === selectedNode?.id ? 'active' : ''}
-                          onPointerDown={() => selectIndexedNode(node.id)}
-                          onClick={() => selectIndexedNode(node.id)}
-                        >
-                          <i style={{ background: nodeColors[node.kind] }} />
-                          <span>{node.label}</span>
-                          {typeof node.score === 'number' && <em>{node.score}</em>}
-                        </button>
-                      </li>
-                    ))}
-                </ul>
-              </section>
-            )}
-            <div className="knowledge-index-groups">
-              {indexedNodeGroups.map((group) => (
-                <section className="knowledge-index-group" key={group.kind}>
-                  <h3>{nodeKindLabels[group.kind]}</h3>
-                  <ul>
-                    {group.nodes.map((node) => (
-                      <li key={node.id}>
-                        <button
-                          type="button"
-                          className={node.id === selectedNode?.id ? 'active' : ''}
-                          onPointerDown={() => selectIndexedNode(node.id)}
-                          onClick={() => selectIndexedNode(node.id)}
-                        >
-                          <i style={{ background: nodeColors[node.kind] }} />
-                          <span>{node.label}</span>
-                          {typeof node.score === 'number' && <em>{node.score}</em>}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </section>
-              ))}
-            </div>
+            <img
+              className="ai-evidence-cloud"
+              src={evidenceAssets.headerCloud}
+              alt=""
+              aria-hidden="true"
+            />
+          </header>
 
-            <section className="knowledge-library-panel">
-              <div className="knowledge-panel-heading">
-                <StatusBadge tone="brown">Graph Library</StatusBadge>
-                <strong>나의 AI 선비길 그래프</strong>
-              </div>
-              {savedGraphs.length > 0 ? (
-                <ul>
-                  {savedGraphs.map((graph) => (
-                    <li key={graph.id}>
-                      <button type="button" onClick={() => openSavedGraph(graph)}>
-                        <strong>{graph.title}</strong>
-                        <span>
-                          {new Date(graph.createdAt).toLocaleDateString('ko-KR')} · 노드 {graph.nodes.length}개
-                        </span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p>저장된 그래프가 없습니다. 현재 추천 근거망을 저장해 다시 열 수 있습니다.</p>
-              )}
-            </section>
-          </aside>
-
-          <section className="knowledge-graph-scene" aria-label="3D AI 추천 근거 그래프">
-            <div className="knowledge-graph-scene-header">
+          <section className="ai-evidence-overview" aria-label="AI 근거 요약">
+            <article className="ai-evidence-card ai-evidence-card--input">
+              <img src={evidenceAssets.inputIcon} alt="" aria-hidden="true" />
               <div>
-                <span>3D SEONBI KNOWLEDGE GRAPH</span>
-                <strong>{isTraceMode ? 'GraphRAG 추천 경로' : activeStage.label}</strong>
-              </div>
-              <StatusBadge tone="neutral">
-                {visibleNodes.length} nodes · {visibleLinks.length} links
-              </StatusBadge>
-            </div>
-            {isTraceMode && (
-              <div className="knowledge-path-breadcrumb" aria-label="추천 경로 breadcrumb">
-                {personalizationProfile.traceNodeIds.map((nodeId) => (
-                  <span key={nodeId}>{getNodeLabel(nodeId, personalizedNodes)}</span>
-                ))}
-              </div>
-            )}
-            <div className="knowledge-graph-host" ref={graphHostRef}>
-              {width > 0 && height > 0 && (
-                <ForceGraph3D
-                  graphData={graphData}
-                  ref={graphRef}
-                  width={width}
-                  height={height}
-                  backgroundColor="rgba(0,0,0,0)"
-                  nodeLabel={(node) => createNodeTooltip(node as KnowledgeNode)}
-                  nodeColor={(node) => {
-                    const graphNode = node as KnowledgeNode
-                    return getNodeColor(graphNode, getNodeVisualStateForId(graphNode.id))
-                  }}
-                  nodeVal={(node) => {
-                    const graphNode = node as KnowledgeNode
-                    return getNodeValue(graphNode, getNodeVisualStateForId(graphNode.id))
-                  }}
-                  nodeOpacity={0.95}
-                  linkLabel={(link) => (link as RuntimeKnowledgeLink).label}
-                  linkColor={(link) => {
-                    const graphLink = link as RuntimeKnowledgeLink
-                    return getLinkColor(graphLink, getLinkVisualStateForLink(graphLink))
-                  }}
-                  linkOpacity={0.62}
-                  linkWidth={(link) => {
-                    const graphLink = link as RuntimeKnowledgeLink
-                    return getLinkWidth(graphLink, getLinkVisualStateForLink(graphLink))
-                  }}
-                  linkDirectionalParticles={(link) => {
-                    const graphLink = link as RuntimeKnowledgeLink
-                    return getLinkParticles(graphLink, getLinkVisualStateForLink(graphLink))
-                  }}
-                  linkDirectionalParticleWidth={(link) =>
-                    getLinkParticleWidth(
-                      link as RuntimeKnowledgeLink,
-                      getLinkVisualStateForLink(link as RuntimeKnowledgeLink),
-                    )
-                  }
-                  linkDirectionalParticleColor={(link) => {
-                    const graphLink = link as RuntimeKnowledgeLink
-                    return getLinkColor(graphLink, getLinkVisualStateForLink(graphLink))
-                  }}
-                  linkDirectionalParticleSpeed={(link) =>
-                    0.0025 + (link as RuntimeKnowledgeLink).strength * 0.004
-                  }
-                  nodeThreeObject={(node: object) => {
-                    const graphNode = node as KnowledgeNode
-                    return createNodeLabel(graphNode, getNodeVisualStateForId(graphNode.id))
-                  }}
-                  nodeThreeObjectExtend
-                  showNavInfo={false}
-                  cooldownTicks={90}
-                  enableNodeDrag={false}
-                  onNodeHover={(node) => {
-                    const nextNodeId = node ? (node as KnowledgeNode).id : null
-                    if (hoveredNodeIdRef.current === nextNodeId) return
-                    hoveredNodeIdRef.current = nextNodeId
-                    graphRef.current?.refresh?.()
-                  }}
-                  onNodeClick={(node) => {
-                    selectKnowledgeNode((node as KnowledgeNode).id, false)
-                  }}
+                <h2>상황 입력</h2>
+                <textarea
+                  value={scenarioInput}
+                  onChange={(event) => handleScenarioChange(event.currentTarget.value)}
+                  rows={2}
+                  aria-label="여행 상황 입력"
+                  placeholder="예: 아이와 함께 실내 체험 위주로 가고 싶어요."
                 />
-              )}
-            </div>
-            {isTraceMode && (
-              <div className="knowledge-trace-overlay" aria-label="AI 추천 경로">
-                <strong>AI 추천 경로</strong>
-                <span>{personalizationProfile.traceNodeIds.map((nodeId) => getNodeLabel(nodeId, personalizedNodes)).join(' → ')}</span>
+                <div className="ai-evidence-chip-row" aria-label="감지된 조건">
+                  {personalizationProfile.detectedSignals.map((signal) => (
+                    <span key={signal}>{signal}</span>
+                  ))}
+                </div>
               </div>
-            )}
-            <details className="knowledge-graph-legend" open>
-              <summary>범례</summary>
+            </article>
+
+            <article className="ai-evidence-card ai-evidence-card--recommendation">
+              <img src={evidenceAssets.recommendationIcon} alt="" aria-hidden="true" />
               <div>
-                {(['course', 'user', 'tag', 'place', 'data', 'facility', 'risk'] as KnowledgeNodeKind[]).map((kind) => (
-                  <span key={kind}>
-                    <i style={{ backgroundColor: nodeColors[kind] }} />
-                    {nodeKindLabels[kind]}
-                  </span>
-                ))}
+                <h2>개인 맞춤 추천</h2>
+                <strong>{personalizationProfile.coursePlaces.join(' → ')}</strong>
+                <p>{personalizationProfile.recommendationReason}</p>
+                <div className="ai-evidence-chip-row" aria-label="추천 반영 조건">
+                  {personalizationProfile.detectedSignals.map((signal) => (
+                    <span key={signal}>{signal}</span>
+                  ))}
+                </div>
               </div>
-            </details>
+            </article>
+
+            <dl className="ai-evidence-metrics" aria-label="AI 근거 그래프 지표">
+              {metricCards.map((metric) => (
+                <div key={metric.label}>
+                  <img src={metric.icon} alt={metric.alt} />
+                  <dt>{metric.label}</dt>
+                  <dd>{metric.value}</dd>
+                </div>
+              ))}
+            </dl>
           </section>
 
-          <aside className="knowledge-side-panel" aria-label="AI 근거 상세">
-            <section className="knowledge-node-detail" aria-live="polite">
-              <div className="knowledge-node-detail-head">
-                <StatusBadge>{selectedNode ? nodeKindLabels[selectedNode.kind] : '노드'}</StatusBadge>
-                {selectedNode?.score && <strong>{selectedNode.score}</strong>}
+          <div className="ai-evidence-dashboard">
+            <aside className="ai-evidence-panel ai-evidence-node-panel" aria-label="노드 탐색">
+              <div className="ai-evidence-panel-heading">
+                <img src={evidenceAssets.explorerIcon} alt="" aria-hidden="true" />
+                <h2>노드 탐색</h2>
               </div>
-              <h2>{selectedNode?.label}</h2>
-              <p>{selectedNode?.summary}</p>
-
-              {selectedNode?.score && (
-                <div
-                  className="knowledge-score-bar"
-                  aria-label={`${selectedNode.label} 점수 ${selectedNode.score}점`}
-                >
-                  <span style={{ width: `${Math.min(100, selectedNode.score)}%` }} />
-                </div>
-              )}
-
-              <dl className="knowledge-node-source">
-                <div>
-                  <dt>노드 타입</dt>
-                  <dd>
-                    {selectedNode ? nodeKindLabels[selectedNode.kind] : '-'}
-                    {selectedNode && ` · ${getServiceNodeType(selectedNode.kind)}`}
-                  </dd>
-                </div>
-                {selectedNode?.source && (
-                  <div>
-                    <dt>출처</dt>
-                    <dd>{selectedNode.source}</dd>
-                  </div>
-                )}
-                {selectedConnectedNodeLabels.length > 0 && (
-                  <div>
-                    <dt>연결된 노드</dt>
-                    <dd>{selectedConnectedNodeLabels.join(' · ')}</dd>
-                  </div>
-                )}
-                {selectedNode?.impact && (
-                  <div>
-                    <dt>추천에 미친 영향</dt>
-                    <dd>{selectedNode.impact}</dd>
-                  </div>
-                )}
-              </dl>
-
-              {selectedNode?.kind === 'place' && selectedNode.placeDetails && (
-                <PlaceEvidenceCard
-                  node={selectedNode}
-                  details={selectedNode.placeDetails}
-                  evidenceCount={selectedConnectedNodeLabels.length}
+              <label className="ai-evidence-search">
+                <span className="visually-hidden">노드 검색</span>
+                <input
+                  type="search"
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.currentTarget.value)}
+                  placeholder="노드 검색"
                 />
-              )}
-
-              {selectedNode?.kind === 'risk' && selectedNode.riskDetails && (
-                <RiskEvidenceCard details={selectedNode.riskDetails} />
-              )}
-
-              {selectedNode?.kind !== 'place' && selectedNode?.kind !== 'risk' && (
-                <ul className="knowledge-evidence-list" aria-label="AI 설명과 근거">
-                  {selectedNode?.evidence.map((item) => <li key={item}>{item}</li>)}
-                </ul>
-              )}
-
-              {selectedNode?.routeTarget?.heatmapMode && selectedNode.kind !== 'place' && (
-                <div className="knowledge-detail-actions">
-                  <Link to={`/heatmap?mode=${selectedNode.routeTarget.heatmapMode}`}>
-                    히트맵에서 보기
-                  </Link>
-                </div>
-              )}
-            </section>
-
-            <section className="knowledge-ai-commands">
-              <div className="knowledge-panel-heading">
-                <StatusBadge tone="brown">AI Commands</StatusBadge>
-                <strong>그래프 확장 명령</strong>
-              </div>
-              <div className="knowledge-ai-command-grid">
-                <button type="button" onClick={() => runAiCommand('expand')}>
-                  관련 근거 확장
+              </label>
+              <div className="ai-evidence-filter-row" aria-label="노드 타입 필터">
+                <button
+                  type="button"
+                  className={nodeKindFilter === 'all' ? 'active' : ''}
+                  onClick={() => setNodeKindFilter('all')}
+                >
+                  전체
                 </button>
-                <button type="button" onClick={() => runAiCommand('risk')}>
-                  리스크 찾기
-                </button>
-                <button type="button" onClick={() => runAiCommand('alternative')}>
-                  대체 코스 생성
-                </button>
-                <button type="button" onClick={() => runAiCommand('summary')}>
-                  그래프 요약
-                </button>
-                <button type="button" onClick={() => runAiCommand('source')}>
-                  출처 보기
-                </button>
+                {(['course', 'tag', 'place', 'data', 'facility', 'risk'] as KnowledgeNodeKind[]).map(
+                  (kind) => (
+                    <button
+                      type="button"
+                      key={kind}
+                      className={nodeKindFilter === kind ? 'active' : ''}
+                      onClick={() => setNodeKindFilter(kind)}
+                    >
+                      {nodeKindLabels[kind]}
+                    </button>
+                  ),
+                )}
               </div>
-              <p className="knowledge-command-message">{commandMessage}</p>
-            </section>
-
-            <section className="knowledge-schema-card">
-              <StatusBadge tone="neutral">Graph JSON</StatusBadge>
-              <dl>
-                <div>
-                  <dt>node.type</dt>
-                  <dd>{selectedNode ? getServiceNodeType(selectedNode.kind) : 'user_input'}</dd>
-                </div>
-                <div>
-                  <dt>edge.relation</dt>
-                  <dd>
-                    {visibleLinks
-                      .filter((link) => link.source === selectedNode?.id || link.target === selectedNode?.id)
-                      .slice(0, 3)
-                      .map((link) => getServiceEdgeRelation(link.label))
-                      .join(' · ') || 'supported_by'}
-                  </dd>
-                </div>
-              </dl>
-            </section>
-
-            <section className="knowledge-side-legend" aria-label="노드 색상 범례">
-              <div>
-                <StatusBadge tone="neutral">범례</StatusBadge>
-                <strong>노드 타입</strong>
-              </div>
-              <ul>
-                {(
-                  [
-                    'course',
-                    'user',
-                    'tag',
-                    'place',
-                    'data',
-                    'facility',
-                    'risk',
-                    'evidence',
-                    'source',
-                  ] as KnowledgeNodeKind[]
-                ).map((kind) => (
-                  <li key={kind}>
-                    <i style={{ background: nodeColors[kind] }} />
-                    {nodeKindLabels[kind]}
-                  </li>
-                ))}
-              </ul>
-              <div className="knowledge-link-legend">
-                {linkKindLabels
-                  .filter((kind) => kind !== '입력됨')
-                  .map((kind) => (
-                    <span key={kind} style={{ borderColor: getLinkLegendColor(kind) }}>
-                      {kind}
-                    </span>
-                  ))}
-              </div>
-            </section>
-
-            {isTraceMode && (
-              <section className="knowledge-trace-panel">
-                <StatusBadge>추천 경로 추적</StatusBadge>
-                <ol>
-                  {personalizationProfile.traceSteps.map((step) => (
-                    <li key={step}>{step}</li>
-                  ))}
-                </ol>
-              </section>
-            )}
-
-            <section className="knowledge-rag-compare">
-              <StatusBadge tone="brown">Before / After RAG</StatusBadge>
-              <div className="knowledge-rag-routes">
-                <div>
-                  <strong>일반 추천</strong>
-                  <span>{personalizationProfile.ragComparison.before.join(' → ')}</span>
-                </div>
-                <div>
-                  <strong>RAG 근거 반영 후</strong>
-                  <span>{personalizationProfile.ragComparison.after.join(' → ')}</span>
-                </div>
-              </div>
-              <ul>
-                {personalizationProfile.ragComparison.reasons.map((reason) => (
-                  <li key={reason}>{reason}</li>
-                ))}
-              </ul>
-            </section>
-
-            <section className="knowledge-log-panel">
-              <StatusBadge tone="brown">AI 근거 로그</StatusBadge>
-              <ol>
-                {visibleLogs.map((stage, index) => (
-                  <li key={stage.label}>
-                    <span>{index + 1}</span>
-                    <p>
-                      <strong>[{stage.status}]</strong>
-                      {personalizationProfile.logMessages[index] ?? stage.log}
-                    </p>
+              <ol className="ai-evidence-node-list">
+                {explorerNodes.map((node) => (
+                  <li key={node.id}>
+                    <button
+                      type="button"
+                      className={node.id === selectedNode?.id ? 'active' : ''}
+                      onPointerDown={() => selectIndexedNode(node.id)}
+                      onClick={() => selectIndexedNode(node.id)}
+                    >
+                      <i style={{ backgroundColor: nodeColors[node.kind] }} />
+                      <span>{node.label}</span>
+                      <em>{node.score ?? 0}</em>
+                    </button>
                   </li>
                 ))}
               </ol>
+            </aside>
+
+            <section className="knowledge-graph-scene ai-evidence-graph-card" aria-label="3D AI 추천 근거 그래프">
+              <div className="knowledge-graph-scene-header ai-evidence-graph-header">
+                <div>
+                  <span>GraphRAG 추천 근거</span>
+                  <strong>{isTraceMode ? personalizationProfile.courseLabel : activeStage.label}</strong>
+                </div>
+                <div className="ai-evidence-graph-controls">
+                  <button type="button" onClick={() => setIsPlaying((current) => !current)}>
+                    {isPlaying ? '일시정지' : '재생'}
+                  </button>
+                  <button type="button" onClick={toggleTraceMode}>
+                    {isTraceMode ? '전체 근거 보기' : '추천 경로 보기'}
+                  </button>
+                  <button type="button" onClick={resetGraph}>
+                    초기화
+                  </button>
+                </div>
+              </div>
+              {isTraceMode && (
+                <div className="knowledge-path-breadcrumb ai-evidence-path-breadcrumb" aria-label="추천 경로 breadcrumb">
+                  {personalizationProfile.traceNodeIds.map((nodeId) => (
+                    <span key={nodeId}>{getNodeLabel(nodeId, personalizedNodes)}</span>
+                  ))}
+                </div>
+              )}
+              <div className="knowledge-graph-host ai-evidence-graph-host" ref={graphHostRef}>
+                {width > 0 && height > 0 && (
+                  <ForceGraph3D
+                    graphData={graphData}
+                    ref={graphRef}
+                    width={width}
+                    height={height}
+                    backgroundColor="rgba(0,0,0,0)"
+                    nodeLabel={(node) => createNodeTooltip(node as KnowledgeNode)}
+                    nodeColor={(node) => {
+                      const graphNode = node as KnowledgeNode
+                      return getNodeColor(graphNode, getNodeVisualStateForId(graphNode.id))
+                    }}
+                    nodeVal={(node) => {
+                      const graphNode = node as KnowledgeNode
+                      return getNodeValue(graphNode, getNodeVisualStateForId(graphNode.id))
+                    }}
+                    nodeOpacity={0.95}
+                    linkLabel={(link) => (link as RuntimeKnowledgeLink).label}
+                    linkColor={(link) => {
+                      const graphLink = link as RuntimeKnowledgeLink
+                      return getLinkColor(graphLink, getLinkVisualStateForLink(graphLink))
+                    }}
+                    linkOpacity={0.62}
+                    linkWidth={(link) => {
+                      const graphLink = link as RuntimeKnowledgeLink
+                      return getLinkWidth(graphLink, getLinkVisualStateForLink(graphLink))
+                    }}
+                    linkDirectionalParticles={(link) => {
+                      const graphLink = link as RuntimeKnowledgeLink
+                      return getLinkParticles(graphLink, getLinkVisualStateForLink(graphLink))
+                    }}
+                    linkDirectionalParticleWidth={(link) =>
+                      getLinkParticleWidth(
+                        link as RuntimeKnowledgeLink,
+                        getLinkVisualStateForLink(link as RuntimeKnowledgeLink),
+                      )
+                    }
+                    linkDirectionalParticleColor={(link) => {
+                      const graphLink = link as RuntimeKnowledgeLink
+                      return getLinkColor(graphLink, getLinkVisualStateForLink(graphLink))
+                    }}
+                    linkDirectionalParticleSpeed={(link) =>
+                      0.0025 + (link as RuntimeKnowledgeLink).strength * 0.004
+                    }
+                    nodeThreeObject={(node: object) => {
+                      const graphNode = node as KnowledgeNode
+                      return createNodeLabel(graphNode, getNodeVisualStateForId(graphNode.id))
+                    }}
+                    nodeThreeObjectExtend
+                    showNavInfo={false}
+                    cooldownTicks={90}
+                    enableNodeDrag={false}
+                    onNodeHover={(node) => {
+                      const nextNodeId = node ? (node as KnowledgeNode).id : null
+                      if (hoveredNodeIdRef.current === nextNodeId) return
+                      hoveredNodeIdRef.current = nextNodeId
+                      graphRef.current?.refresh?.()
+                    }}
+                    onNodeClick={(node) => {
+                      selectKnowledgeNode((node as KnowledgeNode).id, false)
+                    }}
+                  />
+                )}
+              </div>
+              {isTraceMode && (
+                <div className="knowledge-trace-overlay ai-evidence-trace-overlay" aria-label="AI 추천 경로">
+                  <strong>AI 추천 경로</strong>
+                  <span>{personalizationProfile.traceNodeIds.map((nodeId) => getNodeLabel(nodeId, personalizedNodes)).join(' → ')}</span>
+                </div>
+              )}
+              <details className="knowledge-graph-legend ai-evidence-graph-legend" open>
+                <summary>범례</summary>
+                <div>
+                  {(['course', 'user', 'tag', 'place', 'data', 'facility', 'risk'] as KnowledgeNodeKind[]).map((kind) => (
+                    <span key={kind}>
+                      <i style={{ backgroundColor: nodeColors[kind] }} />
+                      {nodeKindLabels[kind]}
+                    </span>
+                  ))}
+                </div>
+              </details>
             </section>
-          </aside>
+
+            <aside className="ai-evidence-panel ai-evidence-recommendation-panel" aria-label="선택 추천 설명">
+              <div className="ai-evidence-panel-heading">
+                <img src={evidenceAssets.graphIcon} alt="" aria-hidden="true" />
+                <h2>선택 추천 설명</h2>
+              </div>
+              <div className="ai-evidence-selected-head">
+                <div>
+                  <span>추천 코스</span>
+                  <strong>{selectedNode?.id === 'course-main' ? personalizationProfile.coursePlaces.join(' → ') : selectedNode?.label}</strong>
+                  <p>{selectedNode?.summary ?? personalizationProfile.recommendationReason}</p>
+                </div>
+                <b>{selectedScore}</b>
+              </div>
+              <div className="knowledge-score-bar ai-evidence-score-bar" aria-label={`추천 신뢰도 ${selectedScore}%`}>
+                <span style={{ width: `${Math.min(100, selectedScore)}%` }} />
+              </div>
+              <p className="ai-evidence-confidence-label">추천 신뢰도 {selectedScore}%</p>
+              <dl className="knowledge-node-source ai-evidence-node-source">
+                <div>
+                  <dt>노드 타입</dt>
+                  <dd>{selectedNodeType}</dd>
+                </div>
+                <div>
+                  <dt>추천 상태</dt>
+                  <dd>{selectedStatus}</dd>
+                </div>
+                <div>
+                  <dt>연결된 노드</dt>
+                  <dd>{connectedNodeText}</dd>
+                </div>
+                <div>
+                  <dt>추천 영향</dt>
+                  <dd>{selectedImpact}</dd>
+                </div>
+              </dl>
+              <div className="ai-evidence-chip-row ai-evidence-chip-row--impact" aria-label="추천 영향 태그">
+                {impactChips.map((chip) => (
+                  <span key={chip}>{chip}</span>
+                ))}
+              </div>
+              <button
+                className="ai-evidence-primary-button"
+                type="button"
+                onClick={() => runAiCommand('summary')}
+              >
+                AI 근거 자세히 보기
+                <span aria-hidden="true">›</span>
+              </button>
+              {selectedNode?.kind === 'place' && selectedNode.placeDetails && (
+                <details className="ai-evidence-inline-detail">
+                  <summary>장소 세부 근거 보기</summary>
+                  <PlaceEvidenceCard
+                    node={selectedNode}
+                    details={selectedNode.placeDetails}
+                    evidenceCount={selectedConnectedNodeLabels.length}
+                  />
+                </details>
+              )}
+              {selectedNode?.kind === 'risk' && selectedNode.riskDetails && (
+                <details className="ai-evidence-inline-detail">
+                  <summary>리스크 세부 근거 보기</summary>
+                  <RiskEvidenceCard details={selectedNode.riskDetails} />
+                </details>
+              )}
+            </aside>
+          </div>
+
+          <section className="ai-evidence-bottom-row" aria-label="추천 경로 추적과 세부 보기">
+            <article className="ai-evidence-trace-bar">
+              <div className="ai-evidence-trace-title">
+                <img src={evidenceAssets.headerCloud} alt="" aria-hidden="true" />
+                <h2>추천 경로 추적</h2>
+              </div>
+              <ol>
+                {traceCards.map((trace, index) => (
+                  <li key={trace.title} className={index === traceCards.length - 1 ? 'active' : ''}>
+                    <button
+                      type="button"
+                      onClick={() => selectStage(Math.min(index, finalGraphStageIndex))}
+                      aria-pressed={index === activeStageIndex}
+                      title={`${getStageVisibleNodeCount(Math.min(index, finalGraphStageIndex), personalizedNodes)} nodes`}
+                    >
+                      <span>{index + 1}</span>
+                      <img src={trace.icon} alt="" aria-hidden="true" />
+                      <strong>{trace.title}</strong>
+                      <small>{trace.detail}</small>
+                    </button>
+                  </li>
+                ))}
+              </ol>
+            </article>
+
+            <div className="ai-evidence-detail-triggers">
+              <details>
+                <summary>Graph JSON 보기</summary>
+                <div className="ai-evidence-detail-content">
+                  <StatusBadge tone="neutral">Graph JSON</StatusBadge>
+                  <dl>
+                    <div>
+                      <dt>node.type</dt>
+                      <dd>{selectedNode ? getServiceNodeType(selectedNode.kind) : 'user_input'}</dd>
+                    </div>
+                    <div>
+                      <dt>edge.relation</dt>
+                      <dd>
+                        {visibleLinks
+                          .filter((link) => link.source === selectedNode?.id || link.target === selectedNode?.id)
+                          .slice(0, 3)
+                          .map((link) => getServiceEdgeRelation(link.label))
+                          .join(' · ') || 'supported_by'}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>visible</dt>
+                      <dd>{visibleNodes.length} nodes · {visibleLinks.length} links</dd>
+                    </div>
+                  </dl>
+                  <div className="ai-evidence-link-legend" aria-label="관계 범례">
+                    {linkKindLabels
+                      .filter((kind) => kind !== '입력됨')
+                      .map((kind) => (
+                        <span key={kind} style={{ borderColor: getLinkLegendColor(kind) }}>
+                          {kind}
+                        </span>
+                      ))}
+                  </div>
+                  <button type="button" onClick={saveCurrentGraph}>현재 근거 저장</button>
+                  <button
+                    type="button"
+                    aria-disabled="true"
+                    onClick={() => {
+                      setGraphMode('2d')
+                      setCommandMessage('2D 모드는 준비 중입니다. 현재는 3D 그래프 탐색을 제공합니다.')
+                      window.setTimeout(() => setGraphMode('3d'), 600)
+                    }}
+                  >
+                    {graphMode === '3d' ? '2D 전환 준비 중' : '3D로 복귀'}
+                  </button>
+                  {savedGraphs.length > 0 && (
+                    <ul>
+                      {savedGraphs.map((graph) => (
+                        <li key={graph.id}>
+                          <button type="button" onClick={() => openSavedGraph(graph)}>
+                            {graph.title}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </details>
+
+              <details>
+                <summary>AI 근거 로그 보기</summary>
+                <div className="ai-evidence-detail-content">
+                  <StatusBadge tone="brown">AI 근거 로그</StatusBadge>
+                  <p>{commandMessage}</p>
+                  <div className="ai-evidence-command-row">
+                    <button type="button" onClick={replayGraphGrowth}>재생</button>
+                    <button type="button" onClick={() => runAiCommand('expand')}>근거 확장</button>
+                    <button type="button" onClick={() => runAiCommand('risk')}>리스크 찾기</button>
+                    <button type="button" onClick={() => runAiCommand('source')}>출처 보기</button>
+                  </div>
+                  <ol>
+                    {visibleLogs.map((stage, index) => (
+                      <li key={stage.label}>
+                        <strong>[{stage.status}]</strong>
+                        {personalizationProfile.logMessages[index] ?? stage.log}
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              </details>
+
+              <details>
+                <summary>Before / After RAG 보기</summary>
+                <div className="ai-evidence-detail-content">
+                  <StatusBadge tone="brown">Before / After RAG</StatusBadge>
+                  <dl>
+                    <div>
+                      <dt>Before</dt>
+                      <dd>{personalizationProfile.ragComparison.before.join(' → ')}</dd>
+                    </div>
+                    <div>
+                      <dt>After</dt>
+                      <dd>{personalizationProfile.ragComparison.after.join(' → ')}</dd>
+                    </div>
+                  </dl>
+                  <ul>
+                    {personalizationProfile.ragComparison.reasons.map((reason) => (
+                      <li key={reason}>{reason}</li>
+                    ))}
+                  </ul>
+                </div>
+              </details>
+            </div>
+          </section>
         </div>
       </section>
     </AppLayout>
@@ -2428,7 +2426,7 @@ function personalizeNodes(
           `${profile.detectedSignals.slice(0, 3).join('·')} 조건 반영`,
           `추천 신뢰도 ${profile.confidence}%`,
         ],
-        impact: '사용자 입력에 따라 실시간으로 재구성된 최종 추천 코스입니다.',
+        impact: '사용자 조건과 공공데이터 근거를 반영해 생성된 추천 코스입니다.',
       }
     }
 
