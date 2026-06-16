@@ -298,13 +298,33 @@ const recommendedRoutePath: [number, number][] = [
   [128.5816, 36.9237],
   [128.6222, 36.7295],
 ]
-const routeTimeline = [
-  { place: '영주역', note: '대중교통 진입과 코스 출발' },
-  { place: '소수서원', note: '역사문화 관람 핵심 권역' },
-  { place: '선비촌', note: '체험형 콘텐츠 연결' },
-  { place: '무섬마을', note: '사색형 마을 산책 마무리' },
-]
 const radiusOptions = [300, 500, 1000]
+const primaryLayerModes: HeatmapMode[] = ['demand', 'facility', 'route']
+const primaryLayerLabels: Record<HeatmapMode, string> = {
+  demand: '관광 집중도',
+  facility: '편의시설 밀도',
+  gap: '편의시설 공백',
+  route: '축제 동선',
+}
+const metricCardIcons = [
+  '/images/new/image-Photoroom (20).png',
+  '/images/new/image-Photoroom (21).png',
+  '/images/new/image-Photoroom (22).png',
+  '/images/new/image-Photoroom (23).png',
+]
+const topTouristPlaceRankings = [
+  { name: '소수서원', score: '9.2' },
+  { name: '부석사', score: '9.0' },
+  { name: '선비촌', score: '8.8' },
+  { name: '무섬마을', score: '8.5' },
+  { name: '소수박물관', score: '8.1' },
+]
+const operationActions = [
+  '주차장 안내 강화',
+  '화장실 위치 우선 노출',
+  '무섬마을 대체 코스 추천',
+  '축제 기간 동선 분산',
+]
 const expandedFallbackHeatmapPoints = dedupeHeatmapPoints([
   ...fallbackHeatmapPoints,
   ...createVisualSamplePoints(fallbackHeatmapPoints),
@@ -368,7 +388,6 @@ export function TourismHeatmapPage() {
     return () => cancelAnimationFrame(animationFrame)
   }, [activeMode])
 
-  const modeConfig = heatmapModes[activeMode]
   const activePoints = useMemo(
     () => getModePoints(dataState.points, activeMode),
     [activeMode, dataState.points],
@@ -384,14 +403,6 @@ export function TourismHeatmapPage() {
   const selectedPlace = useMemo(
     () => majorPlaceMarkers.find((place) => place.id === selectedPlaceId) ?? majorPlaceMarkers[1],
     [selectedPlaceId],
-  )
-  const topPoints = useMemo(
-    () =>
-      [...activePoints]
-        .filter((point) => point.source !== 'visual-sample')
-        .sort((a, b) => b.weights[activeMode] - a.weights[activeMode])
-        .slice(0, 6),
-    [activeMode, activePoints],
   )
   const layers = useMemo(() => {
     const dataLayers = []
@@ -545,251 +556,281 @@ export function TourismHeatmapPage() {
     ]
   }, [activeMode, activePoints, radiusMeters, routeProgress, selectedPlaceId])
 
+  const metricCards = [
+    {
+      label: '관광지',
+      value: displaySummary.tourismPlaces.toLocaleString(),
+      unit: '곳',
+      icon: metricCardIcons[0],
+    },
+    {
+      label: '편의시설',
+      value: displaySummary.facilities.toLocaleString(),
+      unit: '개',
+      icon: metricCardIcons[1],
+    },
+    {
+      label: '추천 권역',
+      value: displaySummary.recommendedZones.toLocaleString(),
+      unit: '개',
+      icon: metricCardIcons[2],
+    },
+    {
+      label: '관광 수요 점수',
+      value: Math.round(totalWeight).toLocaleString(),
+      unit: '점',
+      icon: metricCardIcons[3],
+    },
+  ]
+
   return (
-    <AppLayout hideBottomNavigation>
-      <section className="page-section page-container heatmap-page">
-        <div className="section-heading center">
-          <StatusBadge>공공데이터 기반 시각화</StatusBadge>
-          <h1>영주시 관광 데이터 레이어</h1>
-          <p>
+    <AppLayout hideBottomNavigation hideChatbot>
+      <section className="heatmap-page" aria-labelledby="heatmap-page-title">
+        <div className="heatmap-page-inner">
+          <header className="heatmap-hero">
+            <span className="heatmap-eyebrow">공공데이터 기반 시각화</span>
+            <h1 id="heatmap-page-title">영주시 관광 집중도 3D 히트맵</h1>
+          <p className="heatmap-visually-hidden">
             공공데이터 기반 관광 수요, 편의시설 밀도, 추천 코스 흐름을 시각화합니다.
             데이터가 적을 때는 기존 fallback 대표 지점과 샘플 기반 시각화 포인트로
             분포를 보강합니다.
           </p>
-        </div>
+            <p>
+              영주의 관광 데이터와 편의시설 정보를 한눈에 확인하고, AI 추천 권역을
+              분석해보세요.
+            </p>
+          </header>
 
-        <section className="surface-card heatmap-mode-panel" aria-labelledby="heatmap-mode-title">
-          <div className="heatmap-mode-header">
-            <div>
-              <StatusBadge tone="brown">레이어 전환</StatusBadge>
-              <h2 id="heatmap-mode-title">관광 데이터 레이어</h2>
-              <p>{modeConfig.description}</p>
+          <section className="heatmap-layer-band" aria-labelledby="heatmap-layer-title">
+            <div className="heatmap-layer-heading">
+              <img src="/images/new/image-removebg-preview (30).png" alt="" />
+              <strong id="heatmap-layer-title">레이어 선택</strong>
             </div>
-            <Link className="heatmap-3d-link" to="/tour-3d">
-              AI 선비길 3D 미리보기
+            <div className="heatmap-layer-tabs" aria-label="히트맵 레이어">
+              {primaryLayerModes.map((mode) => {
+                const isActive = activeMode === mode || (activeMode === 'gap' && mode === 'facility')
+                return (
+                  <button
+                    key={mode}
+                    type="button"
+                    className={isActive ? 'active' : ''}
+                    aria-pressed={isActive}
+                    onClick={() => setSelectedMode(mode)}
+                  >
+                    {primaryLayerLabels[mode]}
+                  </button>
+                )
+              })}
+            </div>
+            <Link className="heatmap-preview-button" to="/tour-3d">
+              AI 선비길 미리보기
             </Link>
-          </div>
-          <div className="course-category-tabs heatmap-mode-tabs" aria-label="히트맵 모드">
-            {Object.entries(heatmapModes).map(([mode, config]) => {
-              const isActive = activeMode === mode
-              return (
-                <button
-                  key={mode}
-                  type="button"
-                  className={isActive ? 'active' : ''}
-                  aria-pressed={isActive}
-                  onClick={() => setSelectedMode(mode as HeatmapMode)}
-                >
-                  {config.tabLabel}
-                </button>
-              )
-            })}
-          </div>
-        </section>
-
-        <dl className="heatmap-summary-grid" aria-label="관광 데이터 레이어 요약">
-          <div className="surface-card heatmap-summary-card">
-            <dt>관광지</dt>
-            <dd>{displaySummary.tourismPlaces}</dd>
-          </div>
-          <div className="surface-card heatmap-summary-card">
-            <dt>편의시설</dt>
-            <dd>{displaySummary.facilities}</dd>
-          </div>
-          <div className="surface-card heatmap-summary-card">
-            <dt>추천 권역</dt>
-            <dd>{displaySummary.recommendedZones}</dd>
-          </div>
-          <div className="surface-card heatmap-summary-card">
-            <dt>{modeConfig.metricLabel}</dt>
-            <dd>{Math.round(totalWeight)}</dd>
-          </div>
-        </dl>
-
-        <div className="heatmap-layout">
-          <section className="surface-card heatmap-map-card" aria-labelledby="heatmap-map-title">
-            <div className="map-panel-header">
-              <div>
-                <h2 id="heatmap-map-title">{modeConfig.label}</h2>
-                <span>Mapbox + deck.gl {modeConfig.layerName}</span>
-              </div>
+            <div className="heatmap-visually-hidden" aria-hidden="true">
               <StatusBadge tone={samplePointCount > 0 || fallbackPointCount > 0 ? 'brown' : 'green'}>
                 {localPointCount > 0 ? '공공데이터 보강' : samplePointCount > 0 ? '샘플 기반 시각화' : 'TourAPI 기반'}
               </StatusBadge>
-            </div>
-            <p className="map-panel-note">
-              {modeConfig.mapNote}
-            </p>
-            <div className="heatmap-map-shell">
-              <div className="heatmap-map-controller" aria-label="관광 데이터 레이어 컨트롤러">
-                <strong>관광 데이터 레이어</strong>
-                <span>{modeConfig.label}</span>
-                <div className="heatmap-controller-section">
-                  <small>분석 모드</small>
-                  <div className="heatmap-controller-mode-grid">
-                    {Object.entries(heatmapModes).map(([mode, config]) => {
-                      const isActive = activeMode === mode
-                      return (
-                        <button
-                          key={`controller-${mode}`}
-                          type="button"
-                          className={isActive ? 'active' : ''}
-                          aria-pressed={isActive}
-                          onClick={() => setSelectedMode(mode as HeatmapMode)}
-                        >
-                          {config.tabLabel}
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
-                <div className="heatmap-controller-section">
-                  <small>분석 반경</small>
-                  <div className="heatmap-radius-chips">
-                    {radiusOptions.map((radius) => (
-                      <button
-                        key={radius}
-                        type="button"
-                        className={radiusMeters === radius ? 'active' : ''}
-                        onClick={() => setRadiusMeters(radius)}
-                      >
-                        {radius === 1000 ? '1km' : `${radius}m`}
-                      </button>
-                    ))}
-                  </div>
-                  <input
-                    type="range"
-                    min="300"
-                    max="1000"
-                    step="50"
-                    value={radiusMeters}
-                    onChange={(event) => setRadiusMeters(Number(event.currentTarget.value))}
-                    aria-label="분석 반경"
-                  />
-                  <small>
-                    현재 반경 <output>{radiusMeters.toLocaleString()}</output>m
-                  </small>
-                </div>
-                <div className="heatmap-controller-stats" aria-label="현재 표시 데이터">
-                  <small>현재 표시</small>
-                  <span>관광지 {displaySummary.tourismPlaces.toLocaleString()}개</span>
-                  <span>편의시설 {displaySummary.facilities.toLocaleString()}개</span>
-                  <span>추천 권역 {displaySummary.recommendedZones.toLocaleString()}개</span>
-                </div>
-                <p>{modeConfig.description}</p>
-                <small className="heatmap-controller-location-count">
-                  {activePoints.length.toLocaleString()}개 좌표 렌더링
-                </small>
-              </div>
-              {dataState.status === 'loading' && (
-                <div className="heatmap-loading-overlay">
-                  <BrandLoading message="영주 관광 좌표를 불러오는 중입니다." />
-                </div>
-              )}
-              {mapboxToken ? (
-                <DeckGL
-                  initialViewState={yeongjuInitialViewState}
-                  controller
-                  layers={layers}
-                  getTooltip={({ object }) => createDeckTooltip(object, activeMode)}
-                >
-                  <MapboxMap
-                    mapboxAccessToken={mapboxToken}
-                    mapStyle="mapbox://styles/mapbox/light-v11"
-                    reuseMaps
-                  >
-                    <NavigationControl position="top-right" showCompass />
-                  </MapboxMap>
-                </DeckGL>
-              ) : (
-                <div className="heatmap-token-empty">
-                  <StatusBadge tone="neutral">환경변수 필요</StatusBadge>
-                  <strong>Mapbox 토큰을 설정하면 3D 히트맵 지도가 표시됩니다.</strong>
-                  <span>VITE_MAPBOX_TOKEN</span>
-                </div>
-              )}
+            데이터가 적을 때는 기존 fallback 대표 지점과 샘플 기반 시각화 포인트로
+            분포를 보강합니다.
             </div>
           </section>
 
-          <aside className="heatmap-side-panel" aria-label="히트맵 상세 정보">
-            <section className="surface-card heatmap-info-card">
-              <StatusBadge>AI 분석 요약</StatusBadge>
-              <h2>지금 봐야 할 권역</h2>
-              <ul className="heatmap-insight-list">
-                <li>소수서원·선비촌 권역은 역사문화 수요가 높습니다.</li>
-                <li>무섬마을은 사색형 코스 적합도가 높지만 숙박 연계가 약합니다.</li>
-                <li>축제 기간에는 선비세상 주변 주차 안내를 강화해야 합니다.</li>
-              </ul>
-              {dataState.message && <p className="heatmap-data-message">{dataState.message}</p>}
+          <div className="heatmap-dashboard">
+            <section className="heatmap-map-card" aria-labelledby="heatmap-map-title">
+              <h2 id="heatmap-map-title" className="heatmap-visually-hidden">
+                영주시 관광 집중도
+              </h2>
+              <div className="heatmap-map-shell">
+                <div className="heatmap-map-controller" aria-label="관광 데이터 레이어 컨트롤러">
+                  <strong>관광 데이터 레이어</strong>
+                  <div className="heatmap-controller-section">
+                    <small>레이어</small>
+                    <div className="heatmap-controller-mode-grid">
+                      {Object.entries(heatmapModes).map(([mode, config]) => {
+                        const isActive = activeMode === mode
+                        return (
+                          <button
+                            key={`controller-${mode}`}
+                            type="button"
+                            className={isActive ? 'active' : ''}
+                            aria-pressed={isActive}
+                            onClick={() => setSelectedMode(mode as HeatmapMode)}
+                          >
+                            {config.tabLabel}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                  <div className="heatmap-controller-section">
+                    <small>분석 반경 설정</small>
+                    <div className="heatmap-radius-chips">
+                      {radiusOptions.map((radius) => (
+                        <button
+                          key={radius}
+                          type="button"
+                          className={radiusMeters === radius ? 'active' : ''}
+                          onClick={() => setRadiusMeters(radius)}
+                        >
+                          {radius === 1000 ? '1km' : `${radius}m`}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <dl className="heatmap-controller-stats" aria-label="현재 표시 데이터">
+                    <div>
+                      <dt>현재 반경</dt>
+                      <dd>{radiusMeters === 1000 ? '1km' : `${radiusMeters}m`}</dd>
+                    </div>
+                    <div>
+                      <dt>관광지</dt>
+                      <dd>{displaySummary.tourismPlaces.toLocaleString()}곳</dd>
+                    </div>
+                    <div>
+                      <dt>편의시설</dt>
+                      <dd>{displaySummary.facilities.toLocaleString()}개</dd>
+                    </div>
+                    <div>
+                      <dt>추천 권역</dt>
+                      <dd>{displaySummary.recommendedZones.toLocaleString()}개</dd>
+                    </div>
+                  </dl>
+                  <small className="heatmap-controller-location-count">
+                    {activePoints.length.toLocaleString()}개 좌표 렌더링
+                  </small>
+                </div>
+
+                {dataState.status === 'loading' && (
+                  <div className="heatmap-loading-overlay">
+                    <BrandLoading message="영주 관광 좌표를 불러오는 중입니다." />
+                  </div>
+                )}
+                {mapboxToken ? (
+                  <DeckGL
+                    initialViewState={yeongjuInitialViewState}
+                    controller
+                    layers={layers}
+                    getTooltip={({ object }) => createDeckTooltip(object, activeMode)}
+                  >
+                    <MapboxMap
+                      mapboxAccessToken={mapboxToken}
+                      mapStyle="mapbox://styles/mapbox/light-v11"
+                      reuseMaps
+                    >
+                      <NavigationControl position="top-right" showCompass />
+                    </MapboxMap>
+                  </DeckGL>
+                ) : (
+                  <div className="heatmap-token-empty">
+                    <StatusBadge tone="neutral">환경변수 필요</StatusBadge>
+                    <strong>Mapbox 토큰을 설정하면 3D 히트맵 지도가 표시됩니다.</strong>
+                    <span>VITE_MAPBOX_TOKEN</span>
+                  </div>
+                )}
+
+                <div className="heatmap-map-legend" aria-label="관광 집중도 범례">
+                  <img src="/images/new/image-Photoroom (19).png" alt="낮음 보통 높음" />
+                </div>
+                <p className="heatmap-map-source">공공데이터 기반 관광 집중도 분석</p>
+              </div>
             </section>
 
-            <section className="surface-card heatmap-info-card heatmap-selected-place">
-              <StatusBadge tone="green">장소 정보</StatusBadge>
-              <h2>{selectedPlace.name}</h2>
-              <p>{selectedPlace.description}</p>
-              <dl className="heatmap-place-meta">
-                <div>
-                  <dt>관광 수요 추정</dt>
-                  <dd>{selectedPlace.demandLevel}</dd>
+            <aside className="heatmap-analysis-sidebar" aria-label="히트맵 상세 정보">
+              <section className="heatmap-analysis-card heatmap-ai-card">
+                <div className="heatmap-card-title-row">
+                  <img src="/images/new/image-removebg-preview (34).png" alt="" />
+                  <div>
+                    <span>AI 분석 요약</span>
+                    <h2>AI 분석 요약</h2>
+                  </div>
+                  <em>AI 분석 요약</em>
                 </div>
-                <div>
-                  <dt>편의시설</dt>
-                  <dd>{selectedPlace.facilityLevel}</dd>
-                </div>
-                <div>
-                  <dt>추천 코스 포함</dt>
-                  <dd>{selectedPlace.routeIncluded ? '예' : '아니오'}</dd>
-                </div>
-              </dl>
-              <p>
-                <strong>AI 제안:</strong> {selectedPlace.suggestion}
-              </p>
-            </section>
+                <strong>지금 봐야 할 권역</strong>
+                <ul className="heatmap-insight-list">
+                  <li>소수서원·선비촌 권역은 역사문화 수요가 높습니다.</li>
+                  <li>부석사 권역은 사색형 코스 적합도가 높습니다.</li>
+                  <li>무섬마을 주변은 편의시설 보강 후보입니다.</li>
+                </ul>
+              </section>
 
-            <section className="surface-card heatmap-info-card">
-              <StatusBadge tone="brown">상위 지점</StatusBadge>
-              <h2>{modeConfig.metricLabel} 기준</h2>
-              <ol className="heatmap-point-list">
-                {topPoints.map((point) => (
-                  <li key={`${point.id}-${activeMode}`}>
-                    <span>
-                      <strong>{point.title}</strong>
-                      <small>{getCategoryLabel(point.category)} · {getHeatmapSourceLabel(point.source)}</small>
-                    </span>
-                    <em>{point.weights[activeMode]}</em>
-                  </li>
-                ))}
-              </ol>
-            </section>
+              <section className="heatmap-analysis-card heatmap-selected-place">
+                <div className="heatmap-card-title-row">
+                  <img src="/images/new/image-removebg-preview (46).png" alt="" />
+                  <div>
+                    <span>선택 장소 정보</span>
+                    <h2>선택 장소 정보</h2>
+                  </div>
+                </div>
+                <strong>{selectedPlace.name}</strong>
+                <p>{selectedPlace.description}</p>
+                <dl className="heatmap-place-meta">
+                  <div>
+                    <dt>관광 수요</dt>
+                    <dd>{selectedPlace.demandLevel}</dd>
+                  </div>
+                  <div>
+                    <dt>편의시설</dt>
+                    <dd>{selectedPlace.facilityLevel}</dd>
+                  </div>
+                  <div>
+                    <dt>추천 코스 포함</dt>
+                    <dd>{selectedPlace.routeIncluded ? '예' : '아니오'}</dd>
+                  </div>
+                </dl>
+                <p className="heatmap-ai-suggestion">
+                  AI 제안: {selectedPlace.suggestion}
+                </p>
+              </section>
 
-            {activeMode === 'route' && (
-              <section className="surface-card heatmap-info-card">
-                <StatusBadge tone="green">코스 타임라인</StatusBadge>
-                <h2>영주역에서 무섬마을까지</h2>
-                <ol className="heatmap-route-timeline">
-                  {routeTimeline.map((step, index) => (
-                    <li key={step.place}>
-                      <em>{index + 1}</em>
-                      <span>
-                        <strong>{step.place}</strong>
-                        <small>{step.note}</small>
-                      </span>
+              <section className="heatmap-analysis-card">
+                <div className="heatmap-card-title-row">
+                  <img src="/images/new/image-removebg-preview (52).png" alt="" />
+                  <div>
+                    <span>상위 관광 지점</span>
+                    <h2>상위 관광 지점</h2>
+                  </div>
+                </div>
+                <ol className="heatmap-point-list">
+                  {topTouristPlaceRankings.map((place, index) => (
+                    <li key={place.name}>
+                      <i>{index + 1}</i>
+                      <strong>{place.name}</strong>
+                      <em>{place.score}</em>
                     </li>
                   ))}
                 </ol>
               </section>
-            )}
 
-            <section className="surface-card heatmap-info-card">
-              <StatusBadge>추천 조치</StatusBadge>
-              <h2>운영 액션</h2>
-              <div className="heatmap-action-list">
-                <span>주차장 안내 강화</span>
-                <span>화장실 위치 우선 노출</span>
-                <span>무섬마을 대체 코스 추천</span>
+              <section className="heatmap-analysis-card">
+                <div className="heatmap-card-title-row">
+                  <img src="/images/new/image-removebg-preview (36).png" alt="" />
+                  <div>
+                    <span>운영 액션</span>
+                    <h2>운영 액션</h2>
+                  </div>
+                </div>
+                <div className="heatmap-action-list">
+                  {operationActions.map((action) => (
+                    <span key={action}>{action}</span>
+                  ))}
+                </div>
+              </section>
+            </aside>
+          </div>
+
+          <dl className="heatmap-metric-row" aria-label="관광 집중도 요약 지표">
+            {metricCards.map((card) => (
+              <div key={card.label} className="heatmap-metric-card">
+                <img src={card.icon} alt="" />
+                <span>
+                  <dt>{card.label}</dt>
+                  <dd>
+                    {card.value}
+                    <small>{card.unit}</small>
+                  </dd>
+                </span>
               </div>
-            </section>
-          </aside>
+            ))}
+          </dl>
         </div>
       </section>
     </AppLayout>
