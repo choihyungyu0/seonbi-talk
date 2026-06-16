@@ -1,0 +1,1014 @@
+.my-badges-app {
+  padding-bottom: 0;
+}
+
+.my-badges-app main {
+  min-height: calc(100svh - 74px);
+}
+
+.my-badges {
+  --badge-green: #073b2a;
+  --badge-green-deep: #021b14;
+  --badge-gold: #c89b42;
+  --badge-gold-bright: #f1d486;
+  --badge-paper: #fbf1dc;
+  --badge-ink: #17190f;
+  --badge-muted: #68583a;
+  --badge-border: rgba(181, 128, 45, 0.42);
+  --badge-shadow: 0 13px 26px rgba(74, 45, 11, 0.14);
+
+  position: relative;
+  isolation: isolate;
+  width: 100%;
+  height: calc(100svh - 74px);
+  min-height: 0;
+  overflow: hidden;
+  color: var(--badge-ink);
+  background:
+    linear-gradient(180deg, rgba(255, 251, 240, 0.9), rgba(240, 222, 187, 0.84)),
+    #f2dfba;
+}
+
+.my-badges::before {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background:
+    linear-gradient(90deg, rgba(47, 29, 6, 0.08), transparent 16%, transparent 86%, rgba(47, 29, 6, 0.06)),
+    url('/images/new/17275d50-d105-4762-b2ab-b9cc7ca98b1c.png') top right / 76% auto no-repeat,
+    linear-gradient(180deg, #fff5df, #ecd7ad);
+  content: '';
+}
+
+.my-badges::after {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border: 1px solid rgba(155, 103, 31, 0.34);
+  background:
+    radial-gradient(circle at 70% 10%, rgba(232, 179, 64, 0.24) 0 22px, transparent 23px),
+    repeating-linear-gradient(135deg, transparent 0 24px, rgba(148, 100, 31, 0.03) 24px 25px),
+    linear-gradient(180deg, rgba(255, 252, 243, 0.44), rgba(242, 220, 182, 0.18));
+  box-shadow:
+    inset 0 0 0 4px rgba(255, 248, 224, 0.42),
+    inset 0 -46px 82px rgba(104, 64, 13, 0.08);
+  content: '';
+  pointer-events: none;
+}
+
+.my-badges-shell {
+  display: grid;
+  grid-template-columns: 304px minmax(0, 1fr);
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+}
+
+.my-badges-sidebar {
+  position: relative;
+  isolation: isolate;
+  min-width: 0;
+  overflow: hidden;
+  border-right: 2px solid rgba(204, 158, 74, 0.66);
+  color: #fff9e8;
+  background:
+    radial-gradient(circle at 47% 7%, rgba(237, 196, 100, 0.14), transparent 27%),
+    linear-gradient(180deg, rgba(7, 51, 38, 0.99), rgba(1, 24, 18, 0.99));
+  box-shadow:
+    inset -18px 0 34px rgba(0, 0, 0, 0.22),
+    14px 0 26px rgba(40, 27, 10, 0.14);
+}
+
+.my-badges-sidebar::before,
+.my-badges-sidebar::after {
+  position: absolute;
+  inset: 12px;
+  z-index: -1;
+  border: 1px solid rgba(236, 203, 116, 0.48);
+  content: '';
+  pointer-events: none;
+}
+
+.my-badges-sidebar::after {
+  inset: 18px;
+  border-color: rgba(236, 203, 116, 0.18);
+}
+
+.my-badges-sidebar-art {
+  position: absolute;
+  right: -98px;
+  bottom: -86px;
+  z-index: -2;
+  width: 410px;
+  height: 735px;
+  object-fit: cover;
+  object-position: 48% 82%;
+  opacity: 0.72;
+  mix-blend-mode: screen;
+  filter: saturate(0.92) contrast(1.05);
+}
+
+.my-badges-sidebar-inner {
+  display: grid;
+  align-content: start;
+  gap: 34px;
+  height: 100%;
+  padding: 50px 26px 28px;
+}
+
+.my-badges-sidebar h2 {
+  position: relative;
+  margin: 0;
+  padding: 0 0 18px;
+  color: #f8db91;
+  font-family: var(--serif);
+  font-size: 28px;
+  font-weight: 950;
+  letter-spacing: 0;
+  text-align: center;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.2);
+}
+
+.my-badges-sidebar h2::after {
+  position: absolute;
+  right: 20px;
+  bottom: 0;
+  left: 20px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(244, 211, 127, 0.82), transparent);
+  content: '';
+}
+
+.my-badges-sidebar nav {
+  display: grid;
+  gap: 18px;
+}
+
+.my-badges-sidebar button {
+  position: relative;
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  min-height: 64px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  padding: 10px 14px;
+  color: rgba(255, 247, 224, 0.84);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.01));
+  font-family: var(--serif);
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-align: left;
+  cursor: default;
+}
+
+.my-badges-sidebar button + button {
+  box-shadow: 0 -1px 0 rgba(230, 200, 127, 0.14);
+}
+
+.my-badges-sidebar button img {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  filter: drop-shadow(0 7px 8px rgba(0, 0, 0, 0.28));
+}
+
+.my-badges-sidebar button.is-active {
+  border-color: rgba(247, 204, 91, 0.95);
+  color: #fff5c7;
+  background: linear-gradient(90deg, rgba(9, 61, 44, 0.96), rgba(4, 41, 31, 0.98));
+  box-shadow:
+    0 0 0 2px rgba(8, 58, 42, 0.8),
+    inset 0 0 0 1px rgba(255, 245, 177, 0.28),
+    0 10px 20px rgba(0, 0, 0, 0.24),
+    0 0 16px rgba(235, 190, 84, 0.24);
+}
+
+.my-badges-sidebar button.is-active::after {
+  position: absolute;
+  top: 50%;
+  right: -11px;
+  width: 18px;
+  height: 18px;
+  background: linear-gradient(135deg, #f3c961, #a66b12);
+  box-shadow: 0 0 12px rgba(241, 199, 85, 0.46);
+  content: '';
+  transform: translateY(-50%) rotate(45deg);
+}
+
+.my-badges-main {
+  display: grid;
+  grid-template-rows: 126px 92px minmax(0, 1fr) 96px 64px;
+  gap: 12px;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+  padding: 18px 36px 14px;
+}
+
+.my-badges-header {
+  position: relative;
+  display: grid;
+  align-items: end;
+  min-width: 0;
+  overflow: hidden;
+  border-radius: 4px;
+  padding: 16px 28px 19px;
+  background:
+    linear-gradient(90deg, rgba(255, 249, 231, 0.98), rgba(255, 249, 231, 0.84) 47%, rgba(255, 249, 231, 0.12)),
+    url('/images/new/17275d50-d105-4762-b2ab-b9cc7ca98b1c.png') center right / auto 114% no-repeat;
+}
+
+.my-badges-header::after {
+  position: absolute;
+  inset: 0;
+  border: 1px solid rgba(199, 154, 66, 0.28);
+  border-radius: inherit;
+  content: '';
+  pointer-events: none;
+}
+
+.my-badges-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  min-height: 25px;
+  border: 1px solid rgba(184, 132, 44, 0.46);
+  border-radius: 999px;
+  padding: 2px 14px;
+  color: #4f3610;
+  background: linear-gradient(180deg, #f6db94, #e5bd61);
+  font-family: var(--serif);
+  font-size: 13px;
+  font-weight: 900;
+  box-shadow: 0 4px 10px rgba(88, 52, 9, 0.14);
+}
+
+.my-badges-header h1 {
+  margin: 9px 0 2px;
+  color: #071d16;
+  font-family: var(--serif);
+  font-size: 42px;
+  font-weight: 950;
+  line-height: 1.02;
+  letter-spacing: 0;
+  text-shadow: 0 2px 0 rgba(255, 250, 231, 0.86);
+}
+
+.my-badges-header p {
+  margin: 0;
+  color: #3e3322;
+  font-family: var(--serif);
+  font-size: 16px;
+  font-weight: 720;
+  line-height: 1.28;
+}
+
+.my-badges-stats,
+.my-badges-dashboard,
+.next-goal-list,
+.my-badges-action-bar {
+  min-width: 0;
+  min-height: 0;
+}
+
+.my-badges-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.my-badges-stat-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 74px minmax(0, 1fr);
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+  min-height: 92px;
+  overflow: hidden;
+  border: 1px solid var(--badge-border);
+  border-radius: 4px;
+  padding: 12px 22px;
+  background: linear-gradient(180deg, rgba(255, 252, 242, 0.96), rgba(247, 232, 199, 0.94));
+  box-shadow: var(--badge-shadow);
+}
+
+.my-badges-stat-card img {
+  width: 66px;
+  height: 66px;
+  object-fit: contain;
+  filter: drop-shadow(0 9px 9px rgba(70, 43, 7, 0.22));
+}
+
+.my-badges-stat-card span {
+  display: block;
+  color: #624923;
+  font-family: var(--serif);
+  font-size: 15px;
+  font-weight: 850;
+  line-height: 1.2;
+}
+
+.my-badges-stat-card strong {
+  display: block;
+  margin-top: 4px;
+  color: #1a1d14;
+  font-family: var(--serif);
+  font-size: 32px;
+  font-weight: 950;
+  line-height: 1;
+}
+
+.my-badges-dashboard {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr) 372px;
+  gap: 18px;
+}
+
+.my-badges-card {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid var(--badge-border);
+  border-radius: 4px;
+  background: linear-gradient(180deg, rgba(255, 252, 242, 0.94), rgba(247, 232, 198, 0.9));
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.5),
+    0 13px 26px rgba(76, 45, 10, 0.14);
+}
+
+.my-badges-card::before {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background:
+    linear-gradient(135deg, rgba(176, 117, 34, 0.09), transparent 16%, transparent 84%, rgba(176, 117, 34, 0.08)),
+    repeating-linear-gradient(0deg, transparent 0 28px, rgba(88, 54, 15, 0.025) 28px 29px);
+  content: '';
+  pointer-events: none;
+}
+
+.my-badges-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.badge-card-title {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  margin: 0;
+  color: #2e2415;
+  font-family: var(--serif);
+  font-size: 20px;
+  font-weight: 950;
+  letter-spacing: 0;
+  line-height: 1.2;
+}
+
+.badge-card-title span {
+  color: var(--badge-gold);
+  font-size: 13px;
+  filter: drop-shadow(0 1px 0 rgba(255, 255, 255, 0.9));
+}
+
+.badge-progress-panel {
+  display: grid;
+  grid-template-rows: auto 128px auto minmax(0, 1fr);
+  gap: 10px;
+  padding: 18px 16px 14px;
+}
+
+.badge-progress-ring {
+  position: relative;
+  display: grid;
+  width: 128px;
+  height: 128px;
+  place-items: center;
+  justify-self: center;
+  color: #15170f;
+  font-family: var(--serif);
+}
+
+.badge-progress-ring svg {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+  transform: rotate(-90deg);
+}
+
+.progress-ring-track,
+.progress-ring-value {
+  fill: none;
+  stroke-width: 9;
+}
+
+.progress-ring-track {
+  stroke: rgba(126, 95, 41, 0.18);
+}
+
+.progress-ring-value {
+  stroke: #0c523a;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 5px rgba(228, 179, 65, 0.42));
+}
+
+.badge-progress-ring::after {
+  position: absolute;
+  inset: 7px;
+  border: 6px solid rgba(219, 174, 76, 0.2);
+  border-radius: 50%;
+  content: '';
+}
+
+.badge-progress-ring span,
+.badge-progress-ring strong {
+  position: relative;
+  z-index: 1;
+  display: block;
+  text-align: center;
+}
+
+.badge-progress-ring span {
+  margin-top: 10px;
+  color: #5f5137;
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.badge-progress-ring strong {
+  margin-top: 30px;
+  font-size: 38px;
+  font-weight: 950;
+  line-height: 1;
+}
+
+.badge-progress-rows,
+.unlock-goal-list {
+  display: grid;
+  gap: 8px;
+}
+
+.badge-progress-row,
+.unlock-goal-row {
+  display: grid;
+  align-items: center;
+  min-width: 0;
+  border: 1px solid rgba(166, 116, 40, 0.22);
+  border-radius: 5px;
+  background: rgba(255, 250, 236, 0.7);
+  font-family: var(--serif);
+}
+
+.badge-progress-row {
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  gap: 9px;
+  min-height: 42px;
+  padding: 6px 8px;
+}
+
+.badge-progress-row img {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+}
+
+.badge-progress-row span,
+.unlock-goal-row strong {
+  color: #463923;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.badge-progress-row strong {
+  color: #2b2417;
+  font-size: 13px;
+  font-weight: 950;
+  white-space: nowrap;
+}
+
+.badge-progress-track,
+.next-goal-progress {
+  overflow: hidden;
+  height: 7px;
+  border: 1px solid rgba(144, 99, 31, 0.2);
+  border-radius: 999px;
+  background: rgba(116, 91, 47, 0.14);
+}
+
+.badge-progress-track span,
+.next-goal-progress span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #0a4c36, #d8ad4d);
+}
+
+.unlock-goals {
+  display: grid;
+  gap: 7px;
+  min-height: 0;
+}
+
+.unlock-goals h3 {
+  margin: 2px 0 0;
+  color: #5a4324;
+  font-family: var(--serif);
+  font-size: 15px;
+  font-weight: 950;
+}
+
+.unlock-goal-row {
+  grid-template-columns: 38px minmax(0, 1fr) auto;
+  gap: 8px;
+  min-height: 47px;
+  padding: 5px 8px;
+  color: #342817;
+  text-align: left;
+}
+
+.unlock-goal-row img {
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+  filter: saturate(0.72) drop-shadow(0 5px 5px rgba(55, 37, 14, 0.18));
+}
+
+.unlock-goal-row span {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.unlock-goal-row strong,
+.unlock-goal-row small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.unlock-goal-row small {
+  color: #745f40;
+  font-size: 11px;
+  font-weight: 820;
+}
+
+.unlock-goal-row b {
+  color: #8a6122;
+  font-size: 26px;
+  line-height: 1;
+}
+
+.badge-gallery-panel {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 12px;
+  padding: 18px 20px 16px;
+}
+
+.badge-gallery-heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 18px;
+}
+
+.badge-gallery-heading .badge-card-title {
+  justify-content: start;
+}
+
+.badge-filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.badge-filter-chips button {
+  min-width: 58px;
+  min-height: 28px;
+  border: 1px solid rgba(147, 98, 26, 0.32);
+  border-radius: 999px;
+  padding: 3px 13px;
+  color: #5e5138;
+  background: rgba(255, 251, 239, 0.7);
+  font-family: var(--serif);
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.badge-filter-chips button.is-active {
+  border-color: rgba(235, 199, 101, 0.66);
+  color: #fff2c4;
+  background: linear-gradient(180deg, #154f3a, #073325);
+  box-shadow: 0 5px 10px rgba(21, 55, 39, 0.18);
+}
+
+.badge-gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.badge-gallery-card {
+  position: relative;
+  display: grid;
+  grid-template-rows: minmax(98px, 1fr) auto auto;
+  justify-items: center;
+  min-width: 0;
+  min-height: 0;
+  border: 1px solid rgba(176, 126, 45, 0.36);
+  border-radius: 5px;
+  padding: 10px 9px 9px;
+  color: #1f1b10;
+  background: linear-gradient(180deg, rgba(255, 252, 242, 0.94), rgba(242, 225, 190, 0.86));
+  font-family: var(--serif);
+  text-align: center;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.44);
+}
+
+.badge-gallery-card.is-selected {
+  border-color: rgba(248, 199, 75, 0.94);
+  color: #fff0ae;
+  background:
+    radial-gradient(circle at 50% 20%, rgba(255, 206, 78, 0.62), transparent 34%),
+    linear-gradient(180deg, #0f5d41, #073523);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 242, 162, 0.34),
+    0 0 24px rgba(224, 172, 55, 0.38);
+}
+
+.badge-gallery-card.is-locked {
+  color: #18150f;
+  background:
+    linear-gradient(180deg, rgba(98, 92, 80, 0.5), rgba(70, 64, 54, 0.54)),
+    rgba(221, 210, 187, 0.86);
+}
+
+.badge-image-frame {
+  position: relative;
+  display: grid;
+  width: 100%;
+  min-height: 0;
+  place-items: center;
+}
+
+.badge-image-frame > img {
+  width: min(128px, 100%);
+  height: min(128px, 100%);
+  object-fit: contain;
+  filter: drop-shadow(0 9px 8px rgba(61, 38, 8, 0.22));
+}
+
+.badge-gallery-card.is-selected .badge-image-frame > img {
+  width: min(148px, 100%);
+  height: min(148px, 100%);
+  filter:
+    drop-shadow(0 0 14px rgba(255, 205, 73, 0.78))
+    drop-shadow(0 11px 9px rgba(34, 22, 6, 0.24));
+}
+
+.badge-gallery-card.is-locked .badge-image-frame > img {
+  filter: grayscale(0.18) saturate(0.64) brightness(0.72) drop-shadow(0 8px 7px rgba(34, 27, 17, 0.2));
+}
+
+.badge-lock-mark {
+  position: absolute;
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(32, 27, 18, 0.4);
+}
+
+.badge-lock-mark img {
+  width: 29px;
+  height: 29px;
+  object-fit: contain;
+}
+
+.badge-gallery-card strong,
+.badge-gallery-card span {
+  max-width: 100%;
+  line-height: 1.12;
+  word-break: keep-all;
+}
+
+.badge-gallery-card strong {
+  font-size: 17px;
+  font-weight: 950;
+}
+
+.badge-gallery-card span {
+  font-size: 15px;
+  font-weight: 860;
+}
+
+.selected-badge-panel {
+  display: grid;
+  grid-template-rows: auto 198px auto auto minmax(0, 1fr) 48px;
+  gap: 9px;
+  padding: 18px 22px 16px;
+}
+
+.selected-badge-preview {
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+
+.selected-badge-preview::before {
+  position: absolute;
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 221, 111, 0.48), rgba(255, 221, 111, 0.12) 45%, transparent 70%);
+  content: '';
+}
+
+.selected-badge-preview img {
+  position: relative;
+  width: 196px;
+  height: 196px;
+  object-fit: contain;
+  filter:
+    drop-shadow(0 0 15px rgba(244, 199, 78, 0.52))
+    drop-shadow(0 13px 11px rgba(63, 38, 7, 0.18));
+}
+
+.selected-badge-panel h2 {
+  margin: 0;
+  color: #2a2114;
+  font-family: var(--serif);
+  font-size: 24px;
+  font-weight: 950;
+  line-height: 1.15;
+  text-align: center;
+  word-break: keep-all;
+}
+
+.selected-badge-panel p {
+  margin: 0 auto;
+  max-width: 300px;
+  color: #4d412c;
+  font-family: var(--serif);
+  font-size: 14px;
+  font-weight: 760;
+  line-height: 1.42;
+  text-align: center;
+  word-break: keep-all;
+}
+
+.selected-badge-details {
+  display: grid;
+  align-content: start;
+  gap: 0;
+  min-height: 0;
+  margin: 0;
+  border-top: 1px solid rgba(166, 116, 40, 0.22);
+}
+
+.selected-badge-details div {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  gap: 14px;
+  border-bottom: 1px solid rgba(166, 116, 40, 0.2);
+  padding: 9px 0;
+  color: #34291a;
+  font-family: var(--serif);
+  font-size: 14px;
+}
+
+.selected-badge-details dt,
+.selected-badge-details dd {
+  margin: 0;
+}
+
+.selected-badge-details dt {
+  color: #79613d;
+  font-weight: 850;
+}
+
+.selected-badge-details dd {
+  font-weight: 930;
+  text-align: right;
+}
+
+.next-badge-goals {
+  display: grid;
+  grid-template-columns: 230px minmax(0, 1fr);
+  align-items: center;
+  gap: 14px;
+  padding: 11px 18px;
+}
+
+.next-goals-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.next-goals-heading .badge-card-title {
+  justify-content: start;
+  font-size: 18px;
+}
+
+.next-goals-heading > span {
+  color: #b17b24;
+  font-size: 34px;
+  line-height: 1;
+}
+
+.next-goal-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.next-goal-card {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) 48px;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  border: 1px solid rgba(170, 118, 39, 0.24);
+  border-radius: 6px;
+  padding: 7px 10px;
+  background: rgba(255, 250, 238, 0.82);
+  font-family: var(--serif);
+}
+
+.next-goal-card img {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  filter: saturate(0.72) drop-shadow(0 6px 6px rgba(58, 40, 15, 0.16));
+}
+
+.next-goal-card div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.next-goal-card strong,
+.next-goal-card span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.next-goal-card strong {
+  color: #2e2516;
+  font-size: 13px;
+  font-weight: 950;
+}
+
+.next-goal-card span {
+  color: #6b5737;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.next-goal-card b {
+  color: #342717;
+  font-size: 15px;
+  font-weight: 950;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.my-badges-action-bar {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(260px, 1.28fr) minmax(210px, 0.9fr) minmax(220px, 1fr) minmax(190px, 0.78fr);
+  align-items: center;
+  gap: 36px;
+  min-width: 0;
+  min-height: 0;
+  padding: 0 4px;
+}
+
+.badge-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-width: 0;
+  min-height: 56px;
+  border: 1px solid rgba(151, 102, 28, 0.54);
+  border-radius: 4px;
+  padding: 8px 13px;
+  color: #2c2315;
+  background: linear-gradient(180deg, rgba(255, 250, 236, 0.94), rgba(239, 218, 178, 0.9));
+  font-family: var(--serif);
+  font-size: 18px;
+  font-weight: 950;
+  line-height: 1.1;
+  text-align: center;
+  cursor: pointer;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.46),
+    0 6px 10px rgba(94, 57, 13, 0.08);
+  word-break: keep-all;
+}
+
+.badge-button img {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+}
+
+.badge-button--primary {
+  border-color: rgba(239, 199, 100, 0.78);
+  color: #fff5c7;
+  background: linear-gradient(180deg, #114e39, #062e22);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 247, 183, 0.26),
+    0 10px 16px rgba(5, 31, 22, 0.2);
+}
+
+.badge-button--secondary {
+  background: linear-gradient(180deg, rgba(255, 251, 241, 0.98), rgba(240, 223, 190, 0.92));
+}
+
+.badge-button--quiet {
+  color: #6a5737;
+  background: linear-gradient(180deg, rgba(255, 251, 242, 0.78), rgba(235, 214, 175, 0.72));
+}
+
+.my-badges-action-bar .action-primary,
+.selected-share-button {
+  border-width: 2px;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 248, 186, 0.32),
+    0 0 0 2px rgba(4, 46, 33, 0.86),
+    0 12px 20px rgba(8, 37, 27, 0.25),
+    0 0 18px rgba(226, 180, 74, 0.24);
+}
+
+.selected-share-button {
+  width: 100%;
+  min-height: 48px;
+  font-size: 16px;
+}
+
+.share-status {
+  position: absolute;
+  right: 0;
+  bottom: 100%;
+  min-height: 0;
+  margin: 0 0 5px;
+  color: #553c14;
+  font-family: var(--serif);
+  font-size: 12px;
+  font-weight: 850;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.share-status.is-visible {
+  opacity: 1;
+}
+
+@media (max-width: 1180px) {
+  .my-badges {
+    height: auto;
+    min-height: calc(100svh - 74px);
+    overflow: visible;
+  }
+
+  .my-badges-shell,
+  .my-badges-main,
+  .my-badges-dashboard,
+  .my-badges-stats,
+  .next-badge-goals,
+  .next-goal-list,
+  .my-badges-action-bar {
+    grid-template-columns: 1fr;
+  }
+
+  .my-badges-shell,
+  .my-badges-main {
+    height: auto;
+  }
+
+  .my-badges-main {
+    grid-template-rows: none;
+    overflow: visible;
+  }
+}
