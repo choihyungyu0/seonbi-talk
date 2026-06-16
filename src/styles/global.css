@@ -5710,9 +5710,9 @@ a {
 
 .seonbi-result-page::before {
   background:
-    linear-gradient(90deg, rgba(246, 236, 217, 0.08), rgba(255, 250, 238, 0.54) 28%, rgba(255, 250, 238, 0.64) 64%, rgba(246, 236, 217, 0.08)),
-    url('/images/new/637b9f49-7411-406f-b2c4-9807b02c40e4.png') center / cover no-repeat;
-  opacity: 0.76;
+    linear-gradient(90deg, rgba(246, 236, 217, 0.1), rgba(255, 250, 238, 0.22) 28%, rgba(255, 250, 238, 0.24) 64%, rgba(246, 236, 217, 0.1)),
+    url('/images/new/ChatGPT%20Image%202026%EB%85%84%206%EC%9B%94%2016%EC%9D%BC%20%EC%98%A4%EC%A0%84%2003_11_03.png') center / cover no-repeat;
+  opacity: 0.9;
 }
 
 .seonbi-result-page::after {
@@ -5728,7 +5728,7 @@ a {
   display: grid;
   grid-template-rows: minmax(0, 660px) minmax(0, 270px);
   gap: clamp(14px, 1vw, 18px);
-  width: min(94vw, 1680px);
+  width: min(96vw, 1760px);
   height: 100%;
   margin: 0 auto;
   padding: 26px 0 0;
@@ -5762,17 +5762,18 @@ a {
 .seonbi-result-hero-card img {
   display: block;
   width: 100%;
-  max-height: min(100%, 628px);
+  max-height: min(100%, 650px);
   object-fit: contain;
+  transform: translateX(-34px);
 }
 
 .seonbi-result-summary {
   display: grid;
   justify-items: center;
-  align-content: center;
+  align-content: start;
   gap: clamp(10px, 0.8vw, 15px);
   min-width: 0;
-  padding: 0 clamp(2px, 0.4vw, 8px);
+  padding: 44px clamp(2px, 0.4vw, 8px) 0;
   color: #17392b;
   text-align: center;
 }
@@ -5945,8 +5946,9 @@ a {
 .seonbi-ai-panel {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
-  align-self: center;
+  align-self: start;
   min-height: 0;
+  margin-top: 22px;
   max-height: 612px;
   padding: 29px 33px 30px;
 }

@@ -9,57 +9,58 @@ import { seonbiTypes, type SeonbiType } from '../features/seonbi-test/types'
 import { saveResultImage } from '../features/result/saveResultImage'
 import { loadTestResult } from '../lib/storage'
 
-const toegyeCourseSavedKey = 'yeongju-toegye-3d-course-saved'
+const cheosaCourseSavedKey = 'yeongju-cheosa-3d-course-saved'
 
 function newImage(fileName: string) {
   return encodeURI(`/images/new/${fileName}`)
 }
 
 const seonbiResultData = {
-  type: 'toegye',
-  title: '퇴계형 선비',
+  type: 'cheosa',
+  title: '처사형 선비',
   badge: '선비 유형 콘텐츠',
-  subtitle: '깊은 성찰과 배움으로 마음을 다스리는 선비',
+  subtitle: '자연 속에서 소박하게 뜻을 지키는 은둔형 선비',
   description:
-    '고요한 마음으로 자신을 돌아보고, 끊임없는 배움을 통해 인격을 수양하는 퇴계형 선비입니다. 영주의 선비 문화 속에서 내면의 지혜를 키우고, 세상을 너그럽게 바라보며 조용히 길을 찾아가는 여정을 떠나보세요.',
+    '자연을 벗 삼아 깊이 사색하고, 마음을 비우며 살아가는 선비입니다. 번잡한 세상을 벗어나 조용한 곳에서 스스로를 돌아보고, 소박한 삶 속에서 진정한 자유와 평안을 찾습니다. 느리게 걷고, 깊이 보고, 마음에 머무는 여행을 즐깁니다.',
   heroImage: newImage('image-Photoroom (27).png'),
   saveButtonImage: newImage('image-Photoroom (42).png'),
+  nextRoute: '/tour-3d',
   stats: [
     {
-      label: '배움 포인트',
-      value: '12,580P',
-      icon: newImage('image-removebg-preview (48).png'),
+      label: '자연 포인트',
+      value: '10,860P',
+      icon: newImage('image-removebg-preview (51).png'),
     },
     {
       label: '추천 코스',
-      value: '8개',
-      icon: newImage('image-removebg-preview (49).png'),
+      value: '6개',
+      icon: newImage('image-removebg-preview (52).png'),
     },
     {
       label: '체험 난이도',
-      value: '보통',
+      value: '쉬움',
       icon: newImage('image-removebg-preview (53).png'),
     },
   ],
   aiReasons: [
     {
-      title: '성찰과 배움',
-      text: '깊은 성찰을 통해 자신을 돌아보고, 배움을 삶에 적용하여 마음을 다스립니다.',
-      icon: newImage('image-removebg-preview (45).png'),
+      title: '자연과 사색',
+      text: '숲과 물, 산과 바람이 있는 고요한 장소에서 마음을 비우고 깊은 사색을 떠나보세요.',
+      icon: newImage('image-removebg-preview (54).png'),
     },
     {
-      title: '퇴계의 학문 정신',
-      text: '퇴계 이황의 학문과 가르침을 따라 올바른 지식과 덕을 갖추는 삶을 지향합니다.',
-      icon: newImage('image-removebg-preview (50).png'),
+      title: '처사의 삶',
+      text: '욕심을 덜고 소박하게, 마음의 평안을 지키며 자연과 더불어 살아가는 지혜를 배웁니다.',
+      icon: newImage('image-removebg-preview (55).png'),
     },
     {
       title: '어울리는 장소',
-      text: '소수서원에서 학문을 익히고, 선비촌에서 선비의 일상을 체험하며, 부석사에서 마음을 비워보세요.',
+      text: '무섬마을, 부석사, 소수서원 등 조용하고 아름다운 자연과 고즈넉한 공간을 추천합니다.',
       icon: newImage('image-removebg-preview (56).png'),
     },
     {
       title: '오늘의 추천 활동',
-      text: '선비 문화 체험, 서원 탐방, 독서와 기록을 통해 내면의 성장을 경험해보세요.',
+      text: '느린 여행지 탐방, 차 한 잔의 여유, 글쓰기 등으로 마음의 평온을 경험해보세요.',
       icon: newImage('image-removebg-preview (47).png'),
     },
   ],
@@ -75,7 +76,7 @@ const seonbiResultData = {
       type: 'toegye',
       label: '퇴계형 선비',
       thumbnail: newImage('image-Photoroom (53).png'),
-      active: true,
+      active: false,
     },
     {
       type: 'yulgok',
@@ -87,7 +88,7 @@ const seonbiResultData = {
       type: 'cheosa',
       label: '처사형 선비',
       thumbnail: newImage('47fbed27-5eed-4a5f-9e6a-d5a3a1e5eaa5.png'),
-      active: false,
+      active: true,
     },
     {
       type: 'uguk',
@@ -111,30 +112,34 @@ export function ResultPage() {
   const [courseStatusMessage, setCourseStatusMessage] = useState('')
   const [isCourseSaved, setIsCourseSaved] = useState(() => {
     try {
-      return window.localStorage.getItem(toegyeCourseSavedKey) === 'true'
+      return window.localStorage.getItem(cheosaCourseSavedKey) === 'true'
     } catch {
       return false
     }
   })
   const result = loadTestResult()
-  const requestedType = isSeonbiType(routeType) ? routeType : null
-  const shouldShowToegyeResult = requestedType === 'toegye' || result?.type === 'toegye'
+  const pathSegments = window.location.pathname.split('/').filter(Boolean)
+  const pathnameType = pathSegments[pathSegments.length - 1]
+  const requestedType =
+    isSeonbiType(routeType) ? routeType : isSeonbiType(pathnameType) ? pathnameType : null
+  const displayType = requestedType ?? result?.type
+  const shouldShowCheosaResult = displayType === 'cheosa'
 
-  if (!result && !shouldShowToegyeResult) {
+  if (!result && !shouldShowCheosaResult) {
     return <EmptyResultState />
   }
 
-  function startToegyeCourse() {
-    navigate('/tour-3d')
+  function startCheosaCourse() {
+    navigate(seonbiResultData.nextRoute)
   }
 
-  function saveToegyeCourse() {
+  function saveCheosaCourse() {
     try {
       const nextSavedState = !isCourseSaved
       // TODO: Replace this local toggle with My Page course persistence when that API exists.
-      window.localStorage.setItem(toegyeCourseSavedKey, String(nextSavedState))
+      window.localStorage.setItem(cheosaCourseSavedKey, String(nextSavedState))
       setIsCourseSaved(nextSavedState)
-      setCourseStatusMessage(nextSavedState ? '퇴계형 선비길 코스를 저장했습니다.' : '코스 저장을 해제했습니다.')
+      setCourseStatusMessage(nextSavedState ? '처사형 선비길 코스를 저장했습니다.' : '코스 저장을 해제했습니다.')
     } catch {
       setCourseStatusMessage('코스 저장에 실패했습니다. 다시 시도해주세요.')
     }
@@ -161,7 +166,7 @@ export function ResultPage() {
     }
   }
 
-  if (shouldShowToegyeResult) {
+  if (shouldShowCheosaResult) {
     return (
       <AppLayout hideChatbot hideBottomNavigation>
         <section className="seonbi-result-page" aria-labelledby="seonbi-result-title">
@@ -176,8 +181,8 @@ export function ResultPage() {
               <SeonbiCategoryPanel />
               <SeonbiResultActions
                 isCourseSaved={isCourseSaved}
-                onSaveCourse={saveToegyeCourse}
-                onStartCourse={startToegyeCourse}
+                onSaveCourse={saveCheosaCourse}
+                onStartCourse={startCheosaCourse}
               />
               <SeonbiThemeCollection onThemePending={showThemePendingMessage} />
             </div>
@@ -257,8 +262,8 @@ function EmptyResultState() {
 
 function SeonbiResultHeroCard() {
   return (
-    <figure className="seonbi-result-hero-card" aria-label="퇴계형 선비 이미지">
-      <img src={seonbiResultData.heroImage} alt="서원 정원에서 글을 쓰며 성찰하는 퇴계형 선비" />
+    <figure className="seonbi-result-hero-card" aria-label="처사형 선비 이미지">
+      <img src={seonbiResultData.heroImage} alt="자연 속 정자에서 사색하는 처사형 선비" />
     </figure>
   )
 }
@@ -335,20 +340,20 @@ function SeonbiResultActions({
   onStartCourse,
 }: SeonbiResultActionsProps) {
   return (
-    <section className="seonbi-result-actions" aria-label="퇴계형 선비길 코스 실행">
+    <section className="seonbi-result-actions" aria-label="처사형 선비길 코스 실행">
       <button
         type="button"
         className="seonbi-start-button"
         onClick={onStartCourse}
-        aria-label="퇴계형 시작하기"
+        aria-label="처사형 시작하기"
       >
-        <span>퇴계형 시작하기</span>
+        <span>처사형 시작하기</span>
       </button>
       <button
         type="button"
         className="seonbi-save-button"
         onClick={onSaveCourse}
-        aria-label={isCourseSaved ? '퇴계형 코스 저장 해제' : '퇴계형 코스 저장'}
+        aria-label={isCourseSaved ? '처사형 코스 저장 해제' : '처사형 코스 저장'}
         aria-pressed={isCourseSaved}
       >
         <img src={seonbiResultData.saveButtonImage} alt="" />
