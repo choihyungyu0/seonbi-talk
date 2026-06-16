@@ -1,1 +1,1 @@
-export { MyPage } from './MyOneLineArchivePage'
+export { MyPage } from './MySeonbiRecordsPage'

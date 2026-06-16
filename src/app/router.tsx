@@ -13,7 +13,7 @@ import { KnowledgeGraphPage } from '../pages/KnowledgeGraphPage'
 import { LoginPage } from '../pages/LoginPage'
 import { MissionCompletePage } from '../pages/MissionCompletePage'
 import { MissionReflectionPage } from '../pages/MissionReflectionPage'
-import { MyPage } from '../pages/MyPage'
+import { MyPage as MySeonbiRecordsPage } from '../pages/MySeonbiRecordsPage'
 import { ResultPage } from '../pages/ResultPage'
 import { SignupPage } from '../pages/SignupPage'
 import { TestPage } from '../pages/TestPage'
@@ -52,7 +52,7 @@ export function AppRouter() {
         <Route path="/ai-evidence-graph" element={<KnowledgeGraphPage />} />
         <Route path="/knowledge-graph" element={<KnowledgeGraphPage />} />
         <Route path="/judge" element={<JudgePage />} />
-        <Route path="/mypage" element={<MyPage />} />
+        <Route path="/mypage" element={<MySeonbiRecordsPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/auth/callback" element={<AuthCallbackPage />} />
         <Route path="/signup" element={<SignupPage />} />
