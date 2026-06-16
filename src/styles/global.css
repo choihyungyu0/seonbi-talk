@@ -1709,14 +1709,46 @@ a {
 }
 
 .tour3d-page {
+  position: relative;
   display: grid;
-  gap: 24px;
+  width: min(1840px, calc(100% - 40px));
+  min-height: calc(100svh - 74px);
+  gap: 10px;
+  overflow: hidden;
+  padding: 10px 0 12px;
+  isolation: isolate;
+}
+
+.tour3d-page::before,
+.tour3d-page::after {
+  position: absolute;
+  z-index: -1;
+  pointer-events: none;
+  content: '';
+}
+
+.tour3d-page::before {
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(250, 244, 232, 0.96), rgba(244, 234, 214, 0.92)),
+    url('/images/new/17275d50-d105-4762-b2ab-b9cc7ca98b1c.png') top right / 38% auto no-repeat,
+    url('/images/new/df289307-6561-4197-adc8-51a41ca8f0a8.png') bottom left / 42% auto no-repeat;
+}
+
+.tour3d-page::after {
+  inset: 0;
+  border-inline: 1px solid rgba(173, 125, 50, 0.18);
+  background:
+    linear-gradient(90deg, rgba(118, 82, 34, 0.08), transparent 10%, transparent 90%, rgba(118, 82, 34, 0.08)),
+    linear-gradient(180deg, transparent 0, rgba(255, 255, 255, 0.32) 42%, transparent 100%);
 }
 
 .tour3d-heading {
   display: grid;
-  max-width: 900px;
-  gap: 12px;
+  justify-items: center;
+  gap: 1px;
+  min-height: 74px;
+  text-align: center;
 }
 
 .tour3d-heading h1,
@@ -1725,114 +1757,361 @@ a {
 }
 
 .tour3d-heading h1 {
+  color: #062d20;
   font-family: var(--serif);
-  font-size: clamp(34px, 6vw, 62px);
+  font-size: clamp(32px, 2.5vw, 43px);
+  font-weight: 900;
   line-height: 1.08;
+  text-shadow: 0 2px 0 rgba(255, 247, 221, 0.78);
+  word-break: keep-all;
 }
 
 .tour3d-heading p {
-  max-width: 680px;
-  color: var(--muted);
+  color: #5c4c31;
+  font-size: 13px;
+  font-weight: 800;
 }
 
-.tour3d-layout {
+.tour3d-preview-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 26px;
+  min-width: 174px;
+  border: 1px solid #c99a45;
+  border-radius: 999px;
+  padding: 2px 16px;
+  color: #ffefb4;
+  background:
+    linear-gradient(180deg, rgba(9, 72, 49, 0.96), rgba(3, 52, 37, 0.98)),
+    #043322;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 229, 154, 0.34),
+    0 7px 16px rgba(38, 31, 18, 0.24);
+  font-family: var(--serif);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.tour3d-preview-badge img {
+  width: 19px;
+  height: 19px;
+  object-fit: contain;
+}
+
+.tour3d-preview-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(280px, 0.28fr);
-  gap: 20px;
+  grid-template-columns: minmax(0, 1fr) 374px;
+  gap: 18px;
   align-items: stretch;
 }
 
 .tour3d-map-card,
-.tour3d-control-panel {
-  border: 1px solid rgba(45, 75, 62, 0.12);
-  border-radius: 8px;
-  background: var(--surface);
-  box-shadow: 0 20px 54px rgba(45, 75, 62, 0.11);
+.tour3d-summary-panel,
+.tour3d-timeline {
+  border: 1px solid rgba(181, 132, 54, 0.48);
+  background:
+    linear-gradient(180deg, rgba(255, 250, 239, 0.94), rgba(241, 226, 197, 0.84)),
+    #fbf3df;
+  box-shadow:
+    0 18px 44px rgba(58, 43, 19, 0.18),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.58);
 }
 
 .tour3d-map-card {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
   overflow: hidden;
+  border-radius: 22px;
+  padding: 11px;
 }
 
-.tour3d-map-toolbar {
+.tour3d-map-card-head {
   display: flex;
-  min-height: 72px;
+  min-height: 42px;
   align-items: center;
   justify-content: space-between;
-  gap: 14px;
-  padding: 14px 18px;
-  border-bottom: 1px solid rgba(45, 75, 62, 0.1);
+  gap: 12px;
+  padding: 0 6px;
 }
 
-.tour3d-map-toolbar div {
+.tour3d-map-card-head div {
   display: grid;
-  gap: 3px;
+  gap: 1px;
 }
 
-.tour3d-map-toolbar span {
-  color: var(--muted);
+.tour3d-map-card-head span,
+.tour3d-panel-heading span {
+  color: #7a5523;
   font-size: 12px;
-  font-weight: 900;
+  font-weight: 950;
+  letter-spacing: 0.08em;
 }
 
-.tour3d-map-toolbar strong {
-  color: var(--ink);
+.tour3d-map-card-head strong {
+  color: #062d20;
   font-family: var(--serif);
-  font-size: 24px;
+  font-size: 23px;
   line-height: 1.05;
 }
 
-.tour3d-map-toolbar button,
-.tour3d-place-grid button {
-  min-height: 42px;
-  border: 1px solid rgba(45, 75, 62, 0.18);
+.tour3d-mini-reset-button,
+.tour3d-map-controls button,
+.tour3d-panel-button,
+.tour3d-action-button,
+.tour3d-timeline button,
+.tour3d-route-marker {
+  font: inherit;
+  cursor: pointer;
+}
+
+.tour3d-mini-reset-button {
+  min-height: 34px;
+  border: 1px solid rgba(190, 147, 64, 0.78);
   border-radius: 999px;
   padding: 0 16px;
-  color: var(--forest-dark);
-  background: rgba(255, 253, 249, 0.92);
-  font: inherit;
+  color: #f7e5aa;
+  background: linear-gradient(180deg, #075236, #022d20);
+  font-size: 13px;
   font-weight: 900;
-  cursor: pointer;
-  transition:
-    background 180ms ease,
-    border-color 180ms ease,
-    color 180ms ease,
-    transform 180ms ease;
+  box-shadow: inset 0 0 0 1px rgba(255, 242, 191, 0.22);
 }
 
-.tour3d-map-toolbar button:hover:not(:disabled),
-.tour3d-place-grid button:hover:not(:disabled),
-.tour3d-place-grid button.is-active {
-  border-color: var(--forest);
-  color: #fff;
-  background: var(--forest);
-  transform: translateY(-1px);
-}
-
-.tour3d-map-toolbar button:disabled,
-.tour3d-place-grid button:disabled {
-  cursor: wait;
-  opacity: 0.58;
-}
-
-.tour3d-map-shell {
+.tour3d-map-frame {
   position: relative;
-  min-height: 640px;
+  height: clamp(480px, 50.8vh, 552px);
+  min-height: 480px;
   overflow: hidden;
-  background: #101820;
+  border: 2px solid rgba(215, 169, 74, 0.62);
+  border-radius: 18px;
+  background: #10251f;
+  box-shadow:
+    inset 0 0 0 1px rgba(16, 38, 30, 0.62),
+    0 12px 28px rgba(28, 25, 17, 0.22);
 }
 
-.tour3d-map-host {
-  width: 100%;
-  height: 640px;
-  min-height: 640px;
-}
-
+.tour3d-map-host,
 .tour3d-map-element {
   display: block;
   width: 100%;
-  height: 640px;
-  min-height: 640px;
+  height: 100%;
+  min-height: 100%;
+}
+
+.tour3d-route-svg {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.tour3d-route-line {
+  fill: none;
+  stroke: #ffe39a;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 0.72;
+  filter: url('#tour3d-route-glow');
+}
+
+.tour3d-route-line--aura {
+  stroke: rgba(255, 185, 52, 0.36);
+  stroke-width: 1.9;
+}
+
+.tour3d-route-spark {
+  fill: #fff5c8;
+  filter: drop-shadow(0 0 5px #f4b746);
+}
+
+.tour3d-route-marker {
+  position: absolute;
+  z-index: 6;
+  width: clamp(98px, 7.1vw, 138px);
+  border: 0;
+  padding: 0;
+  background: transparent;
+  transform: translate(-50%, -50%);
+  transition:
+    filter 180ms ease,
+    transform 180ms ease;
+}
+
+.tour3d-route-marker:hover:not(:disabled),
+.tour3d-route-marker.is-active {
+  filter: brightness(1.08) saturate(1.08);
+  transform: translate(-50%, -52%) scale(1.04);
+}
+
+.tour3d-route-marker:disabled {
+  cursor: wait;
+}
+
+.tour3d-route-marker img {
+  display: block;
+  width: 100%;
+  height: auto;
+  filter: drop-shadow(0 12px 16px rgba(18, 14, 8, 0.42));
+}
+
+.tour3d-route-number {
+  position: absolute;
+  bottom: 18%;
+  left: 8%;
+  z-index: 1;
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border: 1px solid #d7aa58;
+  border-radius: 999px;
+  color: #ffe8a7;
+  background: linear-gradient(180deg, #0e5d3f, #042e21);
+  font-family: var(--serif);
+  font-size: 16px;
+  font-weight: 950;
+  line-height: 1;
+  box-shadow: 0 4px 10px rgba(20, 13, 5, 0.32);
+}
+
+.tour3d-map-controls {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  z-index: 8;
+  display: grid;
+  gap: 8px;
+}
+
+.tour3d-map-controls button {
+  display: grid;
+  width: 43px;
+  height: 43px;
+  place-items: center;
+  border: 1px solid rgba(210, 165, 83, 0.78);
+  border-radius: 999px;
+  color: #07402d;
+  background: rgba(255, 245, 219, 0.94);
+  box-shadow:
+    0 6px 16px rgba(22, 15, 7, 0.28),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.82);
+  font-family: var(--serif);
+  font-size: 24px;
+  font-weight: 950;
+  line-height: 1;
+}
+
+.tour3d-map-controls button:nth-child(3),
+.tour3d-map-controls button:nth-child(4) {
+  font-size: 15px;
+}
+
+.tour3d-mini-reset-button:disabled,
+.tour3d-map-controls button:disabled,
+.tour3d-panel-button:disabled,
+.tour3d-action-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+.tour3d-route-card {
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+  z-index: 7;
+  display: grid;
+  width: min(520px, calc(100% - 150px));
+  gap: 6px;
+  border: 1px solid rgba(218, 177, 91, 0.72);
+  border-radius: 12px;
+  padding: 12px;
+  color: #fff4d1;
+  background:
+    linear-gradient(180deg, rgba(5, 64, 43, 0.94), rgba(3, 40, 29, 0.96)),
+    #062d20;
+  box-shadow:
+    0 12px 26px rgba(12, 8, 3, 0.34),
+    inset 0 0 0 1px rgba(255, 236, 176, 0.18);
+}
+
+.tour3d-route-card span {
+  color: #ffe7a4;
+  font-family: var(--serif);
+  font-size: 19px;
+  font-weight: 950;
+}
+
+.tour3d-route-card strong {
+  color: #fff8df;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.tour3d-route-card dl {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  margin: 0;
+}
+
+.tour3d-route-card div {
+  display: grid;
+  gap: 2px;
+  border: 1px solid rgba(242, 200, 105, 0.2);
+  border-radius: 8px;
+  padding: 6px;
+  background: rgba(255, 247, 220, 0.08);
+}
+
+.tour3d-route-card dt,
+.tour3d-route-card dd {
+  margin: 0;
+  line-height: 1.2;
+}
+
+.tour3d-route-card dt {
+  color: rgba(255, 238, 186, 0.74);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.tour3d-route-card dd {
+  color: #fff8df;
+  font-family: var(--serif);
+  font-size: 15px;
+  font-weight: 950;
+}
+
+.tour3d-map-legend {
+  position: absolute;
+  right: 18px;
+  bottom: 18px;
+  z-index: 7;
+  display: grid;
+  gap: 6px;
+  border: 1px solid rgba(219, 174, 82, 0.64);
+  border-radius: 10px;
+  padding: 10px 12px;
+  color: #fff3c8;
+  background: rgba(3, 39, 28, 0.9);
+  box-shadow: 0 10px 24px rgba(20, 13, 5, 0.28);
+}
+
+.tour3d-map-legend span {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.tour3d-map-legend img {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
 }
 
 .tour3d-map-fallback {
@@ -1864,178 +2143,1370 @@ a {
   font-weight: 800;
 }
 
-.tour3d-control-panel {
+.tour3d-map-frame > [role='status'] {
+  z-index: 2;
+  background:
+    linear-gradient(135deg, rgba(6, 47, 34, 0.9), rgba(16, 24, 32, 0.88)),
+    #101820;
+}
+
+.tour3d-map-frame > [role='status'] p {
+  color: rgba(247, 244, 236, 0.86);
+}
+
+.tour3d-summary-panel {
   display: grid;
   align-content: start;
-  gap: 18px;
-  padding: 20px;
-}
-
-.tour3d-control-panel h2,
-.tour3d-control-panel p {
-  margin: 0;
-}
-
-.tour3d-control-panel h2 {
-  margin-top: 10px;
-  font-family: var(--serif);
-  font-size: 28px;
-  line-height: 1.15;
-}
-
-.tour3d-place-grid {
-  display: grid;
-  gap: 10px;
-}
-
-.tour3d-place-grid button {
-  width: 100%;
-  justify-content: center;
-}
-
-.tour3d-detail-card {
-  display: grid;
-  gap: 14px;
-  border: 1px solid rgba(45, 75, 62, 0.13);
-  border-radius: 8px;
+  gap: 12px;
+  min-width: 0;
+  border-radius: 18px;
   padding: 18px;
-  background: rgba(255, 253, 249, 0.94);
-  box-shadow: 0 14px 34px rgba(45, 75, 62, 0.1);
 }
 
-.tour3d-detail-card-empty {
-  background: rgba(200, 234, 216, 0.2);
+.tour3d-panel-heading {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  text-align: center;
 }
 
-.tour3d-detail-card h2 {
+.tour3d-panel-heading h2 {
   margin: 0;
+  color: #103927;
   font-family: var(--serif);
-  font-size: 30px;
+  font-size: 25px;
   line-height: 1.12;
 }
 
-.tour3d-detail-card-empty h2 {
-  font-size: 24px;
+.tour3d-summary-list {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  border: 1px solid rgba(204, 160, 78, 0.34);
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(255, 251, 241, 0.6);
 }
 
-.tour3d-detail-card p,
-.tour3d-detail-card dd {
-  color: var(--muted);
-  font-size: 14px;
-  font-weight: 800;
-  line-height: 1.55;
+.tour3d-summary-list div {
+  display: grid;
+  grid-template-columns: 132px minmax(0, 1fr);
+  align-items: center;
+  min-height: 43px;
+  gap: 10px;
+  border-bottom: 1px solid rgba(196, 155, 80, 0.24);
+  padding: 8px 10px;
 }
 
-.tour3d-detail-card-head {
+.tour3d-summary-list div:last-child {
+  border-bottom: 0;
+}
+
+.tour3d-summary-list dt {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 8px;
+  color: #65481f;
+  font-size: 13px;
+  font-weight: 950;
+}
+
+.tour3d-summary-list dt img {
+  width: 26px;
+  height: 26px;
+  flex: 0 0 auto;
+  object-fit: contain;
+}
+
+.tour3d-summary-list dd {
+  margin: 0;
+  color: #063221;
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1.35;
+  word-break: keep-all;
+}
+
+.tour3d-reason-panel {
+  display: grid;
+  gap: 8px;
+}
+
+.tour3d-reason-panel h3 {
+  margin: 0;
+  color: #21412f;
+  font-family: var(--serif);
+  font-size: 18px;
+  line-height: 1.2;
+  text-align: center;
+}
+
+.tour3d-reason-panel ul {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tour3d-reason-panel li {
+  position: relative;
+  padding-left: 18px;
+  color: #443a28;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+.tour3d-reason-panel li::before {
+  position: absolute;
+  top: 0.58em;
+  left: 3px;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: #0a4d35;
+  box-shadow: 0 0 0 2px rgba(219, 178, 92, 0.42);
+  content: '';
+}
+
+.tour3d-evidence-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.tour3d-evidence-chips span {
+  border: 1px solid rgba(181, 132, 54, 0.42);
+  border-radius: 999px;
+  padding: 5px 9px;
+  color: #10402d;
+  background: rgba(255, 251, 238, 0.74);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.tour3d-panel-button {
+  min-height: 42px;
+  border: 1px solid #bd8c3a;
+  border-radius: 999px;
+  color: #fff0b6;
+  background: linear-gradient(180deg, #0c5d3f, #033524);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 232, 162, 0.24),
+    0 8px 18px rgba(35, 25, 10, 0.18);
+  font-size: 14px;
+  font-weight: 950;
+}
+
+.tour3d-timeline {
+  display: grid;
+  gap: 5px;
+  border-radius: 14px;
+  padding: 6px 12px 8px;
+}
+
+.tour3d-timeline h2 {
+  margin: 0;
+  color: #5c4019;
+  font-family: var(--serif);
+  font-size: 18px;
+  line-height: 1.15;
+  text-align: center;
+}
+
+.tour3d-timeline-track {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 12px;
 }
 
-.tour3d-detail-card-head strong {
-  display: grid;
-  width: 52px;
-  height: 52px;
-  place-items: center;
+.tour3d-timeline-track::before {
+  position: absolute;
+  top: 34px;
+  right: 8%;
+  left: 8%;
+  height: 4px;
   border-radius: 999px;
-  color: #fff;
-  background: var(--forest);
+  background: linear-gradient(90deg, rgba(175, 115, 22, 0.36), #f1b747, rgba(175, 115, 22, 0.36));
+  box-shadow: 0 0 10px rgba(242, 178, 60, 0.54);
+  content: '';
+}
+
+.tour3d-timeline button {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  min-width: 0;
+  min-height: 74px;
+  justify-items: center;
+  gap: 0;
+  border: 1px solid rgba(199, 151, 69, 0.48);
+  border-radius: 8px;
+  padding: 4px 8px 6px;
+  color: #173d2c;
+  background: rgba(255, 250, 239, 0.92);
+  box-shadow:
+    0 8px 18px rgba(54, 39, 16, 0.14),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.66);
+}
+
+.tour3d-timeline button.is-active {
+  border-color: #bd8a32;
+  box-shadow:
+    0 10px 22px rgba(54, 39, 16, 0.22),
+    0 0 0 2px rgba(244, 197, 94, 0.32);
+}
+
+.tour3d-timeline button > span {
+  position: absolute;
+  top: 4px;
+  left: 7px;
+  display: grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  border: 1px solid #d4a54d;
+  border-radius: 999px;
+  color: #ffe4a0;
+  background: #06432d;
   font-family: var(--serif);
-  font-size: 24px;
+  font-size: 12px;
+  font-weight: 950;
+}
+
+.tour3d-timeline img {
+  width: 42px;
+  height: 42px;
+  object-fit: contain;
+}
+
+.tour3d-timeline strong,
+.tour3d-timeline small {
+  overflow: hidden;
+  max-width: 100%;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tour3d-timeline strong {
+  color: #123927;
+  font-family: var(--serif);
+  font-size: 13px;
+  line-height: 1.12;
+}
+
+.tour3d-timeline small {
+  color: #59462a;
+  font-size: 10px;
+  font-weight: 850;
+  line-height: 1.15;
+}
+
+.tour3d-action-bar {
+  position: relative;
+  display: flex;
+  min-height: 58px;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.tour3d-action-button {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid rgba(188, 139, 58, 0.56);
+  border-radius: 8px;
+  padding: 0 22px;
+  color: #153b2a;
+  background: rgba(255, 249, 235, 0.9);
+  box-shadow:
+    0 8px 18px rgba(52, 37, 14, 0.12),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.68);
+  font-size: 14px;
+  font-weight: 950;
+}
+
+.tour3d-action-button--primary {
+  min-width: min(360px, 40vw);
+  min-height: 56px;
+  border-color: #c9993f;
+  color: #fff1b6;
+  background: linear-gradient(180deg, #0d5d3f, #033221);
+  box-shadow:
+    0 12px 26px rgba(30, 21, 8, 0.24),
+    0 0 18px rgba(239, 182, 66, 0.24),
+    inset 0 0 0 1px rgba(255, 232, 161, 0.22);
+  font-family: var(--serif);
+  font-size: 21px;
+}
+
+.tour3d-action-button--secondary,
+.tour3d-action-button--save[aria-pressed='true'] {
+  color: #fff1b6;
+  background: linear-gradient(180deg, #0a4e36, #062d21);
+}
+
+.tour3d-save-status {
+  position: absolute;
+  right: 0;
+  bottom: -6px;
+  margin: 0;
+  color: #0b4a33;
+  font-size: 12px;
+  font-weight: 900;
+  transform: translateY(100%);
+}
+
+.tour3d-page--mission {
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  width: min(1840px, calc(100% - 48px));
+  height: calc(100svh - 74px);
+  min-height: calc(100svh - 74px);
+  gap: 10px;
+  padding: 10px 0 14px;
+}
+
+.tour3d-page--mission::before {
+  background:
+    linear-gradient(180deg, rgba(250, 244, 232, 0.76), rgba(244, 232, 208, 0.66)),
+    url('/images/new/637b9f49-7411-406f-b2c4-9807b02c40e4.png') center / cover no-repeat,
+    #f6ead3;
+}
+
+.tour3d-page--mission::after {
+  background:
+    radial-gradient(circle at 15% 62%, rgba(255, 229, 139, 0.24), transparent 25%),
+    radial-gradient(circle at 82% 22%, rgba(255, 247, 221, 0.38), transparent 32%),
+    linear-gradient(90deg, rgba(104, 72, 29, 0.1), transparent 11%, transparent 89%, rgba(104, 72, 29, 0.1));
+}
+
+.tour3d-mission-hero {
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+  min-height: 218px;
+  text-align: center;
+}
+
+.tour3d-mission-hero h1,
+.tour3d-mission-hero p {
+  margin: 0;
+}
+
+.tour3d-mission-hero h1 {
+  color: #062d20;
+  font-family: var(--serif);
+  font-size: clamp(40px, 3vw, 56px);
+  font-weight: 950;
+  line-height: 1.04;
+  text-shadow: 0 2px 0 rgba(255, 248, 226, 0.84);
+  word-break: keep-all;
+}
+
+.tour3d-mission-hero p {
+  color: #4f422c;
+  font-size: 16px;
+  font-weight: 850;
+  line-height: 1.3;
+}
+
+.tour3d-mission-badge {
+  min-width: 162px;
+  min-height: 33px;
+  border-radius: 7px;
+  font-size: 15px;
+}
+
+.tour3d-mission-badge img {
+  width: 24px;
+  height: 24px;
+}
+
+.tour3d-mission-progress-shell {
+  display: grid;
+  grid-template-columns: 142px minmax(0, 950px);
+  width: min(1130px, 100%);
+  gap: 28px;
+  align-items: stretch;
+  margin-top: 13px;
+}
+
+.tour3d-mission-count,
+.tour3d-mission-steps {
+  border: 1px solid rgba(204, 157, 74, 0.5);
+  background:
+    linear-gradient(180deg, rgba(255, 252, 244, 0.9), rgba(245, 234, 212, 0.82)),
+    #fbf3df;
+  box-shadow:
+    0 12px 28px rgba(74, 50, 19, 0.12),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.66);
+}
+
+.tour3d-mission-count {
+  display: grid;
+  min-height: 82px;
+  place-items: center;
+  align-content: center;
+  gap: 1px;
+  border-radius: 10px;
+}
+
+.tour3d-mission-count strong {
+  color: #1f1b13;
+  font-family: var(--serif);
+  font-size: 34px;
   line-height: 1;
 }
 
-.tour3d-tag-row {
+.tour3d-mission-count span {
+  color: #173c2d;
+  font-size: 13px;
+  font-weight: 950;
+}
+
+.tour3d-mission-steps {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  align-items: center;
+  min-height: 82px;
+  margin: 0;
+  border-radius: 10px;
+  padding: 12px 26px 10px;
+  list-style: none;
+}
+
+.tour3d-mission-steps::before {
+  position: absolute;
+  top: 30px;
+  right: 9%;
+  left: 9%;
+  height: 2px;
+  background:
+    repeating-linear-gradient(90deg, rgba(163, 120, 52, 0.42) 0 12px, transparent 12px 19px);
+  content: '';
+}
+
+.tour3d-mission-steps li {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  justify-items: center;
+  gap: 7px;
+  color: #5d4b31;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.tour3d-mission-steps span {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border: 2px solid rgba(187, 141, 64, 0.5);
+  border-radius: 999px;
+  color: #4b3b21;
+  background: linear-gradient(180deg, #fff8e5, #ead9b9);
+  box-shadow: 0 4px 10px rgba(55, 37, 13, 0.16);
+  font-family: var(--serif);
+  font-size: 19px;
+  font-weight: 950;
+  line-height: 1;
+}
+
+.tour3d-mission-steps .is-active span {
+  border-color: #dcb35a;
+  color: #fff0b9;
+  background: linear-gradient(180deg, #0b6141, #023323);
+  box-shadow:
+    0 0 0 4px rgba(236, 189, 83, 0.18),
+    0 0 22px rgba(243, 186, 59, 0.54),
+    inset 0 0 0 1px rgba(255, 238, 178, 0.3);
+}
+
+.tour3d-mission-steps .is-completed span {
+  border-color: rgba(225, 184, 90, 0.72);
+  color: #fff0b9;
+  background: linear-gradient(180deg, #0b6141, #033423);
+}
+
+.tour3d-mission-steps strong {
+  display: block;
+  overflow: hidden;
+  max-width: 100%;
+  color: inherit;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tour3d-mission-steps .is-active strong {
+  color: #082f22;
+}
+
+.tour3d-mission-steps .is-completed strong {
+  color: #173c2d;
+}
+
+.tour3d-mission-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.86fr) minmax(0, 1.1fr) minmax(0, 0.92fr);
+  gap: 22px;
+  min-height: 0;
+  align-items: stretch;
+  justify-content: center;
+}
+
+.tour3d-mission-panel {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid rgba(182, 132, 52, 0.52);
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, rgba(255, 252, 245, 0.94), rgba(244, 231, 207, 0.86)),
+    #fbf2df;
+  box-shadow:
+    0 18px 38px rgba(58, 43, 19, 0.18),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.62),
+    inset 0 0 0 4px rgba(255, 246, 219, 0.32);
+}
+
+.tour3d-mission-panel::before,
+.tour3d-mission-panel::after {
+  position: absolute;
+  width: 54px;
+  height: 54px;
+  border-color: rgba(186, 135, 50, 0.42);
+  pointer-events: none;
+  content: '';
+}
+
+.tour3d-mission-panel::before {
+  top: 10px;
+  left: 10px;
+  border-top: 2px solid;
+  border-left: 2px solid;
+  border-radius: 13px 0 0;
+}
+
+.tour3d-mission-panel::after {
+  right: 10px;
+  bottom: 10px;
+  border-right: 2px solid;
+  border-bottom: 2px solid;
+  border-radius: 0 0 13px;
+}
+
+.tour3d-mission-map-panel {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) 50px;
+  gap: 10px;
+  padding: 16px;
+}
+
+.tour3d-mission-map-panel h2,
+.tour3d-ai-card h2,
+.tour3d-checklist-card h2 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 0;
+  color: #1d281d;
+  font-family: var(--serif);
+  font-size: 21px;
+  font-weight: 950;
+  line-height: 1.12;
+}
+
+.tour3d-ai-card h2 img,
+.tour3d-checklist-card h2 img {
+  width: 27px;
+  height: 27px;
+  object-fit: contain;
+}
+
+.tour3d-mission-map-frame {
+  height: 100%;
+  min-height: 0;
+  border-radius: 15px;
+  background: #10251f;
+}
+
+.tour3d-mission-route-svg .tour3d-route-line {
+  filter: url('#tour3d-mission-route-glow');
+}
+
+.tour3d-mission-route-marker {
+  width: clamp(82px, 5.8vw, 112px);
+}
+
+.tour3d-mission-route-marker .tour3d-route-number {
+  top: 5%;
+  bottom: auto;
+  left: 8%;
+  width: 29px;
+  height: 29px;
+  border-width: 2px;
+  color: #fff0b8;
+  background: linear-gradient(180deg, #0a6141, #023323);
+}
+
+.tour3d-mission-route-marker.is-current-step {
+  filter: drop-shadow(0 0 14px rgba(255, 191, 58, 0.85)) brightness(1.08);
+}
+
+.tour3d-mission-map-controls {
+  top: 18px;
+  right: 18px;
+  gap: 6px;
+}
+
+.tour3d-mission-map-controls button {
+  width: 37px;
+  height: 37px;
+  border-radius: 8px;
+  font-size: 23px;
+}
+
+.tour3d-mission-map-frame .tour3d-map-fallback {
+  z-index: 10;
+}
+
+.tour3d-mission-wide-button,
+.tour3d-ai-listen-button,
+.tour3d-mission-action,
+.tour3d-next-destination-card {
+  font: inherit;
+  cursor: pointer;
+}
+
+.tour3d-mission-wide-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 50px;
+  border: 1px solid rgba(210, 164, 75, 0.68);
+  border-radius: 8px;
+  color: #fff0b7;
+  background: linear-gradient(180deg, #0a5239, #032d21);
+  box-shadow:
+    0 10px 20px rgba(36, 25, 9, 0.2),
+    inset 0 0 0 1px rgba(255, 232, 163, 0.2);
+  font-family: var(--serif);
+  font-size: 18px;
+  font-weight: 950;
+}
+
+.tour3d-mission-wide-button span,
+.tour3d-mission-action span,
+.tour3d-next-destination-card b {
+  font-size: 27px;
+  line-height: 1;
+}
+
+.tour3d-current-mission-card {
+  display: grid;
+  grid-template-rows: 38px 248px minmax(0, 1fr);
+  padding: 0;
+}
+
+.tour3d-mission-panel-ribbon {
+  display: grid;
+  place-items: center;
+  color: #ffe8a6;
+  background:
+    linear-gradient(180deg, rgba(9, 76, 52, 0.98), rgba(3, 51, 37, 0.98)),
+    #063a2a;
+  box-shadow:
+    inset 0 -1px 0 rgba(247, 202, 98, 0.42),
+    inset 0 0 0 1px rgba(255, 238, 178, 0.12);
+  font-family: var(--serif);
+  font-size: 18px;
+  font-weight: 950;
+}
+
+.tour3d-current-mission-image {
+  position: relative;
+  overflow: hidden;
+  margin: 0;
+  border-bottom: 1px solid rgba(197, 149, 63, 0.46);
+  background:
+    linear-gradient(180deg, rgba(25, 72, 54, 0.08), rgba(255, 250, 236, 0.2)),
+    #e6d6b8;
+}
+
+.tour3d-current-mission-image::after {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(4, 27, 22, 0.06), transparent 54%, rgba(4, 27, 22, 0.12)),
+    radial-gradient(circle at 50% 8%, rgba(255, 244, 207, 0.32), transparent 32%);
+  content: '';
+  pointer-events: none;
+}
+
+.tour3d-current-mission-image img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 42%;
+}
+
+.tour3d-current-mission-body {
+  display: grid;
+  align-content: start;
+  justify-items: center;
+  gap: 10px;
+  min-height: 0;
+  padding: 15px 30px 18px;
+  text-align: center;
+}
+
+.tour3d-current-mission-body h2,
+.tour3d-current-mission-title h3,
+.tour3d-current-mission-body p {
+  margin: 0;
+}
+
+.tour3d-current-mission-body h2 {
+  color: #092c21;
+  font-family: var(--serif);
+  font-size: 31px;
+  font-weight: 950;
+  line-height: 1.08;
+}
+
+.tour3d-current-mission-title {
+  display: flex;
+  max-width: 100%;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 11px;
+}
+
+.tour3d-current-mission-title span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  border: 1px solid rgba(213, 170, 85, 0.72);
+  border-radius: 8px;
+  padding: 0 13px;
+  color: #ffeba8;
+  background: linear-gradient(180deg, #0b6141, #033423);
+  box-shadow: inset 0 0 0 1px rgba(255, 238, 178, 0.2);
+  font-family: var(--serif);
+  font-size: 16px;
+  font-weight: 950;
+}
+
+.tour3d-current-mission-title span img {
+  width: 21px;
+  height: 21px;
+  object-fit: contain;
+}
+
+.tour3d-current-mission-title h3 {
+  color: #101f18;
+  font-family: var(--serif);
+  font-size: 25px;
+  font-weight: 950;
+  line-height: 1.18;
+}
+
+.tour3d-current-mission-body p {
+  color: #4f432f;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.5;
+  word-break: keep-all;
+}
+
+.tour3d-mission-tags {
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   gap: 8px;
 }
 
-.tour3d-tag-row span {
-  border: 1px solid rgba(45, 75, 62, 0.14);
+.tour3d-mission-tags span {
+  min-height: 29px;
+  border: 1px solid rgba(185, 143, 69, 0.28);
   border-radius: 999px;
-  padding: 7px 10px;
-  color: var(--forest-dark);
-  background: rgba(200, 234, 216, 0.36);
+  padding: 4px 14px;
+  color: #503f25;
+  background: rgba(255, 249, 234, 0.72);
   font-size: 12px;
   font-weight: 900;
 }
 
-.tour3d-detail-list {
+.tour3d-mission-info-row {
   display: grid;
-  gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  width: 100%;
+  margin: 5px 0 0;
+  border: 1px solid rgba(198, 153, 75, 0.32);
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(255, 251, 241, 0.7);
+}
+
+.tour3d-mission-info-row div {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  min-width: 0;
+  padding: 9px 10px;
+}
+
+.tour3d-mission-info-row div + div {
+  border-left: 1px solid rgba(198, 153, 75, 0.24);
+}
+
+.tour3d-mission-info-row dt,
+.tour3d-mission-info-row dd {
   margin: 0;
+  line-height: 1.12;
 }
 
-.tour3d-detail-list div {
-  display: grid;
-  gap: 5px;
-  border-top: 1px solid rgba(225, 221, 214, 0.78);
-  padding-top: 12px;
-}
-
-.tour3d-detail-list dt,
-.tour3d-access-grid span {
-  color: var(--ink);
+.tour3d-mission-info-row dt {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: #4c3d25;
   font-size: 12px;
   font-weight: 900;
 }
 
-.tour3d-detail-list dd {
-  margin: 0;
+.tour3d-mission-info-row dt img {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
 }
 
-.tour3d-access-grid {
-  display: grid;
-  gap: 8px;
-}
-
-.tour3d-access-grid div {
-  display: grid;
-  gap: 4px;
-  border-radius: 8px;
-  padding: 10px;
-  background: rgba(247, 244, 236, 0.74);
-}
-
-.tour3d-access-grid p {
-  margin: 0;
-}
-
-.tour3d-add-course-button {
-  min-height: 46px;
-  border: 0;
-  border-radius: 999px;
-  color: #fff;
-  background: var(--forest);
-  font: inherit;
+.tour3d-mission-info-row dd {
+  color: #0b3526;
+  font-family: var(--serif);
+  font-size: 20px;
   font-weight: 950;
-  cursor: pointer;
-  transition:
-    background 180ms ease,
-    transform 180ms ease;
 }
 
-.tour3d-add-course-button:hover:not(:disabled),
-.tour3d-add-course-button:focus-visible {
-  background: var(--forest-dark);
-  transform: translateY(-1px);
+.tour3d-mission-side {
+  display: grid;
+  grid-template-rows: minmax(0, 0.94fr) minmax(0, 1.06fr);
+  gap: 16px;
+  min-width: 0;
+  min-height: 0;
 }
 
-.tour3d-add-course-button:disabled {
-  cursor: default;
-  background: rgba(45, 75, 62, 0.48);
+.tour3d-ai-card,
+.tour3d-checklist-card {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  padding: 17px 20px;
 }
 
-.tour3d-quality-note {
+.tour3d-ai-card-body {
+  display: grid;
+  grid-template-columns: 132px minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+  min-height: 122px;
+  border: 1px solid rgba(192, 148, 75, 0.22);
+  border-radius: 12px;
+  padding: 10px 13px;
+  background: rgba(255, 250, 239, 0.54);
+}
+
+.tour3d-ai-card-body > img {
+  width: 125px;
+  height: 125px;
+  object-fit: contain;
+  object-position: center bottom;
+  filter: drop-shadow(0 10px 14px rgba(64, 43, 17, 0.18));
+}
+
+.tour3d-ai-card-body p {
+  margin: 0;
+  color: #3f3525;
+  font-size: 15px;
+  font-weight: 820;
+  line-height: 1.58;
+  word-break: keep-all;
+}
+
+.tour3d-ai-listen-button {
+  display: inline-flex;
+  min-height: 54px;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  filter:
+    drop-shadow(0 10px 18px rgba(44, 31, 11, 0.24))
+    drop-shadow(0 0 10px rgba(236, 178, 55, 0.2));
+}
+
+.tour3d-ai-listen-button img {
+  display: block;
+  width: 100%;
+  height: 54px;
+  object-fit: fill;
+}
+
+.tour3d-mission-status {
+  margin: -4px 0 0;
+  color: #0c4a34;
+  font-size: 12px;
+  font-weight: 900;
+  text-align: center;
+}
+
+.tour3d-checklist-card ol {
+  display: grid;
+  gap: 9px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tour3d-checklist-card li {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  min-height: 45px;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid rgba(184, 142, 70, 0.32);
   border-radius: 8px;
-  padding: 12px;
-  color: var(--forest-dark);
-  background: rgba(200, 234, 216, 0.34);
-  font-size: 14px;
-  font-weight: 850;
-  line-height: 1.55;
+  padding: 5px 11px;
+  color: #493d29;
+  background: rgba(255, 250, 239, 0.72);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.48);
+}
+
+.tour3d-checklist-card li > span {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border: 1px solid rgba(195, 153, 76, 0.52);
+  border-radius: 999px;
+  color: #8b7653;
+  background: rgba(255, 252, 243, 0.82);
+  font-family: var(--serif);
+  font-weight: 950;
+  line-height: 1;
+}
+
+.tour3d-checklist-card strong {
+  overflow: hidden;
+  min-width: 0;
+  font-size: 15px;
+  font-weight: 920;
+  line-height: 1.24;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tour3d-checklist-card em {
+  border: 1px solid rgba(235, 191, 95, 0.62);
+  border-radius: 999px;
+  padding: 4px 10px;
+  color: #ffe9a9;
+  background: rgba(6, 50, 35, 0.76);
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 950;
+  white-space: nowrap;
+}
+
+.tour3d-checklist-card li.is-completed > span {
+  border-color: rgba(225, 184, 90, 0.72);
+  color: #fff0b7;
+  background: linear-gradient(180deg, #0b6141, #033423);
+}
+
+.tour3d-checklist-card li.is-active {
+  border-color: rgba(238, 185, 66, 0.84);
+  color: #fff4d0;
+  background: linear-gradient(180deg, #0c5f41, #033523);
+  box-shadow:
+    0 0 0 2px rgba(241, 191, 80, 0.22),
+    0 0 20px rgba(241, 181, 50, 0.34),
+    inset 0 0 0 1px rgba(255, 238, 179, 0.16);
+}
+
+.tour3d-checklist-card li.is-active > span {
+  border-color: rgba(246, 211, 132, 0.92);
+  color: #fff0b7;
+  background: rgba(255, 239, 184, 0.12);
+}
+
+.tour3d-checklist-card li.is-active strong {
+  color: #fff7db;
+}
+
+.tour3d-mission-action-bar {
+  display: grid;
+  grid-template-columns:
+    minmax(128px, 0.62fr)
+    minmax(210px, 1fr)
+    minmax(168px, 0.68fr)
+    minmax(150px, 0.64fr)
+    minmax(250px, 1.16fr);
+  gap: 16px;
+  align-items: center;
+  justify-content: center;
+  min-height: 84px;
+}
+
+.tour3d-mission-action {
+  display: inline-flex;
+  min-width: 0;
+  min-height: 56px;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: 1px solid rgba(182, 132, 52, 0.52);
+  border-radius: 9px;
+  padding: 0 20px;
+  color: #163929;
+  background:
+    linear-gradient(180deg, rgba(255, 252, 245, 0.94), rgba(242, 230, 207, 0.88)),
+    #fbf2df;
+  box-shadow:
+    0 12px 24px rgba(59, 40, 14, 0.14),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.62);
+  font-size: 17px;
+  font-weight: 950;
+  white-space: nowrap;
+}
+
+.tour3d-mission-action--primary {
+  min-height: 70px;
+  border-color: #c99a45;
+  color: #fff2bb;
+  background: linear-gradient(180deg, #0d6041, #033523);
+  box-shadow:
+    0 16px 30px rgba(36, 25, 8, 0.26),
+    0 0 22px rgba(239, 185, 64, 0.38),
+    inset 0 0 0 1px rgba(255, 236, 176, 0.24);
+  font-family: var(--serif);
+  font-size: 27px;
+}
+
+.tour3d-mission-action--primary img {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+}
+
+.tour3d-mission-action--next {
+  color: #fff0b7;
+  background: linear-gradient(180deg, #0a5239, #032d21);
+}
+
+.tour3d-next-destination-card {
+  display: grid;
+  grid-template-columns: 132px minmax(0, 1fr) 24px;
+  gap: 12px;
+  align-items: center;
+  min-width: 0;
+  min-height: 78px;
+  border: 1px solid rgba(182, 132, 52, 0.52);
+  border-radius: 10px;
+  padding: 8px 12px 8px 10px;
+  color: #173929;
+  background:
+    linear-gradient(180deg, rgba(255, 252, 245, 0.94), rgba(242, 230, 207, 0.86)),
+    #fbf2df;
+  box-shadow:
+    0 12px 24px rgba(59, 40, 14, 0.14),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.62);
+  text-align: left;
+}
+
+.tour3d-next-destination-card > img {
+  width: 132px;
+  height: 62px;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 12px rgba(68, 43, 14, 0.18));
+}
+
+.tour3d-next-destination-card span {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.tour3d-next-destination-card strong {
+  overflow: hidden;
+  color: #0b3024;
+  font-family: var(--serif);
+  font-size: 19px;
+  line-height: 1.12;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tour3d-next-destination-card small,
+.tour3d-next-destination-card em {
+  overflow: hidden;
+  color: #604b2a;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 900;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-height: 760px) and (min-width: 900px) {
+  .tour3d-page--mission {
+    gap: 8px;
+    padding: 8px 0 10px;
+  }
+
+  .tour3d-mission-hero {
+    min-height: 154px;
+    gap: 1px;
+  }
+
+  .tour3d-mission-hero h1 {
+    font-size: clamp(38px, 3vw, 48px);
+  }
+
+  .tour3d-mission-hero p {
+    font-size: 14px;
+  }
+
+  .tour3d-mission-badge {
+    min-width: 138px;
+    min-height: 28px;
+    font-size: 13px;
+  }
+
+  .tour3d-mission-progress-shell {
+    grid-template-columns: 140px minmax(0, 1fr);
+    width: min(958px, 100%);
+    gap: 28px;
+    margin-top: 7px;
+  }
+
+  .tour3d-mission-count,
+  .tour3d-mission-steps {
+    min-height: 58px;
+  }
+
+  .tour3d-mission-count strong {
+    font-size: 29px;
+  }
+
+  .tour3d-mission-count span {
+    font-size: 11px;
+  }
+
+  .tour3d-mission-steps {
+    padding: 8px 18px 7px;
+  }
+
+  .tour3d-mission-steps::before {
+    top: 26px;
+  }
+
+  .tour3d-mission-steps span {
+    width: 32px;
+    height: 32px;
+    font-size: 16px;
+  }
+
+  .tour3d-mission-steps strong {
+    font-size: 11px;
+  }
+
+  .tour3d-mission-grid {
+    gap: 16px;
+  }
+
+  .tour3d-mission-map-panel {
+    grid-template-rows: auto minmax(0, 1fr) 48px;
+    gap: 8px;
+    padding: 12px;
+  }
+
+  .tour3d-mission-map-panel h2,
+  .tour3d-ai-card h2,
+  .tour3d-checklist-card h2 {
+    font-size: 19px;
+  }
+
+  .tour3d-mission-map-frame .tour3d-map-fallback {
+    gap: 8px;
+    padding: 14px 18px;
+  }
+
+  .tour3d-mission-map-frame .tour3d-map-fallback strong {
+    font-size: 24px;
+    line-height: 1.12;
+  }
+
+  .tour3d-mission-map-frame .tour3d-map-fallback p {
+    font-size: 13px;
+    line-height: 1.35;
+  }
+
+  .tour3d-current-mission-card {
+    grid-template-rows: 34px 150px minmax(0, 1fr);
+  }
+
+  .tour3d-current-mission-body {
+    gap: 7px;
+    padding: 10px 24px 12px;
+  }
+
+  .tour3d-current-mission-body h2 {
+    font-size: 27px;
+  }
+
+  .tour3d-current-mission-title h3 {
+    font-size: 21px;
+  }
+
+  .tour3d-current-mission-body p {
+    font-size: 12px;
+    line-height: 1.38;
+  }
+
+  .tour3d-mission-tags span {
+    min-height: 24px;
+    padding: 3px 10px;
+    font-size: 11px;
+  }
+
+  .tour3d-mission-info-row {
+    margin-top: 0;
+  }
+
+  .tour3d-mission-info-row div {
+    padding: 6px 8px;
+  }
+
+  .tour3d-mission-info-row dt img {
+    width: 22px;
+    height: 22px;
+  }
+
+  .tour3d-mission-info-row dd {
+    font-size: 17px;
+  }
+
+  .tour3d-mission-side {
+    grid-template-rows: minmax(0, 0.75fr) minmax(0, 1.25fr);
+    gap: 12px;
+  }
+
+  .tour3d-ai-card,
+  .tour3d-checklist-card {
+    gap: 8px;
+    padding: 13px 18px;
+  }
+
+  .tour3d-ai-card-body {
+    grid-template-columns: 84px minmax(0, 1fr);
+    min-height: 90px;
+    padding: 8px 10px;
+  }
+
+  .tour3d-ai-card-body > img {
+    width: 82px;
+    height: 82px;
+  }
+
+  .tour3d-ai-card-body p {
+    font-size: 12px;
+    line-height: 1.42;
+  }
+
+  .tour3d-ai-listen-button,
+  .tour3d-ai-listen-button img {
+    min-height: 38px;
+    height: 38px;
+  }
+
+  .tour3d-checklist-card ol {
+    gap: 5px;
+  }
+
+  .tour3d-checklist-card li {
+    grid-template-columns: 30px minmax(0, 1fr) auto;
+    min-height: 29px;
+    gap: 8px;
+    padding: 2px 9px;
+  }
+
+  .tour3d-checklist-card li > span {
+    width: 22px;
+    height: 22px;
+  }
+
+  .tour3d-checklist-card strong {
+    font-size: 12px;
+  }
+
+  .tour3d-checklist-card em {
+    padding: 3px 8px;
+    font-size: 10px;
+  }
+
+  .tour3d-mission-action-bar {
+    min-height: 66px;
+  }
+
+  .tour3d-mission-action {
+    min-height: 48px;
+    padding: 0 14px;
+    font-size: 15px;
+  }
+
+  .tour3d-mission-action--primary {
+    min-height: 60px;
+    font-size: 24px;
+  }
+
+  .tour3d-mission-action--primary img {
+    width: 31px;
+    height: 31px;
+  }
+
+  .tour3d-next-destination-card {
+    grid-template-columns: 72px minmax(0, 1fr) 18px;
+    gap: 10px;
+    min-height: 60px;
+    padding: 6px 10px 6px 8px;
+  }
+
+  .tour3d-next-destination-card > img {
+    width: 72px;
+    height: 50px;
+  }
+
+  .tour3d-next-destination-card strong {
+    font-size: 16px;
+  }
 }
 
 .knowledge-graph-page {
@@ -7832,6 +9303,7 @@ a {
   .course-layout,
   .heatmap-layout,
   .tour3d-layout,
+  .tour3d-preview-grid,
   .knowledge-graph-layout,
   .admin-insight-grid,
   .auth-page,
@@ -7885,15 +9357,21 @@ a {
     min-height: 520px;
   }
 
-  .tour3d-map-shell,
-  .tour3d-map-host,
-  .tour3d-map-element {
+  .tour3d-map-frame {
     min-height: 520px;
     height: 520px;
   }
 
-  .tour3d-place-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .tour3d-summary-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .tour3d-timeline-track {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .tour3d-timeline-track::before {
+    display: none;
   }
 
   .heatmap-summary-grid {
@@ -8110,28 +9588,44 @@ a {
   }
 
   .tour3d-heading h1 {
-    font-size: 40px;
+    font-size: 36px;
   }
 
   .knowledge-graph-heading h1 {
     font-size: 40px;
   }
 
-  .tour3d-map-toolbar {
-    display: grid;
-    min-height: auto;
-    align-items: stretch;
+  .tour3d-page {
+    width: min(100% - 28px, 1840px);
+    overflow: visible;
+    padding-block: 14px;
   }
 
-  .tour3d-map-toolbar button {
+  .tour3d-heading {
+    min-height: auto;
+  }
+
+  .tour3d-map-frame {
+    min-height: 420px;
+    height: 420px;
+  }
+
+  .tour3d-map-card-head {
+    display: grid;
+  }
+
+  .tour3d-mini-reset-button {
     width: 100%;
   }
 
-  .tour3d-map-shell,
-  .tour3d-map-host,
-  .tour3d-map-element {
-    min-height: 420px;
-    height: 420px;
+  .tour3d-route-marker {
+    width: clamp(72px, 20vw, 96px);
+  }
+
+  .tour3d-route-number {
+    width: 23px;
+    height: 23px;
+    font-size: 13px;
   }
 
   .knowledge-stage-tabs {
@@ -8173,29 +9667,54 @@ a {
     padding: 16px;
   }
 
-  .tour3d-control-panel {
-    padding: 16px;
+  .tour3d-route-card,
+  .tour3d-map-legend {
+    width: auto;
+    margin: 8px;
   }
 
-  .tour3d-place-grid {
+  .tour3d-route-card {
+    right: 8px;
+    bottom: 8px;
+    left: 8px;
+  }
+
+  .tour3d-map-legend {
+    top: 8px;
+    right: 8px;
+    bottom: auto;
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  .tour3d-summary-list div {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  .tour3d-timeline-track {
     grid-template-columns: 1fr;
   }
 
-  .tour3d-detail-card {
-    position: static;
-    z-index: 6;
-    max-height: min(72vh, 560px);
-    overflow: auto;
-    border-radius: 18px 18px 8px 8px;
-    box-shadow: 0 -18px 44px rgba(35, 47, 37, 0.2);
+  .tour3d-timeline button {
+    grid-template-columns: 54px minmax(0, 1fr);
+    justify-items: start;
+    min-height: 72px;
+    padding-left: 42px;
   }
 
-  .tour3d-detail-card h2 {
-    font-size: 26px;
+  .tour3d-timeline img {
+    grid-row: span 2;
   }
 
-  .tour3d-access-grid {
-    gap: 6px;
+  .tour3d-action-bar {
+    display: grid;
+  }
+
+  .tour3d-action-button,
+  .tour3d-action-button--primary {
+    width: 100%;
+    min-width: 0;
   }
 
   .optional-grid,

@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react'
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { AdminPage } from '../pages/AdminPage'
 import { AdminLoginPage } from '../pages/AdminLoginPage'
 import { AuthCallbackPage } from '../pages/AuthCallbackPage'
@@ -11,6 +11,8 @@ import { HomeLandingPage } from '../pages/HomeLandingPage'
 import { JudgePage } from '../pages/JudgePage'
 import { KnowledgeGraphPage } from '../pages/KnowledgeGraphPage'
 import { LoginPage } from '../pages/LoginPage'
+import { MissionCompletePage } from '../pages/MissionCompletePage'
+import { MissionReflectionPage } from '../pages/MissionReflectionPage'
 import { MyPage } from '../pages/MyPage'
 import { ResultPage } from '../pages/ResultPage'
 import { SignupPage } from '../pages/SignupPage'
@@ -21,6 +23,12 @@ const TourismHeatmapPage = lazy(() =>
     default: module.TourismHeatmapPage,
   })),
 )
+
+function GoogleTour3DRoute() {
+  const location = useLocation()
+
+  return <GoogleTour3DPreviewPage key={location.search} />
+}
 
 export function AppRouter() {
   return (
@@ -38,7 +46,9 @@ export function AppRouter() {
             </Suspense>
           }
         />
-        <Route path="/tour-3d" element={<GoogleTour3DPreviewPage />} />
+        <Route path="/tour-3d" element={<GoogleTour3DRoute />} />
+        <Route path="/mission-complete" element={<MissionCompletePage />} />
+        <Route path="/mission-complete/:placeId" element={<MissionReflectionPage />} />
         <Route path="/ai-evidence-graph" element={<KnowledgeGraphPage />} />
         <Route path="/knowledge-graph" element={<KnowledgeGraphPage />} />
         <Route path="/judge" element={<JudgePage />} />
