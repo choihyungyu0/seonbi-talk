@@ -1,1 +1,1 @@
-export { MyPage } from './MyEarnedBadgesPage'
+export { MyPage } from './MyOneLineArchivePage'
