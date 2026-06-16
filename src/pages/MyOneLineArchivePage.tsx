@@ -8,6 +8,8 @@ import {
 } from '../features/auth/authApi'
 import './MyPage.css'
 
+export { MyPage } from './MySeonbiRecordsPage'
+
 type ReflectionTag = '성찰' | '배움' | '차분함' | '수양'
 
 interface OneLineRecord {
@@ -113,7 +115,7 @@ function imageAsset(fileName: string) {
   return encodeURI(`/images/new/${fileName}`)
 }
 
-export function MyPage() {
+export function MyOneLineArchivePage() {
   const [user, setUser] = useState<AuthUser | null>(() => getStoredAuthUser())
   const [shareMessage, setShareMessage] = useState('')
   const navigate = useNavigate()
