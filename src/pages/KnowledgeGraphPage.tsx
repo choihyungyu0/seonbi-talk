@@ -1085,7 +1085,7 @@ export function KnowledgeGraphPage() {
   const [activeStageIndex, setActiveStageIndex] = useState(finalGraphStageIndex)
   const [isPlaying, setIsPlaying] = useState(false)
   const [selectedNodeId, setSelectedNodeId] = useState('course-main')
-  const [isTraceMode, setIsTraceMode] = useState(true)
+  const [isTraceMode, setIsTraceMode] = useState(false)
   const [scenarioInput, setScenarioInput] = useState(defaultScenario)
   const [appliedScenario, setAppliedScenario] = useState(defaultScenario)
   const [searchQuery, setSearchQuery] = useState('')
@@ -1245,6 +1245,39 @@ export function KnowledgeGraphPage() {
     graphRef.current?.refresh?.()
   }, [isTraceMode, selectedNode?.id, traceLinkKeySet, traceNodeIdSet, visibleLinks])
 
+  useEffect(() => {
+    if (!width || !height || graphData.nodes.length === 0) return
+
+    const focusTimeoutId = window.setTimeout(() => {
+      if (isTraceMode) {
+        graphRef.current?.cameraPosition(
+          { x: 0, y: 0, z: 112 },
+          { x: 0, y: 0, z: 0 },
+          700,
+        )
+        return
+      }
+
+      graphRef.current?.cameraPosition(
+        { x: 0, y: 0, z: 122 },
+        { x: 0, y: 0, z: 0 },
+        700,
+      )
+    }, 850)
+
+    const fitTimeoutId = window.setTimeout(() => {
+      graphRef.current?.zoomToFit(700, isTraceMode ? 38 : 24, (node) => {
+        const graphNode = node as KnowledgeNode
+        return isTraceMode ? traceNodeIdSet.has(graphNode.id) : true
+      })
+    }, 1650)
+
+    return () => {
+      window.clearTimeout(focusTimeoutId)
+      window.clearTimeout(fitTimeoutId)
+    }
+  }, [graphData.nodes.length, height, isTraceMode, traceNodeIdSet, width])
+
   function getNodeVisualStateForId(nodeId: string) {
     if (normalizedSearchQuery && !isTraceMode) {
       if (nodeId === selectedNode?.id) return 'focused'
@@ -1294,7 +1327,10 @@ export function KnowledgeGraphPage() {
   }
 
   function getFocusedNodeId() {
-    return isTraceMode ? null : hoveredNodeIdRef.current ?? selectedNode?.id ?? null
+    if (isTraceMode) return null
+    if (hoveredNodeIdRef.current) return hoveredNodeIdRef.current
+    if (selectedNode?.id && selectedNode.id !== 'course-main') return selectedNode.id
+    return null
   }
 
   function resetGraph() {
@@ -1333,7 +1369,7 @@ export function KnowledgeGraphPage() {
     setExpandedNodes([])
     setExpandedLinks([])
     setIsPlaying(false)
-    setIsTraceMode(true)
+    setIsTraceMode(false)
     setActiveStageIndex(finalGraphStageIndex)
     setSelectedNodeId('course-main')
   }
@@ -1678,6 +1714,7 @@ export function KnowledgeGraphPage() {
                     height={height}
                     backgroundColor="rgba(0,0,0,0)"
                     nodeLabel={(node) => createNodeTooltip(node as KnowledgeNode)}
+                    nodeRelSize={6.5}
                     nodeColor={(node) => {
                       const graphNode = node as KnowledgeNode
                       return getNodeColor(graphNode, getNodeVisualStateForId(graphNode.id))
@@ -1686,13 +1723,13 @@ export function KnowledgeGraphPage() {
                       const graphNode = node as KnowledgeNode
                       return getNodeValue(graphNode, getNodeVisualStateForId(graphNode.id))
                     }}
-                    nodeOpacity={0.95}
+                    nodeOpacity={1}
                     linkLabel={(link) => (link as RuntimeKnowledgeLink).label}
                     linkColor={(link) => {
                       const graphLink = link as RuntimeKnowledgeLink
                       return getLinkColor(graphLink, getLinkVisualStateForLink(graphLink))
                     }}
-                    linkOpacity={0.62}
+                    linkOpacity={0.84}
                     linkWidth={(link) => {
                       const graphLink = link as RuntimeKnowledgeLink
                       return getLinkWidth(graphLink, getLinkVisualStateForLink(graphLink))
@@ -2885,12 +2922,12 @@ function createLinkKey(source: string, target: string) {
 
 function getNodeValue(node: KnowledgeNode, visualState: VisualState) {
   const visualBonus = visualState === 'focused' || visualState === 'path' ? 1.45 : 1
-  if (node.id === 'course-main') return 58 * visualBonus
-  if (node.kind === 'course') return 28 * visualBonus
-  if (node.kind === 'evidence') return 14 * visualBonus
-  if (node.kind === 'user') return 13 * visualBonus
-  if (node.score) return Math.max(6, node.score / 9) * visualBonus
-  return 7 * visualBonus
+  if (node.id === 'course-main') return 82 * visualBonus
+  if (node.kind === 'course') return 40 * visualBonus
+  if (node.kind === 'evidence') return 22 * visualBonus
+  if (node.kind === 'user') return 20 * visualBonus
+  if (node.score) return Math.max(10, node.score / 6.5) * visualBonus
+  return 10 * visualBonus
 }
 
 function getNodeColor(node: KnowledgeNode, visualState: VisualState) {
@@ -3015,7 +3052,7 @@ function createNodeLabel(node: KnowledgeNode, visualState: VisualState) {
     opacity: isDimmed ? 0.46 : 1,
   })
   const sprite = new THREE.Sprite(material)
-  const scaleFactor = isMainCourse ? 0.18 : isHighlighted ? 0.145 : 0.12
+  const scaleFactor = isMainCourse ? 0.56 : isHighlighted ? 0.4 : 0.32
   sprite.scale.set(boxWidth * scaleFactor, boxHeight * scaleFactor, 1)
   sprite.position.set(0, isMainCourse ? 33 : node.kind === 'course' ? 21 : 13, 0)
 
