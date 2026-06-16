@@ -1,1 +1,1 @@
-export { MyPage } from './MySeonbiRecordsPage'
+export { MyPage } from './MySavedCoursesScreen'
