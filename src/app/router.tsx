@@ -36,7 +36,9 @@ export function AppRouter() {
       <Routes>
         <Route path="/" element={<HomeLandingPage />} />
         <Route path="/test" element={<TestPage />} />
-        <Route path="/result" element={<ResultPage />} />
+        <Route path="/test/result" element={<ResultPage />} />
+        <Route path="/test/result/:type" element={<ResultPage />} />
+        <Route path="/result" element={<Navigate to="/test/result" replace />} />
         <Route path="/course" element={<CoursePage />} />
         <Route
           path="/heatmap"

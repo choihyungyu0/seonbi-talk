@@ -56,7 +56,7 @@ export function TestPage() {
       scores: result.scores,
     })
     saveTestResult(result)
-    navigate('/result')
+    navigate(`/test/result/${result.type}`)
   }
 
   return (
