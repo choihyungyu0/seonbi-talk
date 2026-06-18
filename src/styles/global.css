@@ -957,7 +957,6 @@ a {
   width: calc(866 / 850 * 100%);
   height: auto;
   max-width: none;
-  filter: drop-shadow(0 8px 12px rgba(46, 29, 6, 0.24));
 }
 
 .course-page-progress-badge {
