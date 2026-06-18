@@ -14,6 +14,17 @@ type DashboardStatus = 'idle' | 'loading' | 'ready' | 'error'
 type DashboardRange = 'today' | '7d' | '30d' | 'all'
 type RagSeedStatus = 'idle' | 'loading' | 'success' | 'error'
 type RagSearchStatus = 'idle' | 'loading' | 'ready' | 'error'
+type AdminSectionKey = 'funnel' | 'quality' | 'local' | 'recommendations' | 'activity'
+type AdminIconName =
+  | 'activity'
+  | 'bookmark'
+  | 'chart'
+  | 'database'
+  | 'funnel'
+  | 'map'
+  | 'message'
+  | 'shield'
+  | 'users'
 
 interface AdminDashboard {
   summary: {
@@ -98,6 +109,14 @@ interface RagSearchResponse {
   documents?: RagSearchResult[]
 }
 
+interface AdminSectionOption {
+  key: AdminSectionKey
+  label: string
+  caption: string
+  value: string
+  icon: AdminIconName
+}
+
 const ranges: Array<{ value: DashboardRange; label: string }> = [
   { value: 'today', label: '오늘' },
   { value: '7d', label: '7일' },
@@ -137,6 +156,7 @@ export function AdminPage() {
   const [ragSearchResults, setRagSearchResults] = useState<RagSearchResult[]>([])
   const [ragSearchMessage, setRagSearchMessage] = useState('')
   const [enrichmentData, setEnrichmentData] = useState<YeongjuEnrichmentData | null>(null)
+  const [activeAdminSection, setActiveAdminSection] = useState<AdminSectionKey>('funnel')
   const isCheckingSession = sessionStatus === 'checking'
   const isAuthenticated = sessionStatus === 'authenticated'
   const hasNoData = useMemo(() => {
@@ -147,6 +167,10 @@ export function AdminPage() {
       dashboard.summary.totalJudgeHistories === 0
     )
   }, [dashboard])
+  const adminSectionOptions = useMemo(
+    () => (dashboard ? createAdminSectionOptions(dashboard, enrichmentData) : []),
+    [dashboard, enrichmentData],
+  )
 
   useEffect(() => {
     let ignore = false
@@ -186,7 +210,7 @@ export function AdminPage() {
   const loadDashboard = useCallback(
     async (options: { silent?: boolean; ignore?: () => boolean } = {}) => {
       if (!options.silent) {
-      setDashboardStatus('loading')
+        setDashboardStatus('loading')
       }
       setStatusMessage('')
 
@@ -405,53 +429,83 @@ export function AdminPage() {
               </p>
             )}
 
-            <section className="admin-dashboard-grid" aria-label="요약 지표">
-              <SummaryCard label="총 사용자" value={dashboard.summary.totalUsers} icon="人" />
-              <SummaryCard label="총 이벤트" value={dashboard.summary.totalEvents} icon="↗" />
-              <SummaryCard
-                label="관심 코스 저장"
-                value={dashboard.summary.totalFavorites}
-                icon="□"
-              />
-              <SummaryCard
-                label="선비의 한마디 생성"
-                value={dashboard.summary.totalJudgeHistories}
-                icon="言"
-              />
-            </section>
+            <div className="admin-command-center">
+              <section
+                className="admin-dashboard-grid admin-dashboard-grid--compact"
+                aria-label="요약 지표"
+              >
+                <SummaryCard label="총 사용자" value={dashboard.summary.totalUsers} icon="users" />
+                <SummaryCard label="총 이벤트" value={dashboard.summary.totalEvents} icon="activity" />
+                <SummaryCard
+                  label="관심 코스 저장"
+                  value={dashboard.summary.totalFavorites}
+                  icon="bookmark"
+                />
+                <SummaryCard
+                  label="선비의 한마디 생성"
+                  value={dashboard.summary.totalJudgeHistories}
+                  icon="message"
+                />
+              </section>
 
-            <InsightPanel insights={dashboard.insights} />
+              <AdminSectionTabs
+                activeSection={activeAdminSection}
+                onChange={setActiveAdminSection}
+                options={adminSectionOptions}
+              />
 
-            <section className="admin-analytics-grid">
-              <BehaviorFunnel steps={dashboard.behaviorFunnel} />
-              <AiPublicDataQualityPanel
-                searchMessage={ragSearchMessage}
-                searchQuery={ragSearchQuery}
-                searchResults={ragSearchResults}
-                searchStatus={ragSearchStatus}
-                seedStatus={ragSeedStatus}
-                publicDataStatus={dashboard.publicDataStatus}
-                ragStatus={dashboard.ragStatus}
-                onSearch={handleRagSearch}
-                onSearchQueryChange={setRagSearchQuery}
-                onSeed={() => void handleRagSeed()}
-              />
-              <LocalPublicDataPanel data={enrichmentData} />
-              <ChartPanel
-                title="선비유형 분포"
-                rows={toChartRows(dashboard.seonbiTypeDistribution, seonbiTypeLabels)}
-              />
-              <ChartPanel
-                title="한마디 모드 사용량"
-                rows={toChartRows(dashboard.judgeStats.modeCounts, judgeModeLabels)}
-              />
-              <TopCourses courses={dashboard.courseStats.favoriteTopCourses} />
-              <ChartPanel
-                title="카테고리별 추천/저장 비율"
-                rows={toChartRows(dashboard.courseStats.contentTypeCounts)}
-              />
-              <RecentActivities activities={dashboard.recentActivities} />
-              <PrivacyPanel />
+              <InsightPanel insights={dashboard.insights} />
+            </div>
+
+            <section
+              className="admin-active-dashboard"
+              id={`admin-section-panel-${activeAdminSection}`}
+              role="tabpanel"
+              aria-labelledby={`admin-section-tab-${activeAdminSection}`}
+            >
+              {activeAdminSection === 'funnel' && (
+                <BehaviorFunnel steps={dashboard.behaviorFunnel} />
+              )}
+              {activeAdminSection === 'quality' && (
+                <AiPublicDataQualityPanel
+                  searchMessage={ragSearchMessage}
+                  searchQuery={ragSearchQuery}
+                  searchResults={ragSearchResults}
+                  searchStatus={ragSearchStatus}
+                  seedStatus={ragSeedStatus}
+                  publicDataStatus={dashboard.publicDataStatus}
+                  ragStatus={dashboard.ragStatus}
+                  onSearch={handleRagSearch}
+                  onSearchQueryChange={setRagSearchQuery}
+                  onSeed={() => void handleRagSeed()}
+                />
+              )}
+              {activeAdminSection === 'local' && (
+                <LocalPublicDataPanel data={enrichmentData} />
+              )}
+              {activeAdminSection === 'recommendations' && (
+                <div className="admin-analytics-grid admin-analytics-grid--selected">
+                  <ChartPanel
+                    title="선비유형 분포"
+                    rows={toChartRows(dashboard.seonbiTypeDistribution, seonbiTypeLabels)}
+                  />
+                  <ChartPanel
+                    title="한마디 모드 사용량"
+                    rows={toChartRows(dashboard.judgeStats.modeCounts, judgeModeLabels)}
+                  />
+                  <TopCourses courses={dashboard.courseStats.favoriteTopCourses} />
+                  <ChartPanel
+                    title="카테고리별 추천/저장 비율"
+                    rows={toChartRows(dashboard.courseStats.contentTypeCounts)}
+                  />
+                </div>
+              )}
+              {activeAdminSection === 'activity' && (
+                <div className="admin-analytics-grid admin-analytics-grid--selected">
+                  <RecentActivities activities={dashboard.recentActivities} />
+                  <PrivacyPanel />
+                </div>
+              )}
             </section>
           </>
         )}
@@ -496,12 +550,12 @@ function SummaryCard({
 }: {
   label: string
   value: number
-  icon: string
+  icon: AdminIconName
 }) {
   return (
     <article className="surface-card admin-summary-card">
       <span className="admin-summary-icon" aria-hidden="true">
-        {icon}
+        <AdminIcon name={icon} />
       </span>
       <div>
         <span>{label}</span>
@@ -509,6 +563,134 @@ function SummaryCard({
       </div>
     </article>
   )
+}
+
+function AdminSectionTabs({
+  options,
+  activeSection,
+  onChange,
+}: {
+  options: AdminSectionOption[]
+  activeSection: AdminSectionKey
+  onChange: (section: AdminSectionKey) => void
+}) {
+  return (
+    <nav className="surface-card admin-section-tabs" aria-label="관리자 상세 섹션">
+      <div className="admin-section-tabs-heading">
+        <StatusBadge tone="neutral">섹션</StatusBadge>
+        <h2>관리 영역</h2>
+      </div>
+      <div className="admin-section-tab-list" role="tablist" aria-label="관리자 상세 보기">
+        {options.map((option) => {
+          const isActive = activeSection === option.key
+          return (
+            <button
+              key={option.key}
+              id={`admin-section-tab-${option.key}`}
+              type="button"
+              role="tab"
+              aria-controls={`admin-section-panel-${option.key}`}
+              aria-selected={isActive}
+              className={isActive ? 'admin-section-tab active' : 'admin-section-tab'}
+              onClick={() => onChange(option.key)}
+            >
+              <span className="admin-section-tab-icon" aria-hidden="true">
+                <AdminIcon name={option.icon} />
+              </span>
+              <span>
+                <strong>{option.label}</strong>
+                <small>{option.caption}</small>
+              </span>
+              <em>{option.value}</em>
+            </button>
+          )
+        })}
+      </div>
+    </nav>
+  )
+}
+
+function AdminIcon({ name }: { name: AdminIconName }) {
+  const commonProps = {
+    className: 'admin-icon',
+    fill: 'none',
+    stroke: 'currentColor',
+    strokeLinecap: 'round' as const,
+    strokeLinejoin: 'round' as const,
+    strokeWidth: 2,
+    viewBox: '0 0 24 24',
+  }
+
+  switch (name) {
+    case 'activity':
+      return (
+        <svg {...commonProps}>
+          <path d="M3 12h4l3-7 4 14 3-7h4" />
+        </svg>
+      )
+    case 'bookmark':
+      return (
+        <svg {...commonProps}>
+          <path d="M7 4h10a1 1 0 0 1 1 1v15l-6-3-6 3V5a1 1 0 0 1 1-1Z" />
+        </svg>
+      )
+    case 'chart':
+      return (
+        <svg {...commonProps}>
+          <path d="M4 19V5" />
+          <path d="M4 19h16" />
+          <path d="M8 16v-5" />
+          <path d="M12 16V8" />
+          <path d="M16 16v-3" />
+        </svg>
+      )
+    case 'database':
+      return (
+        <svg {...commonProps}>
+          <ellipse cx="12" cy="5" rx="7" ry="3" />
+          <path d="M5 5v6c0 1.7 3.1 3 7 3s7-1.3 7-3V5" />
+          <path d="M5 11v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6" />
+        </svg>
+      )
+    case 'funnel':
+      return (
+        <svg {...commonProps}>
+          <path d="M4 5h16l-6 7v5l-4 2v-7L4 5Z" />
+        </svg>
+      )
+    case 'map':
+      return (
+        <svg {...commonProps}>
+          <path d="m9 18-6 3V6l6-3 6 3 6-3v15l-6 3-6-3Z" />
+          <path d="M9 3v15" />
+          <path d="M15 6v15" />
+        </svg>
+      )
+    case 'message':
+      return (
+        <svg {...commonProps}>
+          <path d="M5 6h14v9H8l-3 3V6Z" />
+          <path d="M9 10h6" />
+          <path d="M9 13h4" />
+        </svg>
+      )
+    case 'shield':
+      return (
+        <svg {...commonProps}>
+          <path d="M12 3 19 6v5c0 4.4-2.8 8-7 10-4.2-2-7-5.6-7-10V6l7-3Z" />
+          <path d="m9 12 2 2 4-5" />
+        </svg>
+      )
+    case 'users':
+      return (
+        <svg {...commonProps}>
+          <path d="M16 20v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2" />
+          <circle cx="9.5" cy="7" r="3" />
+          <path d="M21 20v-2a3.2 3.2 0 0 0-2.4-3.1" />
+          <path d="M16.8 4.2a3 3 0 0 1 0 5.6" />
+        </svg>
+      )
+  }
 }
 
 function ChartPanel({ title, rows }: { title: string; rows: ChartRow[] }) {
@@ -1034,6 +1216,53 @@ function PrivacyPanel() {
       <p>모든 데이터는 비식별 통계 목적으로만 사용됩니다.</p>
     </article>
   )
+}
+
+function createAdminSectionOptions(
+  dashboard: AdminDashboard,
+  enrichmentData: YeongjuEnrichmentData | null,
+): AdminSectionOption[] {
+  const enrichmentTotal = enrichmentData
+    ? enrichmentData.sourceInventory.reduce((sum, item) => sum + item.appliedRows, 0)
+    : null
+
+  return [
+    {
+      key: 'funnel',
+      label: '사용자 행동',
+      caption: '방문·추천·공유',
+      value: `${formatNumber(dashboard.behaviorFunnel.length)}단계`,
+      icon: 'funnel',
+    },
+    {
+      key: 'quality',
+      label: 'AI/데이터',
+      caption: 'RAG·공공데이터',
+      value: `${formatNumber(dashboard.ragStatus.totalDocuments)}문서`,
+      icon: 'database',
+    },
+    {
+      key: 'local',
+      label: '영주 보강',
+      caption: '로컬 데이터',
+      value: enrichmentTotal === null ? '수집 중' : `${formatNumber(enrichmentTotal)}건`,
+      icon: 'map',
+    },
+    {
+      key: 'recommendations',
+      label: '추천/저장',
+      caption: '유형·코스',
+      value: `${formatNumber(dashboard.summary.totalFavorites)}저장`,
+      icon: 'chart',
+    },
+    {
+      key: 'activity',
+      label: '활동/보호',
+      caption: '로그·원칙',
+      value: `${formatNumber(dashboard.recentActivities.length)}건`,
+      icon: 'shield',
+    },
+  ]
 }
 
 interface ChartRow {
