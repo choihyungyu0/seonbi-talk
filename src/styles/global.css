@@ -3415,11 +3415,17 @@ a {
 
 .tour3d-mission-grid {
   display: grid;
-  grid-template-columns: minmax(0, 0.86fr) minmax(0, 1.1fr) minmax(0, 0.92fr);
+  grid-template-columns: minmax(0, 1.12fr) minmax(0, 1.14fr) minmax(0, 0.62fr);
   gap: 22px;
   min-height: 0;
   align-items: stretch;
   justify-content: center;
+}
+
+@media (min-width: 901px) and (max-width: 1500px) {
+  .tour3d-mission-grid {
+    grid-template-columns: minmax(0, 1.04fr) minmax(0, 1.14fr) minmax(0, 0.7fr);
+  }
 }
 
 .tour3d-mission-panel {
@@ -3790,8 +3796,11 @@ a {
 }
 
 .tour3d-ai-listen-button {
-  display: inline-flex;
-  min-height: 54px;
+  position: relative;
+  display: flex;
+  width: 100%;
+  height: auto;
+  min-height: 0;
   align-items: center;
   justify-content: center;
   border: 0;
@@ -3802,11 +3811,16 @@ a {
     drop-shadow(0 0 10px rgba(236, 178, 55, 0.2));
 }
 
+.tour3d-ai-listen-button::before,
+.tour3d-ai-listen-button::after {
+  content: none;
+}
+
 .tour3d-ai-listen-button img {
   display: block;
-  width: 100%;
-  height: 54px;
-  object-fit: fill;
+  width: min(100%, 360px);
+  height: auto;
+  object-fit: contain;
 }
 
 .tour3d-mission-status {
@@ -4193,10 +4207,14 @@ a {
     line-height: 1.28;
   }
 
-  .tour3d-ai-listen-button,
+  .tour3d-ai-listen-button {
+    height: auto;
+    min-height: 0;
+    padding: 0;
+  }
+
   .tour3d-ai-listen-button img {
-    min-height: 30px;
-    height: 30px;
+    width: min(100%, 230px);
   }
 
   .tour3d-checklist-card ol {
@@ -4350,10 +4368,14 @@ a {
     height: 110px;
   }
 
-  .tour3d-ai-listen-button,
+  .tour3d-ai-listen-button {
+    height: auto;
+    min-height: 0;
+    padding: 0;
+  }
+
   .tour3d-ai-listen-button img {
-    min-height: 48px;
-    height: 48px;
+    width: min(100%, 360px);
   }
 
   .tour3d-checklist-card li {

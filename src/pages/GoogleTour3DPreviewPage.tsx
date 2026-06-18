@@ -328,6 +328,12 @@ interface TourismProxyImageResponse {
   items?: TourismContent[]
 }
 
+const missionTourApiImageCacheKey = 'yeongju-tour3d-mission-tourapi-images-v1'
+const missionTourApiKeywordBackoffMs = 5 * 60 * 1000
+let missionTourApiImageMemoryCache: MissionTourApiImageUrls | null = null
+let missionTourApiImageRequestPromise: Promise<MissionTourApiImageUrls> | null = null
+let missionTourApiKeywordBackoffUntil = 0
+
 const routePreviewStops: RoutePreviewStop[] = tour3DRouteStops.map((stop) => ({
   spotId: stop.id,
   number: stop.order,
@@ -595,28 +601,187 @@ function getMissionHeroImageUrl(
   return imageUrls[stop.spotId] ?? imageAsset(detail.heroImage)
 }
 
+async function getMissionTourApiImageUrls() {
+  const cachedImageUrls = readMissionTourApiImageCache()
+  const missingStops = routePreviewStops.filter((stop) => !cachedImageUrls[stop.spotId])
+  if (missingStops.length === 0) return cachedImageUrls
+
+  if (!missionTourApiImageRequestPromise) {
+    missionTourApiImageRequestPromise = requestMissingMissionTourApiImageUrls(
+      cachedImageUrls,
+      missingStops,
+    ).finally(() => {
+      missionTourApiImageRequestPromise = null
+    })
+  }
+
+  return missionTourApiImageRequestPromise
+}
+
+async function requestMissingMissionTourApiImageUrls(
+  cachedImageUrls: MissionTourApiImageUrls,
+  missingStops: RoutePreviewStop[],
+) {
+  const areaBasedUrl = new URL('/api/tourism', window.location.origin)
+  areaBasedUrl.searchParams.set('type', 'areaBased')
+  areaBasedUrl.searchParams.set('areaCode', '35')
+  areaBasedUrl.searchParams.set('sigunguCode', '14')
+  areaBasedUrl.searchParams.set('numOfRows', '80')
+
+  const areaBasedResult = await requestTourismProxyItems(areaBasedUrl)
+  const areaBasedImageUrls = getMissionImageUrlsFromTourismItems(areaBasedResult.items)
+  const mergedAreaBasedImageUrls = mergeMissionTourApiImageUrls(
+    cachedImageUrls,
+    areaBasedImageUrls,
+  )
+  writeMissionTourApiImageCache(mergedAreaBasedImageUrls)
+
+  if (areaBasedResult.rateLimited) return mergedAreaBasedImageUrls
+
+  const stillMissingStops = missingStops.filter(
+    (stop) => !mergedAreaBasedImageUrls[stop.spotId],
+  )
+  if (stillMissingStops.length === 0) return mergedAreaBasedImageUrls
+
+  const keywordImageUrls: MissionTourApiImageUrls = {}
+
+  for (const stop of stillMissingStops) {
+    if (isMissionTourApiKeywordBackoffActive()) break
+
+    const imageUrl = await getTourApiImageUrlByPlaceName(stop.name)
+    if (imageUrl) {
+      keywordImageUrls[stop.spotId] = imageUrl
+      writeMissionTourApiImageCache(
+        mergeMissionTourApiImageUrls(mergedAreaBasedImageUrls, keywordImageUrls),
+      )
+    }
+  }
+
+  return mergeMissionTourApiImageUrls(mergedAreaBasedImageUrls, keywordImageUrls)
+}
+
+async function requestTourismProxyItems(url: URL) {
+  const response = await fetch(url)
+  if (!response.ok) {
+    return {
+      items: [],
+      rateLimited: response.status === 429 || response.status === 502,
+    }
+  }
+
+  const data = (await response.json()) as TourismProxyImageResponse
+  return {
+    items: data.ok ? data.items ?? [] : [],
+    rateLimited: false,
+  }
+}
+
 async function getTourApiImageUrlByPlaceName(placeName: string) {
   const url = new URL('/api/tourism', window.location.origin)
   url.searchParams.set('type', 'keyword')
   url.searchParams.set('keyword', placeName)
   url.searchParams.set('numOfRows', '8')
 
-  const response = await fetch(url)
-  if (!response.ok) return ''
+  const result = await requestTourismProxyItems(url)
+  if (result.rateLimited) {
+    missionTourApiKeywordBackoffUntil = Date.now() + missionTourApiKeywordBackoffMs
+    return ''
+  }
 
-  const data = (await response.json()) as TourismProxyImageResponse
-  if (!data.ok) return ''
-
-  const imageContent = (data.items ?? []).find((item) => {
+  const imageContent = result.items.find((item) => {
     const imageUrl = getTourismPrimaryImageUrl(item)
     if (!imageUrl) return false
 
-    const itemTitle = normalizeMissionPlaceName(item.title ?? item.name)
-    const normalizedPlaceName = normalizeMissionPlaceName(placeName)
-    return itemTitle === normalizedPlaceName || itemTitle.includes(normalizedPlaceName)
+    return isMatchingMissionPlaceName(item, placeName)
   })
 
   return imageContent ? getTourismPrimaryImageUrl(imageContent) : ''
+}
+
+function getMissionImageUrlsFromTourismItems(items: TourismContent[]) {
+  const imageUrls: MissionTourApiImageUrls = {}
+
+  for (const stop of routePreviewStops) {
+    const imageContent = items.find((item) => {
+      const imageUrl = getTourismPrimaryImageUrl(item)
+      return imageUrl && isMatchingMissionPlaceName(item, stop.name)
+    })
+    const imageUrl = imageContent ? getTourismPrimaryImageUrl(imageContent) : ''
+    if (imageUrl) imageUrls[stop.spotId] = imageUrl
+  }
+
+  return imageUrls
+}
+
+function isMatchingMissionPlaceName(item: TourismContent, placeName: string) {
+  const itemTitle = normalizeMissionPlaceName(item.title ?? item.name)
+  const normalizedPlaceName = normalizeMissionPlaceName(placeName)
+  return (
+    itemTitle === normalizedPlaceName ||
+    itemTitle.includes(normalizedPlaceName) ||
+    normalizedPlaceName.includes(itemTitle)
+  )
+}
+
+function mergeMissionTourApiImageUrls(
+  ...imageUrlSets: MissionTourApiImageUrls[]
+) {
+  return imageUrlSets.reduce<MissionTourApiImageUrls>((mergedImageUrls, imageUrls) => {
+    for (const stop of routePreviewStops) {
+      const imageUrl = imageUrls[stop.spotId]
+      if (isUsableMissionImageUrl(imageUrl)) {
+        mergedImageUrls[stop.spotId] = imageUrl
+      }
+    }
+
+    return mergedImageUrls
+  }, {})
+}
+
+function readMissionTourApiImageCache() {
+  if (missionTourApiImageMemoryCache) return missionTourApiImageMemoryCache
+  if (typeof window === 'undefined') return {}
+
+  try {
+    const cachedValue = window.localStorage.getItem(missionTourApiImageCacheKey)
+    if (!cachedValue) return {}
+
+    const parsedValue = JSON.parse(cachedValue) as MissionTourApiImageUrls
+    missionTourApiImageMemoryCache = mergeMissionTourApiImageUrls(parsedValue)
+    return missionTourApiImageMemoryCache
+  } catch {
+    return {}
+  }
+}
+
+function writeMissionTourApiImageCache(imageUrls: MissionTourApiImageUrls) {
+  const safeImageUrls = mergeMissionTourApiImageUrls(imageUrls)
+  missionTourApiImageMemoryCache = safeImageUrls
+
+  if (typeof window === 'undefined') return
+  try {
+    window.localStorage.setItem(
+      missionTourApiImageCacheKey,
+      JSON.stringify(safeImageUrls),
+    )
+  } catch {
+    // The app can still show the current network result if storage is unavailable.
+  }
+}
+
+function isUsableMissionImageUrl(value: string | undefined) {
+  if (!value) return false
+
+  try {
+    const parsedUrl = new URL(value)
+    return parsedUrl.protocol === 'http:' || parsedUrl.protocol === 'https:'
+  } catch {
+    return false
+  }
+}
+
+function isMissionTourApiKeywordBackoffActive() {
+  return Date.now() < missionTourApiKeywordBackoffUntil
 }
 
 function normalizeMissionPlaceName(value: string | undefined) {
@@ -693,7 +858,7 @@ export function GoogleTour3DPreviewPage() {
   const [activeMapView, setActiveMapView] = useState<'3d' | '2d'>('3d')
   const [missionStatusMessage, setMissionStatusMessage] = useState('')
   const [missionTourApiImageUrls, setMissionTourApiImageUrls] =
-    useState<MissionTourApiImageUrls>({})
+    useState<MissionTourApiImageUrls>(() => readMissionTourApiImageCache())
   const [courseRouteState, setCourseRouteState] = useState<CourseRouteState>(() =>
     createFallbackCourseRouteState(),
   )
@@ -786,21 +951,17 @@ export function GoogleTour3DPreviewPage() {
     let isDisposed = false
 
     async function loadMissionTourApiImages() {
-      const imageEntries = await Promise.all(
-        routePreviewStops.map(async (stop) => {
-          try {
-            const imageUrl = await getTourApiImageUrlByPlaceName(stop.name)
-            return [stop.spotId, imageUrl] as const
-          } catch {
-            return [stop.spotId, ''] as const
-          }
-        }),
-      )
+      const cachedImageUrls = readMissionTourApiImageCache()
+      if (Object.keys(cachedImageUrls).length > 0) {
+        setMissionTourApiImageUrls(cachedImageUrls)
+      }
+
+      const imageUrls = await getMissionTourApiImageUrls()
 
       if (isDisposed) return
 
-      setMissionTourApiImageUrls(
-        Object.fromEntries(imageEntries.filter(([, imageUrl]) => imageUrl)),
+      setMissionTourApiImageUrls((previousImageUrls) =>
+        mergeMissionTourApiImageUrls(previousImageUrls, imageUrls),
       )
     }
 
