@@ -2433,6 +2433,65 @@
   max-height: 58px;
 }
 
+.home-journey-screen .home-experience-panel .home-ornament-button--asset {
+  display: inline-flex;
+  width: min(430px, 100%);
+  min-height: 76px;
+  height: auto;
+  justify-self: center;
+  border: 1px solid rgba(235, 190, 88, 0.92);
+  border-radius: 8px;
+  padding: 0 28px;
+  color: #fff8df;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.12), transparent 42%),
+    linear-gradient(180deg, #0f4e3d, #073b2e);
+  box-shadow:
+    inset 0 0 0 2px rgba(199, 155, 69, 0.38),
+    0 14px 24px rgba(2, 12, 10, 0.22);
+  font-size: 1.02rem;
+  letter-spacing: 0;
+}
+
+.home-journey-screen .home-experience-panel .home-ornament-button--light.home-ornament-button--asset {
+  width: min(390px, 92%);
+  min-height: 66px;
+  height: auto;
+  color: #20332b;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.58), transparent 48%),
+    linear-gradient(180deg, rgba(246, 231, 194, 0.96), rgba(199, 180, 136, 0.96));
+  box-shadow:
+    inset 0 0 0 2px rgba(255, 250, 240, 0.38),
+    0 12px 20px rgba(2, 12, 10, 0.16);
+}
+
+.home-journey-screen .home-experience-panel .home-ornament-button--asset img,
+.home-journey-screen .home-experience-panel .home-ornament-button--light.home-ornament-button--asset img {
+  display: none;
+}
+
+.home-journey-screen .home-experience-panel .home-ornament-button--asset .home-sr-only {
+  position: static;
+  width: auto;
+  height: auto;
+  overflow: visible;
+  clip: auto;
+  clip-path: none;
+  white-space: normal;
+}
+
+.home-journey-screen .home-experience-panel .home-ornament-button--asset::after {
+  margin-left: 18px;
+  content: '→';
+  font-size: 1.28rem;
+  line-height: 1;
+}
+
+.home-journey-screen .home-experience-panel .home-ornament-button--asset::before {
+  display: block;
+}
+
 .home-scroll-dots {
   position: fixed;
   top: 50%;
@@ -5753,11 +5812,11 @@
   }
 
   .home-experience-panel .home-ornament-button--asset {
-    height: 84px;
+    height: 104px;
   }
 
   .home-experience-panel .home-ornament-button--light.home-ornament-button--asset {
-    height: 68px;
+    height: 84px;
   }
 
   .home-experience-panel .home-ornament-button--asset img,
@@ -5794,11 +5853,16 @@
   }
 
   .home-journey-screen .home-experience-panel .home-ornament-button--asset {
-    height: 62px;
+    width: min(360px, 100%);
+    min-height: 66px;
+    height: auto;
+    padding: 0 22px;
   }
 
   .home-journey-screen .home-experience-panel .home-ornament-button--light.home-ornament-button--asset {
-    height: 54px;
+    width: min(330px, 94%);
+    min-height: 58px;
+    height: auto;
   }
 
   .home-journey-screen .home-experience-panel .home-ornament-button--asset img,

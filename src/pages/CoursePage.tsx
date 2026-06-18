@@ -54,8 +54,8 @@ import type { SeonbiType } from '../features/seonbi-test/types'
 
 const yeongjuKeywords = ['소수서원', '선비세상', '무섬마을', '부석사', '풍기인삼']
 const yeongjuCenterLocation: RouteCoordinate = {
-  lat: 36.8057,
-  lng: 128.624,
+  lat: 36.8056858,
+  lng: 128.6240551,
 }
 const tourismFilters = [
   { id: 'all', label: '전체', contentTypeId: undefined },

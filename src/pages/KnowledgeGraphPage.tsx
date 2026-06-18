@@ -1170,6 +1170,21 @@ export function KnowledgeGraphPage() {
     () => new Set(personalizationProfile.traceNodeIds),
     [personalizationProfile.traceNodeIds],
   )
+  const recommendationFitNodeIdSet = useMemo(
+    () => {
+      const fitNodeIds = new Set([...personalizationProfile.traceNodeIds, selectedNodeId])
+      visibleLinks.forEach((link) => {
+        const sourceId = getLinkEndpointId(link.source)
+        const targetId = getLinkEndpointId(link.target)
+        if (fitNodeIds.has(sourceId) || fitNodeIds.has(targetId)) {
+          fitNodeIds.add(sourceId)
+          fitNodeIds.add(targetId)
+        }
+      })
+      return fitNodeIds
+    },
+    [personalizationProfile.traceNodeIds, selectedNodeId, visibleLinks],
+  )
   const traceLinkKeySet = useMemo(() => {
     const linkKeys = new Set<string>()
     for (let index = 0; index < personalizationProfile.traceNodeIds.length - 1; index += 1) {
@@ -1265,10 +1280,16 @@ export function KnowledgeGraphPage() {
       )
     }, 850)
 
+    const fitPadding = width < 520 ? 58 : width < 900 ? 42 : isTraceMode ? 38 : 24
+    const shouldFitRecommendationPath =
+      !isPlaying && activeStageIndex >= finalGraphStageIndex && !normalizedSearchQuery
+
     const fitTimeoutId = window.setTimeout(() => {
-      graphRef.current?.zoomToFit(700, isTraceMode ? 38 : 24, (node) => {
+      graphRef.current?.zoomToFit(700, fitPadding, (node) => {
         const graphNode = node as KnowledgeNode
-        return isTraceMode ? traceNodeIdSet.has(graphNode.id) : true
+        if (isTraceMode) return traceNodeIdSet.has(graphNode.id)
+        if (shouldFitRecommendationPath) return recommendationFitNodeIdSet.has(graphNode.id)
+        return true
       })
     }, 1650)
 
@@ -1276,7 +1297,17 @@ export function KnowledgeGraphPage() {
       window.clearTimeout(focusTimeoutId)
       window.clearTimeout(fitTimeoutId)
     }
-  }, [graphData.nodes.length, height, isTraceMode, traceNodeIdSet, width])
+  }, [
+    activeStageIndex,
+    graphData.nodes.length,
+    height,
+    isPlaying,
+    isTraceMode,
+    normalizedSearchQuery,
+    recommendationFitNodeIdSet,
+    traceNodeIdSet,
+    width,
+  ])
 
   function getNodeVisualStateForId(nodeId: string) {
     if (normalizedSearchQuery && !isTraceMode) {
@@ -1560,7 +1591,7 @@ export function KnowledgeGraphPage() {
   ]
 
   return (
-    <AppLayout hideChatbot hideBottomNavigation>
+    <AppLayout className="ai-evidence-app-shell" hideChatbot hideBottomNavigation>
       <section className="page-section page-container knowledge-graph-page ai-evidence-page">
         <div className="ai-evidence-inner">
           <header className="ai-evidence-header">
@@ -2812,7 +2843,7 @@ function useElementSize(ref: RefObject<HTMLElement | null>) {
       if (!rect) return
 
       setSize({
-        width: Math.max(320, Math.round(rect.width)),
+        width: Math.max(260, Math.round(rect.width)),
         height: Math.max(420, Math.round(rect.height)),
       })
     }

@@ -141,8 +141,8 @@ const heatmapModes: Record<
 }
 
 const yeongjuInitialViewState = {
-  longitude: 128.6241,
-  latitude: 36.8057,
+  longitude: 128.6240551,
+  latitude: 36.8056858,
   zoom: 11.05,
   minZoom: 9,
   maxZoom: 15,
@@ -151,37 +151,37 @@ const yeongjuInitialViewState = {
 }
 
 const fallbackHeatmapPoints: HeatmapPoint[] = [
-  createFallbackPoint('sosu-seowon', '소수서원', 'tour', [128.5808, 36.9252], {
+  createFallbackPoint('sosu-seowon', '소수서원', 'tour', [128.58, 36.92556], {
     demand: 10,
     facility: 3,
     gap: 5,
     route: 8,
   }),
-  createFallbackPoint('seonbichon', '선비촌', 'course', [128.5816, 36.9237], {
+  createFallbackPoint('seonbichon', '선비촌', 'course', [128.582677, 36.928557], {
     demand: 8,
     facility: 4,
     gap: 4,
     route: 9,
   }),
-  createFallbackPoint('seonbi-world', '선비세상', 'festival', [128.5843, 36.9198], {
+  createFallbackPoint('seonbi-world', '선비세상', 'festival', [128.58932026, 36.937775008], {
     demand: 9,
     facility: 5,
     gap: 3,
     route: 7,
   }),
-  createFallbackPoint('museom-village', '무섬마을', 'tour', [128.6222, 36.7295], {
+  createFallbackPoint('museom-village', '무섬마을', 'tour', [128.6210331, 36.7331746], {
     demand: 8,
     facility: 3,
     gap: 8,
     route: 10,
   }),
-  createFallbackPoint('buseoksa', '부석사', 'tour', [128.6878, 36.998], {
+  createFallbackPoint('buseoksa', '부석사', 'tour', [128.68746, 36.998969], {
     demand: 10,
     facility: 3,
     gap: 7,
     route: 5,
   }),
-  createFallbackPoint('yeongju-station', '영주역', 'festival', [128.6264, 36.8115], {
+  createFallbackPoint('yeongju-station', '영주역', 'festival', [128.6242371, 36.81011662], {
     demand: 4,
     facility: 6,
     gap: 2,
@@ -229,7 +229,7 @@ const majorPlaceMarkers: PlaceMarker[] = [
     id: 'yeongju-station',
     name: '영주역',
     category: '교통 거점',
-    coordinates: [128.6264, 36.8115],
+    coordinates: [128.6242371, 36.81011662],
     demandLevel: '보통',
     facilityLevel: '충분',
     routeIncluded: true,
@@ -240,7 +240,7 @@ const majorPlaceMarkers: PlaceMarker[] = [
     id: 'sosu-seowon',
     name: '소수서원',
     category: '역사문화',
-    coordinates: [128.5808, 36.9252],
+    coordinates: [128.58, 36.92556],
     demandLevel: '높음',
     facilityLevel: '보통',
     routeIncluded: true,
@@ -251,7 +251,7 @@ const majorPlaceMarkers: PlaceMarker[] = [
     id: 'seonbichon',
     name: '선비촌',
     category: '체험',
-    coordinates: [128.5816, 36.9237],
+    coordinates: [128.582677, 36.928557],
     demandLevel: '높음',
     facilityLevel: '보통',
     routeIncluded: true,
@@ -262,7 +262,7 @@ const majorPlaceMarkers: PlaceMarker[] = [
     id: 'seonbi-world',
     name: '선비세상',
     category: '축제·체험',
-    coordinates: [128.5843, 36.9198],
+    coordinates: [128.58932026, 36.937775008],
     demandLevel: '높음',
     facilityLevel: '충분',
     routeIncluded: false,
@@ -273,7 +273,7 @@ const majorPlaceMarkers: PlaceMarker[] = [
     id: 'museom-village',
     name: '무섬마을',
     category: '마을 산책',
-    coordinates: [128.6222, 36.7295],
+    coordinates: [128.6210331, 36.7331746],
     demandLevel: '높음',
     facilityLevel: '주의',
     routeIncluded: true,
@@ -284,7 +284,7 @@ const majorPlaceMarkers: PlaceMarker[] = [
     id: 'buseoksa',
     name: '부석사',
     category: '사찰·문화유산',
-    coordinates: [128.6878, 36.998],
+    coordinates: [128.68746, 36.998969],
     demandLevel: '높음',
     facilityLevel: '주의',
     routeIncluded: false,
@@ -293,10 +293,10 @@ const majorPlaceMarkers: PlaceMarker[] = [
   },
 ]
 const recommendedRoutePath: [number, number][] = [
-  [128.6264, 36.8115],
-  [128.5808, 36.9252],
-  [128.5816, 36.9237],
-  [128.6222, 36.7295],
+  [128.6242371, 36.81011662],
+  [128.58, 36.92556],
+  [128.582677, 36.928557],
+  [128.6210331, 36.7331746],
 ]
 const radiusOptions = [300, 500, 1000]
 const primaryLayerModes: HeatmapMode[] = ['demand', 'facility', 'route']

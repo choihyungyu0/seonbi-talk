@@ -8,6 +8,10 @@ function newImage(fileName: string) {
   return encodeURI(`/images/new/${fileName}`)
 }
 
+function homeImage(fileName: string) {
+  return encodeURI(`/images/home/optimized/${fileName}`)
+}
+
 interface SeonbiResultStat {
   label: string
   value: string
@@ -42,10 +46,10 @@ interface SeonbiResultData {
 }
 
 const themeThumbnails: Record<SeonbiType, string> = {
-  toegye: newImage('image-Photoroom (53).png'),
-  yulgok: newImage('f0eca584-0776-45f4-9af5-88044b7455f2.png'),
-  cheosa: newImage('47fbed27-5eed-4a5f-9e6a-d5a3a1e5eaa5.png'),
-  uguk: newImage('5e77728a-f6df-4983-8f1f-de6b0b51f47c.png'),
+  toegye: homeImage('1c51baf4-d604-48f7-8a09-ca0ab1c1d982.webp'),
+  yulgok: homeImage('3da4cd9c-2865-4ffb-afc9-ab284de979b7.webp'),
+  cheosa: homeImage('62ac8f05-5f95-4cd7-b58f-70c2bf586f03.webp'),
+  uguk: homeImage('381c59e0-22e6-4c8a-9bc6-20981a00970e.webp'),
 }
 
 const seonbiResultDataByType: Record<SeonbiType, SeonbiResultData> = {
@@ -57,8 +61,8 @@ const seonbiResultDataByType: Record<SeonbiType, SeonbiResultData> = {
     subtitle: '깊은 성찰과 배움으로 마음을 다스리는 선비',
     description:
       '고요한 마음으로 자신을 돌아보고, 끊임없는 배움을 통해 인격을 수양하는 퇴계형 선비입니다. 영주의 선비 문화 속에서 내면의 지혜를 키우고, 세상을 너그럽게 바라보며 조용히 길을 찾아가는 여정을 떠나보세요.',
-    heroImage: newImage('image-Photoroom (53).png'),
-    heroAlt: '서원에서 글을 쓰는 퇴계형 선비',
+    heroImage: homeImage('1c51baf4-d604-48f7-8a09-ca0ab1c1d982.webp'),
+    heroAlt: '정자에서 글을 쓰며 성찰하는 퇴계형 선비',
     saveButtonImage: newImage('image-Photoroom (42).png'),
     nextRoute: '/tour-3d?course=toegye',
     stats: [
@@ -104,8 +108,8 @@ const seonbiResultDataByType: Record<SeonbiType, SeonbiResultData> = {
     subtitle: '현실을 읽고 계획을 세우는 실용형 선비',
     description:
       '생각을 실행으로 옮기고, 복잡한 문제를 차분히 정리하는 율곡형 선비입니다. 영주의 문화 거점과 생활 동선을 함께 살피며, 배움이 오늘의 선택과 행동으로 이어지는 실용적인 여정을 즐깁니다.',
-    heroImage: newImage('f0eca584-0776-45f4-9af5-88044b7455f2.png'),
-    heroAlt: '책을 들고 생각하는 율곡형 선비',
+    heroImage: homeImage('3da4cd9c-2865-4ffb-afc9-ab284de979b7.webp'),
+    heroAlt: '지도를 보며 계획을 세우는 율곡형 선비',
     saveButtonImage: newImage('image-Photoroom (42).png'),
     nextRoute: '/tour-3d?course=yulgok',
     stats: [
@@ -151,8 +155,8 @@ const seonbiResultDataByType: Record<SeonbiType, SeonbiResultData> = {
     subtitle: '자연 속에서 소박하게 뜻을 지키는 은둔형 선비',
     description:
       '자연을 벗 삼아 깊이 사색하고, 마음을 비우며 살아가는 선비입니다. 번잡한 세상을 벗어나 조용한 곳에서 스스로를 돌아보고, 소박한 삶 속에서 진정한 자유와 평안을 찾습니다. 느리게 걷고, 깊이 보고, 마음에 머무는 여행을 즐깁니다.',
-    heroImage: newImage('image-Photoroom (27).png'),
-    heroAlt: '자연 속 정자에서 사색하는 처사형 선비',
+    heroImage: homeImage('62ac8f05-5f95-4cd7-b58f-70c2bf586f03.webp'),
+    heroAlt: '자연 속에서 쉬어가는 처사형 선비',
     saveButtonImage: newImage('image-Photoroom (42).png'),
     nextRoute: '/tour-3d?course=cheosa',
     stats: [
@@ -198,8 +202,8 @@ const seonbiResultDataByType: Record<SeonbiType, SeonbiResultData> = {
     subtitle: '정의감과 책임감으로 길을 여는 실천형 선비',
     description:
       '공동체의 안녕과 옳은 선택을 중요하게 생각하는 우국형 선비입니다. 역사와 장소가 품은 이야기를 따라가며, 배움을 행동으로 옮기고 다음 사람을 위한 책임 있는 여행을 만들어갑니다.',
-    heroImage: newImage('5e77728a-f6df-4983-8f1f-de6b0b51f47c.png'),
-    heroAlt: '갑옷을 입고 깃발을 든 우국형 선비',
+    heroImage: homeImage('381c59e0-22e6-4c8a-9bc6-20981a00970e.webp'),
+    heroAlt: '성곽 앞에서 책임감 있게 서 있는 우국형 선비',
     saveButtonImage: newImage('image-Photoroom (42).png'),
     nextRoute: '/tour-3d?course=uguk',
     stats: [

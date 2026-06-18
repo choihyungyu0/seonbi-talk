@@ -6,6 +6,7 @@ import adminRagSeedHandler from './api/admin/rag/seed'
 import adminSessionHandler from './api/admin/session'
 import adminVerifyHandler from './api/admin/verify'
 import judgeHandler from './api/judge'
+import googleRouteHandler from './api/google-route'
 import ragChatHandler from './api/rag-chat'
 import ragSearchHandler from './api/rag/search'
 import routeHandler from './api/route'
@@ -39,6 +40,7 @@ const localApiHandlers: Record<string, LocalApiHandler> = {
   '/admin/rag/seed': adminRagSeedHandler as LocalApiHandler,
   '/admin/session': adminSessionHandler as LocalApiHandler,
   '/admin/verify': adminVerifyHandler as LocalApiHandler,
+  '/google-route': googleRouteHandler as LocalApiHandler,
   '/judge': judgeHandler as LocalApiHandler,
   '/rag-chat': ragChatHandler as LocalApiHandler,
   '/rag/search': ragSearchHandler as LocalApiHandler,

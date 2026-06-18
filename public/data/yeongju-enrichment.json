@@ -122,8 +122,8 @@
     "placeId": "sosu-seowon",
     "placeName": "소수서원",
     "coordinates": [
-      128.5808,
-      36.9252
+      128.58,
+      36.92556
     ],
     "dateRange": {
       "start": "2014-01-01",
@@ -356,8 +356,8 @@
       "endDate": "2025-05-05",
       "content": "공연+전시+거리퍼레이드",
       "address": "경상북도 영주시 순흥면 소백로 2796",
-      "mapX": 128.5816,
-      "mapY": 36.9237,
+      "mapX": 128.582677,
+      "mapY": 36.928557,
       "coordinateSource": "representative-venue-keyword",
       "source": "YeongjuFestivalOpenData"
     },
@@ -395,8 +395,8 @@
       "endDate": "2025-10-12",
       "content": "외나무다리 퍼포먼스+전통혼례 재연행사+전통상여행렬 재연행사+샌드아트",
       "address": "경상북도 영주시 문수면 무섬로234번길 31-12",
-      "mapX": 128.6222,
-      "mapY": 36.7295,
+      "mapX": 128.6210331,
+      "mapY": 36.7331746,
       "coordinateSource": "representative-venue-keyword",
       "source": "YeongjuFestivalOpenData"
     },
@@ -5195,8 +5195,8 @@
       "title": "소수서원",
       "address": "경상북도 영주시 순흥면 소백로 2740",
       "tel": "054-639-7691",
-      "mapX": 128.5808,
-      "mapY": 36.9252,
+      "mapX": 128.58,
+      "mapY": 36.92556,
       "coordinateSource": "known-place",
       "source": "YeongjuRuralTourismOpenData"
     },
@@ -5205,8 +5205,8 @@
       "title": "부석사",
       "address": "경상북도 영주시 부석면 부석사로 345",
       "tel": "054-633-3464",
-      "mapX": 128.6878,
-      "mapY": 36.998,
+      "mapX": 128.68746,
+      "mapY": 36.998969,
       "coordinateSource": "known-place",
       "source": "YeongjuRuralTourismOpenData"
     },
@@ -5225,8 +5225,8 @@
       "title": "선비촌",
       "address": "경상북도 영주시 순흥면 소백로 2796",
       "tel": "054-638-6444",
-      "mapX": 128.5816,
-      "mapY": 36.9237,
+      "mapX": 128.582677,
+      "mapY": 36.928557,
       "coordinateSource": "known-place",
       "source": "YeongjuRuralTourismOpenData"
     },
@@ -5255,8 +5255,8 @@
       "title": "무섬마을",
       "address": "경상북도 영주시 문수면 무섬로 234번길 41",
       "tel": "054-636-4700",
-      "mapX": 128.6222,
-      "mapY": 36.7295,
+      "mapX": 128.6210331,
+      "mapY": 36.7331746,
       "coordinateSource": "known-place",
       "source": "YeongjuRuralTourismOpenData"
     },
@@ -10552,8 +10552,8 @@
       "영주 시내 일원"
     ],
     "address": "경상북도 영주시 순흥면 선비세상·소수서원 권역",
-    "mapX": 128.5843,
-    "mapY": 36.9198,
+    "mapX": 128.58932026,
+    "mapY": 36.937775008,
     "coordinateSource": "official-main-venue",
     "programs": [
       "선비축전",
@@ -10601,8 +10601,8 @@
   "transitAccess": {
     "mainStation": {
       "title": "영주역",
-      "mapX": 128.6264,
-      "mapY": 36.8115,
+      "mapX": 128.6242371,
+      "mapY": 36.81011662,
       "address": "경상북도 영주시 선비로 64"
     },
     "weekdayPassengerTrainCount": 34,

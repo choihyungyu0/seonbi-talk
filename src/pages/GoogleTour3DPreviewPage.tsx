@@ -1,7 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
+import {
+  toegyeCourseStops,
+  type CourseStop,
+  type RouteCoordinate,
+  type ToegyeCourseStopId,
+} from '../data/courseStops'
 import { seonbiTypes, type SeonbiType } from '../features/seonbi-test/types'
+import {
+  requestGoogleCourseRoute,
+  type GoogleCourseRouteSource,
+} from '../features/tourism/googleRouteApi'
 
 type GoogleMaps3DLoadStatus = 'idle' | 'loading' | 'ready' | 'missing-key' | 'error'
 
@@ -67,6 +77,19 @@ interface GoogleMap3DMarkerElement extends HTMLElement {
   zIndex?: number
 }
 
+interface GoogleMap3DPolylineElement extends HTMLElement {
+  altitudeMode?: string
+  drawsOccludedSegments?: boolean
+  extruded?: boolean
+  geodesic?: boolean
+  outerColor?: string
+  outerWidth?: number
+  path?: RouteCoordinate[]
+  strokeColor?: string
+  strokeWidth?: number
+  zIndex?: number
+}
+
 interface GoogleMap3DPlaceClickEvent extends Event {
   placeId?: string
   preventDefault: () => void
@@ -86,7 +109,20 @@ interface GoogleMaps3DLibrary {
     title?: string
     zIndex?: number
   }) => GoogleMap3DMarkerElement
+  Polyline3DElement?: new (options?: {
+    altitudeMode?: string
+    drawsOccludedSegments?: boolean
+    extruded?: boolean
+    geodesic?: boolean
+    outerColor?: string
+    outerWidth?: number
+    path?: RouteCoordinate[]
+    strokeColor?: string
+    strokeWidth?: number
+    zIndex?: number
+  }) => GoogleMap3DPolylineElement
   AltitudeMode?: {
+    CLAMP_TO_GROUND?: string
     RELATIVE_TO_GROUND?: string
   }
   CollisionBehavior?: {
@@ -114,42 +150,56 @@ const googleMapsScriptId = 'google-maps-3d-script'
 const googleMapsScriptCallback = '__yeongjuGoogleMaps3DLoaded'
 const googleMapsLoadTimeoutMs = 15000
 const initialCamera: Tour3DCameraTarget = {
-  id: 'yeongju',
-  name: '영주시',
-  lat: 36.8057,
-  lng: 128.6241,
-  altitude: 900,
-  range: 7000,
-  tilt: 65,
-  heading: 0,
+  id: 'toegye-route-overview',
+  name: '선비길 전체',
+  lat: 36.8686,
+  lng: 128.6328,
+  altitude: 1800,
+  range: 42000,
+  tilt: 54,
+  heading: 352,
 }
+
+const courseStopById = new Map<ToegyeCourseStopId, CourseStop>(
+  toegyeCourseStops.map((stop) => [stop.id, stop]),
+)
+
+function getToegyeCourseStop(stopId: ToegyeCourseStopId) {
+  const stop = courseStopById.get(stopId)
+  if (!stop) {
+    throw new Error(`퇴계형 코스 지점을 찾을 수 없습니다: ${stopId}`)
+  }
+
+  return stop
+}
+
+type Tour3DRouteStopId = Exclude<ToegyeCourseStopId, 'seonbi-record'>
+type Tour3DRouteStop = Extract<
+  (typeof toegyeCourseStops)[number],
+  { id: Tour3DRouteStopId }
+>
+
+const tour3DRouteStops = toegyeCourseStops.filter(
+  (stop): stop is Tour3DRouteStop => stop.id !== 'seonbi-record',
+)
+
+const tour3DFallbackRoutePath: RouteCoordinate[] = [
+  { lat: 36.92556, lng: 128.58 },
+  { lat: 36.928557, lng: 128.582677 },
+  { lat: 36.9281, lng: 128.5892 },
+  { lat: 36.9531, lng: 128.626 },
+  { lat: 36.998969, lng: 128.68746 },
+  { lat: 36.9484, lng: 128.6735 },
+  { lat: 36.8766, lng: 128.6428 },
+  { lat: 36.7331746, lng: 128.6210331 },
+]
+
 const tour3DSpots: Tour3DSpot[] = [
   {
-    id: 'yeongju-station',
-    name: '영주역',
-    lat: 36.8107,
-    lng: 128.6245,
-    altitude: 520,
-    range: 3600,
-    tilt: 65,
-    heading: 0,
-    placeType: '교통 거점',
-    score: 88,
-    seonbiTags: ['출발형', '도시 산책형'],
-    publicDataSource: '공공데이터포털 TourAPI 좌표 체계 기반',
-    aiReason:
-      '영주 여행을 시작하기 좋은 교통 거점이라 첫 방문자 코스의 기준점으로 추천합니다.',
-    accessibility: {
-      parking: '역 주변 공영·민영 주차 접근이 비교적 쉽습니다.',
-      toilet: '역사 내외 화장실 이용이 편리합니다.',
-      lodging: '영주 시내 숙박권과 가장 가깝습니다.',
-    },
-  },
-  {
     id: 'sosu-seowon',
-    name: '소수서원',
-    lat: 36.9254,
-    lng: 128.5801,
+    name: getToegyeCourseStop('sosu-seowon').name,
+    lat: getToegyeCourseStop('sosu-seowon').lat,
+    lng: getToegyeCourseStop('sosu-seowon').lng,
     altitude: 620,
     range: 4200,
     tilt: 65,
@@ -168,9 +218,9 @@ const tour3DSpots: Tour3DSpot[] = [
   },
   {
     id: 'seonbichon',
-    name: '선비촌',
-    lat: 36.9274,
-    lng: 128.5828,
+    name: getToegyeCourseStop('seonbichon').name,
+    lat: getToegyeCourseStop('seonbichon').lat,
+    lng: getToegyeCourseStop('seonbichon').lng,
     altitude: 620,
     range: 3800,
     tilt: 65,
@@ -188,31 +238,10 @@ const tour3DSpots: Tour3DSpot[] = [
     },
   },
   {
-    id: 'seonbi-world',
-    name: '선비세상',
-    lat: 36.9278,
-    lng: 128.5878,
-    altitude: 620,
-    range: 4200,
-    tilt: 65,
-    heading: 20,
-    placeType: '복합문화 테마공간',
-    score: 90,
-    seonbiTags: ['체험형', '전시형'],
-    publicDataSource: '영주시 관광 안내 및 공공 좌표 기반',
-    aiReason:
-      '선비 문화를 현대적인 전시·체험으로 이해할 수 있어 짧은 일정에도 만족도가 높습니다.',
-    accessibility: {
-      parking: '대형 방문객을 고려한 주차 동선이 비교적 좋습니다.',
-      toilet: '시설 내부 편의시설 이용이 쉽습니다.',
-      lodging: '풍기·영주 시내 숙박지와 함께 계획하기 좋습니다.',
-    },
-  },
-  {
     id: 'museom-village',
-    name: '무섬마을',
-    lat: 36.7348,
-    lng: 128.6254,
+    name: getToegyeCourseStop('museom-village').name,
+    lat: getToegyeCourseStop('museom-village').lat,
+    lng: getToegyeCourseStop('museom-village').lng,
     altitude: 520,
     range: 4200,
     tilt: 65,
@@ -231,9 +260,9 @@ const tour3DSpots: Tour3DSpot[] = [
   },
   {
     id: 'buseoksa',
-    name: '부석사',
-    lat: 36.9981,
-    lng: 128.6872,
+    name: getToegyeCourseStop('buseoksa').name,
+    lat: getToegyeCourseStop('buseoksa').lat,
+    lng: getToegyeCourseStop('buseoksa').lng,
     altitude: 780,
     range: 4600,
     tilt: 65,
@@ -250,78 +279,32 @@ const tour3DSpots: Tour3DSpot[] = [
       lodging: '부석·풍기 권역 숙박 또는 영주 시내 숙박과 연계 가능합니다.',
     },
   },
-  {
-    id: 'seonbi-record',
-    name: '선비의 한마디 기록',
-    lat: 36.8057,
-    lng: 128.6241,
-    altitude: 540,
-    range: 3600,
-    tilt: 62,
-    heading: 6,
-    placeType: '기록 미션',
-    score: 92,
-    seonbiTags: ['사색형', '기록형'],
-    publicDataSource: '영주선비길 앱 내 미션 흐름 기반',
-    aiReason:
-      '여정의 끝에서 배움과 감상을 한 문장으로 저장하도록 설계된 퇴계형 마무리 미션입니다.',
-    accessibility: {
-      parking: '마지막 이동 뒤 머문 장소에서 바로 기록할 수 있습니다.',
-      toilet: '현장 이동 전 주변 편의시설을 함께 확인하는 흐름입니다.',
-      lodging: '영주 시내 귀환 또는 다음 장소 이동 전 여정을 정리하기 좋습니다.',
-    },
-  },
 ]
 
-const routePreviewStops = [
-  {
-    spotId: 'sosu-seowon',
-    number: 1,
-    name: '소수서원',
-    mission: '학문 정신 해설 듣기',
-    icon: 'b (2).png',
-    x: 24,
-    y: 29,
-  },
-  {
-    spotId: 'seonbichon',
-    number: 2,
-    name: '선비촌',
-    mission: '전통 생활 공간 둘러보기',
-    icon: '1 (4).png',
-    x: 51,
-    y: 43,
-  },
-  {
-    spotId: 'buseoksa',
-    number: 3,
-    name: '부석사',
-    mission: '자연 속 사색 미션',
-    icon: '1 (5).png',
-    x: 79,
-    y: 31,
-  },
-  {
-    spotId: 'museom-village',
-    number: 4,
-    name: '무섬마을',
-    mission: '고요한 길 걷기',
-    icon: '1 (3).png',
-    x: 77,
-    y: 71,
-  },
-  {
-    spotId: 'seonbi-record',
-    number: 5,
-    name: '선비의 한마디',
-    mission: '오늘의 생각 기록하기',
-    icon: '1 (6).png',
-    x: 31,
-    y: 72,
-  },
-] as const
+const missionCopyByStopId: Record<Tour3DRouteStopId, string> = {
+  'sosu-seowon': '학문 정신 해설 듣기',
+  seonbichon: '전통 생활 공간 둘러보기',
+  buseoksa: '자연 속 사색 미션',
+  'museom-village': '고요한 길 걷기',
+}
 
-type MissionSpotId = (typeof routePreviewStops)[number]['spotId']
+interface RoutePreviewStop {
+  spotId: Tour3DRouteStopId
+  number: number
+  name: string
+  mission: string
+  iconPath: `/images/new/${string}`
+}
+
+const routePreviewStops: RoutePreviewStop[] = tour3DRouteStops.map((stop) => ({
+  spotId: stop.id,
+  number: stop.order,
+  name: stop.name,
+  mission: missionCopyByStopId[stop.id],
+  iconPath: stop.iconPath,
+}))
+
+type MissionSpotId = Tour3DRouteStopId
 type MissionChecklistStatus = 'completed' | 'active' | 'idle'
 
 const summaryRows = [
@@ -360,7 +343,7 @@ const summaryRows = [
 const recommendationReasons = [
   '소수서원과 선비촌을 중심으로 퇴계형의 배움과 성찰 흐름을 구성했습니다.',
   '부석사의 자연 경관을 연결해 조용한 사색 경험을 강화했습니다.',
-  '마지막에 선비의 한마디 기록 미션을 배치해 여행 경험을 저장할 수 있습니다.',
+  '무섬마을의 느린 길을 끝 지점으로 두어 여정의 여운을 자연스럽게 남깁니다.',
 ]
 
 const coursePreviewCopy: Record<
@@ -379,7 +362,7 @@ const coursePreviewCopy: Record<
     courseName: '퇴계형 사색 코스',
     title: '퇴계형 선비길',
     subtitle: '깊은 성찰과 배움을 따라 걷는 영주의 3D 문화 여정',
-    routeLabel: '소수서원 → 선비촌 → 부석사 → 무섬마을 → 선비의 한마디',
+    routeLabel: '소수서원 → 선비촌 → 부석사 → 무섬마을',
     style: '조용한 배움 · 서원 탐방 · 사색 기록',
     target: '퇴계형 선비에게 어울리는 배움과 성찰 중심 코스',
     reasons: recommendationReasons,
@@ -388,39 +371,39 @@ const coursePreviewCopy: Record<
     courseName: '율곡형 실용 탐구 코스',
     title: '율곡형 선비길',
     subtitle: '계획과 실행을 연결하는 영주의 3D 실용 탐구 여정',
-    routeLabel: '소수서원 → 선비촌 → 부석사 → 무섬마을 → 선비의 한마디',
+    routeLabel: '소수서원 → 선비촌 → 부석사 → 무섬마을',
     style: '계획형 동선 · 문화 거점 · 데이터 기반 선택',
     target: '율곡형 선비에게 어울리는 실행과 탐구 중심 코스',
     reasons: [
       '소수서원과 선비촌을 중심으로 배움과 실제 체험이 이어지는 동선을 구성했습니다.',
       '부석사와 무섬마을을 연결해 이동 효율과 장소 의미를 함께 확인하도록 설계했습니다.',
-      '마지막 기록 미션에서 오늘의 선택과 다음 실행 계획을 정리할 수 있습니다.',
+      '무섬마을에서 오늘의 선택과 다음 실행 계획을 차분히 정리할 수 있습니다.',
     ],
   },
   cheosa: {
     courseName: '처사형 자연 사색 코스',
     title: '처사형 선비길',
     subtitle: '자연과 고요함을 따라 천천히 머무는 영주의 3D 사색 여정',
-    routeLabel: '소수서원 → 선비촌 → 부석사 → 무섬마을 → 선비의 한마디',
+    routeLabel: '소수서원 → 선비촌 → 부석사 → 무섬마을',
     style: '자연 풍경 · 느린 산책 · 마음 비움',
     target: '처사형 선비에게 어울리는 자연과 여유 중심 코스',
     reasons: [
       '부석사와 무섬마을의 고요한 풍경을 중심으로 느린 여행감을 강화했습니다.',
       '소수서원과 선비촌을 앞쪽에 두어 조용한 배움 뒤 자연 사색으로 이어지게 했습니다.',
-      '마지막 기록 미션에서 마음에 남은 풍경과 생각을 한 문장으로 저장할 수 있습니다.',
+      '무섬마을에서 마음에 남은 풍경과 생각을 천천히 정리할 수 있습니다.',
     ],
   },
   uguk: {
     courseName: '우국형 역사 실천 코스',
     title: '우국형 선비길',
     subtitle: '역사와 책임의 감각을 따라 움직이는 영주의 3D 실천 여정',
-    routeLabel: '소수서원 → 선비촌 → 부석사 → 무섬마을 → 선비의 한마디',
+    routeLabel: '소수서원 → 선비촌 → 부석사 → 무섬마을',
     style: '역사 해설 · 공동체 가치 · 실천 기록',
     target: '우국형 선비에게 어울리는 책임과 실천 중심 코스',
     reasons: [
       '소수서원과 선비촌을 통해 선비 정신의 공적 의미를 먼저 확인하도록 구성했습니다.',
       '부석사와 무섬마을을 연결해 장소가 품은 역사와 공동체의 이야기를 따라갑니다.',
-      '마지막 기록 미션에서 오늘의 배움을 행동과 책임의 언어로 남길 수 있습니다.',
+      '무섬마을에서 오늘의 배움을 행동과 책임의 언어로 정리할 수 있습니다.',
     ],
   },
 }
@@ -430,16 +413,7 @@ const evidenceChips = ['TourAPI', '역사문화', '편의시설', '이동 거리
 const legendItems = [
   { label: '추천 동선', icon: 'image-Photoroom (40).png' },
   { label: '문화 지점', icon: 'image-Photoroom (13).png' },
-  { label: '기록 미션', icon: 'image-Photoroom (31).png' },
 ]
-
-const missionRouteStops = [
-  { ...routePreviewStops[0], x: 29, y: 24 },
-  { ...routePreviewStops[1], x: 52, y: 39 },
-  { ...routePreviewStops[2], x: 32, y: 52 },
-  { ...routePreviewStops[3], x: 55, y: 66 },
-  { ...routePreviewStops[4], x: 44, y: 82 },
-] as const
 
 const missionTags = ['유교 문화', '서원 탐방', '배움', '성찰'] as const
 
@@ -465,7 +439,7 @@ const missionChecklist = [
   { number: 1, label: '서원 입구 안내문 확인하기', status: 'completed' },
   { number: 2, label: '학문 정신 해설 듣기', status: 'active' },
   { number: 3, label: '가장 인상 깊은 문장 기록하기', status: 'idle' },
-  { number: 4, label: '선비의 한마디에 생각 남기기', status: 'idle' },
+  { number: 4, label: '다음 장소로 이동 준비하기', status: 'idle' },
 ] as const
 
 const missionDetails = {
@@ -497,7 +471,7 @@ const missionDetails = {
       { number: 1, label: '선비촌 입구 도착하기', status: 'completed' },
       { number: 2, label: '전통 생활 공간 둘러보기', status: 'active' },
       { number: 3, label: '인상 깊은 생활 방식 기록하기', status: 'idle' },
-      { number: 4, label: '선비의 한마디에 생각 남기기', status: 'idle' },
+      { number: 4, label: '다음 장소로 이동 준비하기', status: 'idle' },
     ],
   },
   buseoksa: {
@@ -515,7 +489,7 @@ const missionDetails = {
       { number: 1, label: '부석사 입구 도착하기', status: 'completed' },
       { number: 2, label: '자연 속 사색 미션', status: 'active' },
       { number: 3, label: '고요한 풍경 기록하기', status: 'idle' },
-      { number: 4, label: '선비의 한마디에 생각 남기기', status: 'idle' },
+      { number: 4, label: '다음 장소로 이동 준비하기', status: 'idle' },
     ],
   },
   'museom-village': {
@@ -533,25 +507,7 @@ const missionDetails = {
       { number: 1, label: '무섬마을 길 도착하기', status: 'completed' },
       { number: 2, label: '고요한 길 걷기', status: 'active' },
       { number: 3, label: '느린 걸음의 생각 기록하기', status: 'idle' },
-      { number: 4, label: '선비의 한마디에 생각 남기기', status: 'idle' },
-    ],
-  },
-  'seonbi-record': {
-    heroImage: 'image-Photoroom (68).png',
-    title: '오늘의 생각 기록하기',
-    description:
-      '마지막 미션은 오늘 지나온 장소의 배움과 사색을 한 문장으로 정리해 나의 기록으로 남기는 단계입니다.',
-    tags: ['기록', '완성', '성찰', '여운'],
-    stay: '5분',
-    difficulty: '쉬움',
-    trust: '92%',
-    aiText:
-      '이제 여정의 끝에서 오늘의 배움과 감상을 하나의 문장으로 정리할 차례입니다. 짧아도 괜찮으니 마음에 남은 것을 남겨보세요.',
-    checklist: [
-      { number: 1, label: '오늘의 생각 떠올리기', status: 'completed' },
-      { number: 2, label: '한 문장으로 정리하기', status: 'active' },
-      { number: 3, label: '선비의 한마디 기록 저장하기', status: 'idle' },
-      { number: 4, label: '여정 완료 화면 확인하기', status: 'idle' },
+      { number: 4, label: '여정 마무리 준비하기', status: 'idle' },
     ],
   },
 } as const satisfies Record<
@@ -577,6 +533,10 @@ function imageAsset(fileName: string) {
   return encodeURI(`/images/new/${fileName}`)
 }
 
+function publicImageAsset(path: string) {
+  return encodeURI(path)
+}
+
 function getCourseType(value: string | null | undefined): SeonbiType {
   if (!value) return 'toegye'
   const normalizedValue = value.toLowerCase()
@@ -592,10 +552,23 @@ function isMissionSpotId(spotId: string | null | undefined): spotId is MissionSp
 
 let googleMapsScriptPromise: Promise<void> | null = null
 
+type CourseRouteRenderSource = GoogleCourseRouteSource | 'custom-path-fallback'
+
+interface CourseRouteState {
+  path: RouteCoordinate[]
+  source: CourseRouteRenderSource
+  distanceMeters: number
+  duration: string
+}
+
+const fallbackRouteDurationText = '3시간 20분'
+
 export function GoogleTour3DPreviewPage() {
   const mapHostRef = useRef<HTMLDivElement>(null)
   const mapElementRef = useRef<GoogleMap3DElement | null>(null)
+  const maps3dRef = useRef<GoogleMaps3DLibrary | null>(null)
   const markerElementsRef = useRef<Map<string, GoogleMap3DMarkerElement>>(new Map())
+  const routePolylineElementsRef = useRef<GoogleMap3DPolylineElement[]>([])
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const courseType = getCourseType(searchParams.get('course'))
@@ -616,7 +589,7 @@ export function GoogleTour3DPreviewPage() {
     requestedSpot?.id ?? initialCamera.id,
   )
   const [selectedSpotId, setSelectedSpotId] = useState(
-    requestedSpot?.id ?? routePreviewStops[0].spotId,
+    requestedSpot?.id ?? '',
   )
   const [isCourseSaved, setIsCourseSaved] = useState(() => {
     try {
@@ -627,7 +600,11 @@ export function GoogleTour3DPreviewPage() {
   })
   const [saveStatusMessage, setSaveStatusMessage] = useState('')
   const [missionStatusMessage, setMissionStatusMessage] = useState('')
-  const googleMapsApiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY
+  const [courseRouteState, setCourseRouteState] = useState<CourseRouteState>(() =>
+    createFallbackCourseRouteState(),
+  )
+  const googleMapsApiKey =
+    import.meta.env.VITE_GOOGLE_MAPS_BROWSER_KEY ?? import.meta.env.VITE_GOOGLE_MAPS_API_KEY
   const activePlaceName = useMemo(() => {
     if (activePlaceId === initialCamera.id) return initialCamera.name
     return (
@@ -670,12 +647,48 @@ export function GoogleTour3DPreviewPage() {
   const previousMissionRoute = previousMissionStop
     ? `/tour-3d?mode=mission&place=${previousMissionStop.spotId}&course=${courseType}`
     : `/tour-3d?course=${courseType}`
+  const courseRoutePathKey = useMemo(() => {
+    return courseRouteState.path
+      .map((point) => `${point.lat.toFixed(5)},${point.lng.toFixed(5)}`)
+      .join('|')
+  }, [courseRouteState.path])
+  const routeDistanceText = useMemo(
+    () => formatRouteDistance(courseRouteState.distanceMeters),
+    [courseRouteState.distanceMeters],
+  )
+  const routeDurationText = useMemo(
+    () => formatRouteDuration(courseRouteState.duration),
+    [courseRouteState.duration],
+  )
   const currentSummaryRows = summaryRows.map((row) => {
     if (row.label === '코스명') return { ...row, value: courseCopy.courseName }
+    if (row.label === '예상 소요 시간') return { ...row, value: routeDurationText }
     if (row.label === '여행 스타일') return { ...row, value: courseCopy.style }
     if (row.label === '추천 대상') return { ...row, value: courseCopy.target }
     return row
   })
+
+  useEffect(() => {
+    let isDisposed = false
+
+    async function loadGoogleRoute() {
+      const googleRoute = await requestGoogleCourseRoute(tour3DRouteStops)
+      if (isDisposed || !googleRoute) return
+
+      setCourseRouteState({
+        path: googleRoute.path,
+        source: googleRoute.source,
+        distanceMeters: googleRoute.distanceMeters,
+        duration: googleRoute.duration,
+      })
+    }
+
+    void loadGoogleRoute()
+
+    return () => {
+      isDisposed = true
+    }
+  }, [])
 
   useEffect(() => {
     let isDisposed = false
@@ -720,6 +733,9 @@ export function GoogleTour3DPreviewPage() {
         if (!maps3d.Marker3DInteractiveElement) {
           throw new Error('Google Maps 3D 마커 라이브러리를 불러오지 못했습니다.')
         }
+        if (!maps3d.Polyline3DElement) {
+          throw new Error('Google Maps 3D 경로 라인 라이브러리를 불러오지 못했습니다.')
+        }
 
         const mapElement = new maps3d.Map3DElement({
           ...toGoogleCamera(initialCamera),
@@ -749,6 +765,7 @@ export function GoogleTour3DPreviewPage() {
         markerElements.forEach((marker) => mapElement.append(marker))
         mapHostRef.current?.replaceChildren(mapElement)
         mapElementRef.current = mapElement
+        maps3dRef.current = maps3d
         markerElementsRef.current = markerElements
         setStatus('ready')
         if (requestedSpot) {
@@ -779,17 +796,45 @@ export function GoogleTour3DPreviewPage() {
       }
       mapElementRef.current?.remove()
       mapElementRef.current = null
+      maps3dRef.current = null
       markerElementsRef.current.clear()
+      routePolylineElementsRef.current = []
     }
   }, [googleMapsApiKey, requestedSpot])
 
   useEffect(() => {
+    const mapElement = mapElementRef.current
+    const maps3d = maps3dRef.current
+    if (status !== 'ready' || !mapElement || !maps3d) return
+
+    routePolylineElementsRef.current.forEach((polylineElement) => {
+      polylineElement.remove()
+    })
+
+    const routePolylineElements = createRoutePolylineElements(maps3d, courseRouteState.path)
+    routePolylineElements.forEach((polylineElement) => {
+      mapElement.append(polylineElement)
+    })
+    routePolylineElementsRef.current = routePolylineElements
+    mapElement.setAttribute('data-route-source', courseRouteState.source)
+    mapElement.setAttribute('data-route-point-count', String(courseRouteState.path.length))
+
+    return () => {
+      routePolylineElements.forEach((polylineElement) => {
+        polylineElement.remove()
+      })
+    }
+  }, [courseRoutePathKey, courseRouteState.path, courseRouteState.source, status])
+
+  useEffect(() => {
     markerElementsRef.current.forEach((marker, markerId) => {
       const isSelected = markerId === selectedSpotId
-      marker.zIndex = isSelected ? 100 : 10
-      marker.collisionPriority = isSelected ? 100 : 20
-      marker.drawsWhenOccluded = isSelected
+      const isRouteStop = isMissionSpotId(markerId)
+      marker.zIndex = isSelected ? 120 : isRouteStop ? 80 : 10
+      marker.collisionPriority = isSelected ? 120 : isRouteStop ? 90 : 20
+      marker.drawsWhenOccluded = isSelected || isRouteStop
       marker.extruded = isSelected
+      marker.classList.toggle('is-active', isSelected)
     })
   }, [selectedSpotId])
 
@@ -806,7 +851,7 @@ export function GoogleTour3DPreviewPage() {
     moveToPlace(spot)
   }
 
-  function resetToYeongju() {
+  function resetToFullRoute() {
     setSelectedSpotId('')
     moveToPlace(initialCamera)
   }
@@ -863,7 +908,7 @@ export function GoogleTour3DPreviewPage() {
 
             <div className="tour3d-mission-progress-shell">
               <div className="tour3d-mission-count" aria-label="현재 진행률">
-                <strong>{currentMissionStop.number} / 5</strong>
+                <strong>{currentMissionStop.number} / {routePreviewStops.length}</strong>
                 <span>진행 중</span>
               </div>
               <ol className="tour3d-mission-steps" aria-label="코스 진행 단계">
@@ -891,57 +936,6 @@ export function GoogleTour3DPreviewPage() {
               <h2>코스 지도</h2>
               <div className="tour3d-map-frame tour3d-mission-map-frame">
                 <div className="tour3d-map-host" ref={mapHostRef} />
-
-                <svg
-                  className="tour3d-route-svg tour3d-mission-route-svg"
-                  viewBox="0 0 100 100"
-                  preserveAspectRatio="none"
-                  aria-hidden="true"
-                >
-                  <defs>
-                    <filter id="tour3d-mission-route-glow" x="-20%" y="-20%" width="140%" height="140%">
-                      <feGaussianBlur stdDeviation="1.25" result="blur" />
-                      <feMerge>
-                        <feMergeNode in="blur" />
-                        <feMergeNode in="SourceGraphic" />
-                      </feMerge>
-                    </filter>
-                  </defs>
-                  <path
-                    className="tour3d-route-line tour3d-route-line--aura"
-                    d="M 29 24 C 40 27 40 38 52 39 C 48 48 36 47 32 52 C 34 62 50 58 55 66 C 57 75 48 78 44 82"
-                  />
-                  <path
-                    className="tour3d-route-line"
-                    d="M 29 24 C 40 27 40 38 52 39 C 48 48 36 47 32 52 C 34 62 50 58 55 66 C 57 75 48 78 44 82"
-                  />
-                  {missionRouteStops.map((stop) => (
-                    <circle
-                      key={stop.spotId}
-                      className="tour3d-route-spark"
-                      cx={stop.x}
-                      cy={stop.y}
-                      r="0.9"
-                    />
-                  ))}
-                </svg>
-
-                {missionRouteStops.map((stop) => (
-                  <button
-                    type="button"
-                    key={stop.spotId}
-                    className={`tour3d-route-marker tour3d-mission-route-marker ${
-                      stop.spotId === selectedSpotId ? 'is-active' : ''
-                    } ${stop.spotId === currentMissionId ? 'is-current-step' : ''}`}
-                    style={{ left: `${stop.x}%`, top: `${stop.y}%` }}
-                    disabled={status === 'loading'}
-                    onClick={() => selectRouteStop(stop.spotId)}
-                    aria-label={`${stop.number}번 ${stop.name} 3D 지도에서 보기`}
-                  >
-                    <span className="tour3d-route-number">{stop.number}</span>
-                    <img src={imageAsset(stop.icon)} alt="" />
-                  </button>
-                ))}
 
                 <div className="tour3d-map-controls tour3d-mission-map-controls" aria-label="3D 지도 조작">
                   <button
@@ -1094,7 +1088,7 @@ export function GoogleTour3DPreviewPage() {
               className="tour3d-mission-action tour3d-mission-action--next"
               onClick={() => navigate(nextMissionRoute)}
             >
-              {nextMissionStop ? '다음 장소 보기' : '마지막 기록 쓰기'}
+              {nextMissionStop ? '다음 장소 보기' : '여정 완료하기'}
               <span aria-hidden="true">›</span>
             </button>
             <button
@@ -1109,13 +1103,16 @@ export function GoogleTour3DPreviewPage() {
               className="tour3d-next-destination-card"
               onClick={() => navigate(nextMissionRoute)}
             >
-              <img src={imageAsset(nextMissionStop?.icon ?? currentMissionStop.icon)} alt="" />
+              <img
+                src={publicImageAsset(nextMissionStop?.iconPath ?? currentMissionStop.iconPath)}
+                alt=""
+              />
               <span>
                 <strong>
-                  {nextMissionStop ? `다음 장소: ${nextMissionStop.name}` : '마지막 기록 작성'}
+                  {nextMissionStop ? `다음 장소: ${nextMissionStop.name}` : '여정 마무리'}
                 </strong>
                 <small>{nextMissionStop?.mission ?? currentMissionDetail.title}</small>
-                <em>{nextMissionStop ? '다음 미션으로 이동' : '여정 완료 전 마지막 기록'}</em>
+                <em>{nextMissionStop ? '다음 미션으로 이동' : '여정 완료 화면으로 이동'}</em>
               </span>
               <b aria-hidden="true">›</b>
             </button>
@@ -1148,64 +1145,13 @@ export function GoogleTour3DPreviewPage() {
                 type="button"
                 className="tour3d-mini-reset-button"
                 disabled={status !== 'ready'}
-                onClick={resetToYeongju}
+                onClick={resetToFullRoute}
               >
-                영주시
+                전체 보기
               </button>
             </div>
             <div className="tour3d-map-frame">
               <div className="tour3d-map-host" ref={mapHostRef} />
-
-              <svg
-                className="tour3d-route-svg"
-                viewBox="0 0 100 100"
-                preserveAspectRatio="none"
-                aria-hidden="true"
-              >
-                <defs>
-                  <filter id="tour3d-route-glow" x="-20%" y="-20%" width="140%" height="140%">
-                    <feGaussianBlur stdDeviation="1.2" result="blur" />
-                    <feMerge>
-                      <feMergeNode in="blur" />
-                      <feMergeNode in="SourceGraphic" />
-                    </feMerge>
-                  </filter>
-                </defs>
-                <path
-                  className="tour3d-route-line tour3d-route-line--aura"
-                  d="M 24 31 C 33 30 39 43 51 43 C 61 43 67 28 79 31 C 84 44 86 59 77 71 C 64 78 47 64 31 58"
-                />
-                <path
-                  className="tour3d-route-line"
-                  d="M 24 31 C 33 30 39 43 51 43 C 61 43 67 28 79 31 C 84 44 86 59 77 71 C 64 78 47 64 31 58"
-                />
-                {[24, 51, 79, 77, 31].map((cx, index) => (
-                  <circle
-                    key={cx}
-                    className="tour3d-route-spark"
-                    cx={cx}
-                    cy={[31, 43, 31, 71, 58][index]}
-                    r="0.82"
-                  />
-                ))}
-              </svg>
-
-              {routePreviewStops.map((stop) => (
-                <button
-                  type="button"
-                  key={stop.spotId}
-                  className={`tour3d-route-marker ${
-                    stop.spotId === selectedSpotId ? 'is-active' : ''
-                  }`}
-                  style={{ left: `${stop.x}%`, top: `${stop.y}%` }}
-                  disabled={status === 'loading'}
-                  onClick={() => selectRouteStop(stop.spotId)}
-                  aria-label={`${stop.number}번 ${stop.name} 3D 지도에서 보기`}
-                >
-                  <span className="tour3d-route-number">{stop.number}</span>
-                  <img src={imageAsset(stop.icon)} alt="" />
-                </button>
-              ))}
 
               <div className="tour3d-map-controls" aria-label="3D 지도 조작">
                 <button
@@ -1238,7 +1184,7 @@ export function GoogleTour3DPreviewPage() {
                 <button
                   type="button"
                   disabled={status !== 'ready'}
-                  onClick={resetToYeongju}
+                  onClick={resetToFullRoute}
                   aria-label="전체 경로 보기"
                   title="전체 경로 보기"
                 >
@@ -1252,11 +1198,11 @@ export function GoogleTour3DPreviewPage() {
                 <dl>
                   <div>
                     <dt>예상 소요</dt>
-                    <dd>3시간 20분</dd>
+                    <dd>{routeDurationText}</dd>
                   </div>
                   <div>
                     <dt>이동 거리</dt>
-                    <dd>12.6km</dd>
+                    <dd>{routeDistanceText}</dd>
                   </div>
                   <div>
                     <dt>난이도</dt>
@@ -1341,7 +1287,7 @@ export function GoogleTour3DPreviewPage() {
                 onClick={() => selectRouteStop(stop.spotId)}
               >
                 <span>{stop.number}</span>
-                <img src={imageAsset(stop.icon)} alt="" />
+                <img src={publicImageAsset(stop.iconPath)} alt="" />
                 <strong>{stop.name}</strong>
                 <small>{stop.mission}</small>
               </button>
@@ -1390,11 +1336,188 @@ export function GoogleTour3DPreviewPage() {
   )
 }
 
+function createFallbackCourseRouteState(): CourseRouteState {
+  const path = getFallbackCourseRoutePath()
+
+  return {
+    path,
+    source: 'custom-path-fallback',
+    distanceMeters: getPathDistanceMeters(path),
+    duration: '',
+  }
+}
+
+function getFallbackCourseRoutePath() {
+  if (tour3DFallbackRoutePath.length >= 2) {
+    return tour3DFallbackRoutePath.map(({ lat, lng }) => ({ lat, lng }))
+  }
+
+  return tour3DRouteStops.map(({ lat, lng }) => ({ lat, lng }))
+}
+
+function createRoutePolylineElements(
+  maps3d: GoogleMaps3DLibrary,
+  path: RouteCoordinate[],
+) {
+  if (!maps3d.Polyline3DElement || path.length < 2) return []
+
+  const altitudeMode = maps3d.AltitudeMode?.RELATIVE_TO_GROUND ?? 'RELATIVE_TO_GROUND'
+  const pathWithAltitude = path.map((point) => ({
+    ...point,
+    altitude: 14,
+  }))
+  const routeAura = new maps3d.Polyline3DElement({
+    altitudeMode,
+    drawsOccludedSegments: true,
+    extruded: false,
+    geodesic: false,
+    outerColor: 'rgba(255, 247, 221, 0.78)',
+    outerWidth: 0.68,
+    path: pathWithAltitude,
+    strokeColor: 'rgba(255, 210, 94, 0.58)',
+    strokeWidth: 18,
+    zIndex: 20,
+  })
+  const routeLine = new maps3d.Polyline3DElement({
+    altitudeMode,
+    drawsOccludedSegments: true,
+    extruded: false,
+    geodesic: false,
+    outerColor: '#fff1bd',
+    outerWidth: 0.52,
+    path: pathWithAltitude,
+    strokeColor: '#d68619',
+    strokeWidth: 7,
+    zIndex: 21,
+  })
+
+  routeAura.className = 'tour3d-coordinate-route-line tour3d-coordinate-route-line--aura'
+  routeLine.className = 'tour3d-coordinate-route-line'
+  routeAura.style.pointerEvents = 'none'
+  routeLine.style.pointerEvents = 'none'
+
+  return [routeAura, routeLine]
+}
+
+function createRouteMarkerGraphic(stop: RoutePreviewStop) {
+  const template = document.createElement('template')
+  const svgNamespace = ['http:', '', 'www.w3.org', '2000', 'svg'].join('/')
+  const markerGraphic = document.createElementNS(svgNamespace, 'svg')
+  markerGraphic.classList.add('tour3d-route-pin')
+  markerGraphic.setAttribute('viewBox', '0 0 136 158')
+  markerGraphic.setAttribute('role', 'img')
+  markerGraphic.setAttribute('aria-label', `${stop.number}번 ${stop.name}`)
+
+  const image = document.createElementNS(svgNamespace, 'image')
+  image.classList.add('tour3d-route-pin-image')
+  image.setAttribute('href', publicImageAsset(stop.iconPath))
+  image.setAttribute('x', '0')
+  image.setAttribute('y', '0')
+  image.setAttribute('width', '136')
+  image.setAttribute('height', '120')
+  image.setAttribute('preserveAspectRatio', 'xMidYMid meet')
+
+  const orderHalo = document.createElementNS(svgNamespace, 'circle')
+  orderHalo.setAttribute('cx', '28')
+  orderHalo.setAttribute('cy', '94')
+  orderHalo.setAttribute('r', '17')
+  orderHalo.setAttribute('fill', '#fff4d0')
+  orderHalo.setAttribute('stroke', '#c7851c')
+  orderHalo.setAttribute('stroke-width', '2')
+
+  const order = document.createElementNS(svgNamespace, 'text')
+  order.classList.add('tour3d-route-pin-order')
+  order.setAttribute('x', '28')
+  order.setAttribute('y', '100')
+  order.setAttribute('text-anchor', 'middle')
+  order.textContent = String(stop.number)
+
+  const labelBackground = document.createElementNS(svgNamespace, 'rect')
+  labelBackground.setAttribute('x', '12')
+  labelBackground.setAttribute('y', '122')
+  labelBackground.setAttribute('width', '112')
+  labelBackground.setAttribute('height', '28')
+  labelBackground.setAttribute('rx', '14')
+  labelBackground.setAttribute('fill', '#fff6d8')
+  labelBackground.setAttribute('stroke', '#c7851c')
+  labelBackground.setAttribute('stroke-width', '1.5')
+
+  const label = document.createElementNS(svgNamespace, 'text')
+  label.classList.add('tour3d-route-pin-label')
+  label.setAttribute('x', '68')
+  label.setAttribute('y', '141')
+  label.setAttribute('text-anchor', 'middle')
+  label.textContent = stop.name
+
+  markerGraphic.append(image, orderHalo, order, labelBackground, label)
+  template.content.append(markerGraphic)
+  return template
+}
+
 function preventGooglePlaceDetailsPopover(event: Event) {
   const placeClickEvent = event as GoogleMap3DPlaceClickEvent
   if (typeof placeClickEvent.placeId === 'string') {
     placeClickEvent.preventDefault()
   }
+}
+
+function formatRouteDistance(distanceMeters: number) {
+  if (!Number.isFinite(distanceMeters) || distanceMeters <= 0) return '계산 중'
+  if (distanceMeters < 1000) return `${Math.round(distanceMeters)}m`
+
+  return `${(distanceMeters / 1000).toFixed(1)}km`
+}
+
+function formatRouteDuration(duration: string) {
+  const totalSeconds = getDurationSeconds(duration)
+  if (!totalSeconds) return fallbackRouteDurationText
+
+  const totalMinutes = Math.max(1, Math.round(totalSeconds / 60))
+  const hours = Math.floor(totalMinutes / 60)
+  const minutes = totalMinutes % 60
+
+  if (hours <= 0) return `${minutes}분`
+  if (minutes <= 0) return `${hours}시간`
+  return `${hours}시간 ${minutes}분`
+}
+
+function getDurationSeconds(duration: string) {
+  const match = /^(\d+(?:\.\d+)?)s$/.exec(duration)
+  if (!match) return 0
+
+  return Number(match[1])
+}
+
+function getPathDistanceMeters(path: RouteCoordinate[]) {
+  let distanceMeters = 0
+
+  for (let index = 1; index < path.length; index += 1) {
+    distanceMeters += getCoordinateDistanceMeters(path[index - 1], path[index])
+  }
+
+  return distanceMeters
+}
+
+function getCoordinateDistanceMeters(firstPoint: RouteCoordinate, secondPoint: RouteCoordinate) {
+  const earthRadiusMeters = 6371000
+  const firstLat = toRadians(firstPoint.lat)
+  const secondLat = toRadians(secondPoint.lat)
+  const latDelta = toRadians(secondPoint.lat - firstPoint.lat)
+  const lngDelta = toRadians(secondPoint.lng - firstPoint.lng)
+  const halfChordLength =
+    Math.sin(latDelta / 2) * Math.sin(latDelta / 2) +
+    Math.cos(firstLat) *
+      Math.cos(secondLat) *
+      Math.sin(lngDelta / 2) *
+      Math.sin(lngDelta / 2)
+  const angularDistance =
+    2 * Math.atan2(Math.sqrt(halfChordLength), Math.sqrt(1 - halfChordLength))
+
+  return earthRadiusMeters * angularDistance
+}
+
+function toRadians(value: number) {
+  return (value * Math.PI) / 180
 }
 
 function createSpotMarkers(
@@ -1408,42 +1531,46 @@ function createSpotMarkers(
     maps3d.CollisionBehavior?.OPTIONAL_AND_HIDES_LOWER_PRIORITY ??
     maps3d.CollisionBehavior?.REQUIRED ??
     'OPTIONAL_AND_HIDES_LOWER_PRIORITY'
+  const requiredCollisionBehavior = maps3d.CollisionBehavior?.REQUIRED ?? collisionBehavior
 
   tour3DSpots.forEach((spot, index) => {
+    const routeStop = routePreviewStops.find((stop) => stop.spotId === spot.id)
     const marker = new maps3d.Marker3DInteractiveElement({
       altitudeMode,
-      collisionBehavior,
-      collisionPriority: 20,
-      drawsWhenOccluded: false,
+      collisionBehavior: routeStop ? requiredCollisionBehavior : collisionBehavior,
+      collisionPriority: routeStop ? 90 + routeStop.number : 20,
+      drawsWhenOccluded: Boolean(routeStop),
       extruded: false,
-      label: spot.name,
+      label: routeStop ? undefined : spot.name,
       position: {
         lat: spot.lat,
         lng: spot.lng,
-        altitude: 80,
+        altitude: routeStop ? 12 : 70,
       },
       sizePreserved: true,
       title: spot.name,
-      zIndex: index + 1,
+      zIndex: routeStop ? 80 + routeStop.number : index + 1,
     })
 
-    marker.className = 'tour3d-marker'
-    marker.setAttribute('aria-label', `${spot.name} 상세 정보 보기`)
+    marker.className = routeStop
+      ? 'tour3d-marker tour3d-route-map-marker'
+      : 'tour3d-marker tour3d-spot-map-marker'
+    marker.setAttribute(
+      'aria-label',
+      routeStop
+        ? `${routeStop.number}번 ${routeStop.name} 3D 지도에서 보기`
+        : `${spot.name} 상세 정보 보기`,
+    )
+    if (routeStop) {
+      marker.dataset.routeStopId = routeStop.spotId
+      marker.append(createRouteMarkerGraphic(routeStop))
+    }
     marker.addEventListener('gmp-click', () => onSelectSpot(spot))
     markerElements.set(spot.id, marker)
   })
 
-  if (!markerElements.has(tour3DSpots[0]?.id ?? '')) return markerElements
-
-  const firstMarker = markerElements.get(tour3DSpots[0].id)
-  if (firstMarker) {
-    firstMarker.zIndex = 100
-    firstMarker.collisionPriority = 100
-    firstMarker.drawsWhenOccluded = true
-    firstMarker.extruded = true
-  }
-
   mapElement.setAttribute('data-marker-count', String(markerElements.size))
+  mapElement.setAttribute('data-route-marker-count', String(routePreviewStops.length))
   return markerElements
 }
 
@@ -1516,7 +1643,7 @@ function getGoogleMapsConsoleErrorMessage(args: unknown[]) {
     return 'Google Cloud 프로젝트의 결제 설정이 활성화되어 있는지 확인해주세요.'
   }
   if (consoleMessage.includes('InvalidKeyMapError')) {
-    return 'VITE_GOOGLE_MAPS_API_KEY 값이 올바른 Google Maps JavaScript API 키인지 확인해주세요.'
+    return 'VITE_GOOGLE_MAPS_BROWSER_KEY 또는 VITE_GOOGLE_MAPS_API_KEY 값이 올바른 Google Maps JavaScript API 키인지 확인해주세요.'
   }
 
   return 'Google Maps JavaScript API 설정을 확인해주세요.'
@@ -1563,7 +1690,7 @@ function getStatusTitle(status: GoogleMaps3DLoadStatus) {
 
 function getStatusMessage(status: GoogleMaps3DLoadStatus) {
   if (status === 'missing-key') {
-    return 'VITE_GOOGLE_MAPS_API_KEY 환경변수를 설정한 뒤 개발 서버를 다시 시작해주세요.'
+    return 'VITE_GOOGLE_MAPS_BROWSER_KEY 또는 기존 VITE_GOOGLE_MAPS_API_KEY 환경변수를 설정한 뒤 개발 서버를 다시 시작해주세요.'
   }
   if (status === 'error') {
     return 'API 키, Maps JavaScript API 활성화 여부, maps3d 라이브러리 접근 권한을 확인해주세요.'
