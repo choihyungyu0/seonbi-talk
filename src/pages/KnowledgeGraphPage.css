@@ -1550,3 +1550,34 @@
     height: 23px;
   }
 }
+
+@media (max-width: 1120px) and (min-width: 921px) {
+  .ai-evidence-app-shell .top-nav {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 18px;
+  }
+
+  .ai-evidence-app-shell .top-nav-rule {
+    display: none;
+  }
+
+  .ai-evidence-app-shell .desktop-nav {
+    display: flex;
+    min-height: 56px;
+    justify-content: flex-start;
+    gap: 12px;
+    overflow-x: auto;
+    padding: 0 16px;
+    scrollbar-width: none;
+  }
+
+  .ai-evidence-app-shell .desktop-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .ai-evidence-app-shell .desktop-nav a {
+    min-height: 40px;
+    padding: 0 14px;
+    font-size: 14px;
+  }
+}

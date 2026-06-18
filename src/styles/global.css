@@ -94,38 +94,65 @@ a {
 .top-nav {
   position: sticky;
   top: 0;
-  z-index: 20;
+  z-index: 50;
   display: grid;
-  grid-template-columns: minmax(210px, 1fr) auto minmax(160px, 1fr);
+  grid-template-columns:
+    minmax(220px, 0.7fr)
+    1px
+    minmax(650px, 1052px)
+    1px
+    minmax(180px, 0.55fr);
   align-items: center;
-  gap: 24px;
-  min-height: 74px;
-  padding: 14px clamp(20px, 4vw, 44px);
-  border-bottom: 1px solid var(--line);
-  background: rgba(249, 246, 239, 0.94);
+  gap: clamp(20px, 2.6vw, 52px);
+  min-height: 82px;
+  isolation: isolate;
+  padding: 0 clamp(20px, 2.2vw, 44px);
+  border-top: 2px solid rgba(216, 178, 94, 0.94);
+  border-bottom: 2px solid rgba(216, 178, 94, 0.94);
+  background:
+    linear-gradient(90deg, rgba(233, 199, 107, 0.08), transparent 22%, transparent 78%, rgba(233, 199, 107, 0.08)),
+    linear-gradient(180deg, #073f34 0%, #052f29 100%);
+  box-shadow:
+    0 12px 38px rgba(2, 29, 24, 0.22),
+    inset 0 1px 0 rgba(255, 250, 220, 0.1);
   backdrop-filter: blur(18px);
+}
+
+.top-nav::before {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(circle at 18% 50%, rgba(232, 207, 139, 0.12), transparent 18rem),
+    radial-gradient(circle at 82% 52%, rgba(232, 207, 139, 0.1), transparent 16rem),
+    linear-gradient(100deg, transparent 0 72%, rgba(245, 228, 172, 0.1) 72.1% 72.2%, transparent 72.3% 100%);
+  content: '';
+  pointer-events: none;
 }
 
 .brand-link {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   min-width: 0;
-  color: var(--ink);
+  color: #fff8df;
   text-decoration: none;
 }
 
 .brand-mark {
   display: grid;
-  width: 40px;
-  height: 40px;
+  width: clamp(46px, 2.7vw, 56px);
+  height: clamp(46px, 2.7vw, 56px);
   flex: 0 0 auto;
   place-items: center;
   overflow: hidden;
-  border: 1px solid rgba(45, 75, 62, 0.12);
-  border-radius: 12px;
+  border: 1px solid rgba(255, 253, 249, 0.72);
+  border-radius: 18px;
   color: var(--paper);
-  background: rgba(255, 253, 249, 0.86);
+  background: rgba(255, 253, 249, 0.96);
+  box-shadow:
+    0 8px 18px rgba(1, 23, 18, 0.2),
+    inset 0 0 0 1px rgba(5, 47, 41, 0.08);
   font-family: var(--serif);
   font-weight: 700;
 }
@@ -166,17 +193,23 @@ a {
 
 .brand-link strong {
   display: block;
+  color: #fff8df;
   font-family: var(--serif);
-  font-size: 18px;
-  line-height: 1;
+  font-size: clamp(20px, 1.35vw, 26px);
+  font-weight: 950;
+  line-height: 1.05;
+  white-space: nowrap;
 }
 
 .brand-link small {
   display: block;
   margin-top: 4px;
-  color: var(--muted);
-  font-size: 10px;
-  letter-spacing: 0.08em;
+  color: rgba(255, 248, 223, 0.78);
+  font-size: clamp(8px, 0.54vw, 10px);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  white-space: nowrap;
 }
 
 .brand-loading {
@@ -218,21 +251,70 @@ a {
 }
 
 .desktop-nav {
+  position: relative;
   display: flex;
+  width: min(100%, 1052px);
+  min-width: 0;
+  min-height: 52px;
+  align-items: center;
   justify-content: center;
-  gap: clamp(14px, 2.2vw, 28px);
+  gap: clamp(8px, 1vw, 20px);
+  justify-self: center;
+  overflow: hidden;
+  border: 1px solid rgba(230, 197, 111, 0.2);
+  border-radius: 999px;
+  padding: 0 clamp(14px, 1.5vw, 30px);
+  background:
+    linear-gradient(180deg, rgba(34, 92, 73, 0.82), rgba(12, 67, 55, 0.78)),
+    rgba(10, 66, 55, 0.86);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 250, 220, 0.18),
+    inset 0 -1px 0 rgba(0, 21, 16, 0.36),
+    0 16px 34px rgba(1, 29, 24, 0.16);
 }
 
 .desktop-nav a,
 .desktop-nav button,
-.nav-login-link,
+.nav-login-link {
+  color: rgba(255, 248, 223, 0.9);
+  text-decoration: none;
+}
+
 .text-link {
   color: var(--muted);
   text-decoration: none;
 }
 
 .desktop-nav a {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 0 clamp(10px, 0.86vw, 20px);
+  color: rgba(255, 248, 223, 0.9);
+  font-family: var(--serif);
+  font-size: clamp(13px, 0.8vw, 16px);
+  font-weight: 760;
+  line-height: 1;
   white-space: nowrap;
+  transition:
+    color 180ms ease,
+    background 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.desktop-nav-separator {
+  position: relative;
+  z-index: 1;
+  color: rgba(219, 181, 89, 0.9);
+  font-family: var(--serif);
+  font-size: 16px;
+  font-weight: 900;
+  line-height: 1;
+  pointer-events: none;
 }
 
 .desktop-nav a.active,
@@ -240,20 +322,34 @@ a {
 .desktop-nav button:hover:not(.nav-disabled-link),
 .nav-login-link:hover,
 .text-link:hover {
-  color: var(--forest);
+  color: #fff8df;
 }
 
 .desktop-nav a.active {
-  font-weight: 800;
-  text-decoration: underline;
-  text-underline-offset: 10px;
+  color: #073228;
+  background:
+    linear-gradient(180deg, #f5e2ab 0%, #d9b764 52%, #bf9646 100%);
+  box-shadow:
+    0 10px 18px rgba(1, 22, 18, 0.24),
+    inset 0 1px 0 rgba(255, 253, 238, 0.78),
+    inset 0 -1px 0 rgba(88, 61, 22, 0.22);
+  font-weight: 950;
+  text-decoration: none;
 }
 
 .top-nav-actions {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 12px;
+  gap: clamp(12px, 1.35vw, 22px);
+  min-width: 0;
+}
+
+.top-nav-rule {
+  display: block;
+  width: 1px;
+  height: 48px;
+  background: linear-gradient(180deg, transparent, rgba(218, 181, 91, 0.82), transparent);
 }
 
 .nav-disabled-link {
@@ -280,18 +376,51 @@ a {
 .nav-user-label {
   max-width: 220px;
   overflow: hidden;
-  color: var(--ink-soft);
+  color: rgba(255, 248, 223, 0.72);
   font-size: 14px;
   font-weight: 800;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+.nav-login-link {
+  display: inline-flex;
+  min-height: 34px;
+  min-width: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 0 10px;
+  font-family: var(--serif);
+  font-size: clamp(13px, 0.76vw, 15px);
+  font-weight: 760;
+  line-height: 1;
+  white-space: nowrap;
+}
+
 .nav-button-link {
   border: 0;
-  padding: 0;
   background: transparent;
   cursor: pointer;
+}
+
+.top-nav-actions .nav-login-link[href='/signup'] {
+  min-height: 44px;
+  min-width: clamp(108px, 6.4vw, 136px);
+  border: 1px solid rgba(255, 248, 223, 0.62);
+  padding: 0 clamp(16px, 1.25vw, 26px);
+  color: #082f26;
+  background:
+    linear-gradient(180deg, #f8e8b7 0%, #ddb85f 58%, #c79a49 100%);
+  box-shadow:
+    0 12px 22px rgba(1, 22, 18, 0.24),
+    inset 0 1px 0 rgba(255, 253, 238, 0.84),
+    inset 0 -1px 0 rgba(91, 63, 23, 0.22);
+  font-weight: 950;
+}
+
+.top-nav-actions .nav-login-link[href='/signup']:hover {
+  color: #062a22;
 }
 
 .bottom-nav {
@@ -351,15 +480,30 @@ a {
   text-align: center;
 }
 
-@media (max-width: 1120px) and (min-width: 921px) {
+@media (max-width: 1320px) and (min-width: 921px) {
   .top-nav {
     grid-template-columns: auto minmax(0, 1fr) auto;
-    gap: 14px;
+    gap: 18px;
+    min-height: 74px;
     padding-inline: 24px;
+  }
+
+  .top-nav-rule {
+    display: none;
   }
 
   .brand-link {
     gap: 8px;
+  }
+
+  .brand-mark {
+    width: 46px;
+    height: 46px;
+    border-radius: 15px;
+  }
+
+  .brand-link strong {
+    font-size: 20px;
   }
 
   .brand-link small {
@@ -367,7 +511,16 @@ a {
   }
 
   .desktop-nav {
-    gap: clamp(10px, 1.6vw, 18px);
+    min-height: 46px;
+    justify-content: flex-start;
+    gap: 12px;
+    overflow-x: auto;
+    padding: 0 16px;
+    scrollbar-width: none;
+  }
+
+  .desktop-nav::-webkit-scrollbar {
+    display: none;
   }
 
   .desktop-nav a,
@@ -375,8 +528,19 @@ a {
     font-size: 14px;
   }
 
+  .desktop-nav a {
+    min-height: 34px;
+    padding: 0 12px;
+  }
+
   .top-nav-actions {
-    gap: 8px;
+    gap: 10px;
+  }
+
+  .top-nav-actions .nav-login-link[href='/signup'] {
+    min-width: 98px;
+    min-height: 38px;
+    padding-inline: 16px;
   }
 }
 
@@ -11461,9 +11625,13 @@ a {
 @media (max-width: 920px) {
   .top-nav {
     grid-template-columns: 1fr auto;
+    min-height: 66px;
+    gap: 12px;
+    padding: 9px 18px;
   }
 
-  .desktop-nav {
+  .desktop-nav,
+  .top-nav-rule {
     display: none;
   }
 
@@ -11613,8 +11781,8 @@ a {
   }
 
   .top-nav {
-    min-height: 66px;
-    padding: 12px 16px;
+    min-height: 62px;
+    padding: 10px 14px;
   }
 
   .brand-link small {
@@ -11622,9 +11790,37 @@ a {
   }
 
   .brand-mark {
-    width: 36px;
-    height: 36px;
-    border-radius: 11px;
+    width: 38px;
+    height: 38px;
+    border-radius: 13px;
+  }
+
+  .brand-link {
+    gap: 9px;
+  }
+
+  .brand-link strong {
+    font-size: 18px;
+  }
+
+  .top-nav-actions {
+    gap: 8px;
+  }
+
+  .nav-user-label {
+    display: none;
+  }
+
+  .nav-login-link {
+    min-height: 32px;
+    padding: 0 7px;
+    font-size: 12px;
+  }
+
+  .top-nav-actions .nav-login-link[href='/signup'] {
+    min-width: 78px;
+    min-height: 34px;
+    padding: 0 12px;
   }
 
   .home-hero {
@@ -14294,4 +14490,301 @@ a {
     font-family: var(--sans);
     font-size: 13px;
   }
+}
+
+.app-shell--login .top-nav,
+.test-app-shell .top-nav {
+  grid-template-columns:
+    minmax(220px, 0.7fr)
+    1px
+    minmax(650px, 1052px)
+    1px
+    minmax(180px, 0.55fr);
+  gap: clamp(20px, 2.6vw, 52px);
+  min-height: 82px;
+  padding: 0 clamp(20px, 2.2vw, 44px);
+  border-top: 2px solid rgba(216, 178, 94, 0.94);
+  border-bottom: 2px solid rgba(216, 178, 94, 0.94);
+  background:
+    linear-gradient(90deg, rgba(233, 199, 107, 0.08), transparent 22%, transparent 78%, rgba(233, 199, 107, 0.08)),
+    linear-gradient(180deg, #073f34 0%, #052f29 100%);
+  box-shadow:
+    0 12px 38px rgba(2, 29, 24, 0.22),
+    inset 0 1px 0 rgba(255, 250, 220, 0.1);
+}
+
+.app-shell--login .brand-mark,
+.test-app-shell .brand-mark {
+  width: clamp(46px, 2.7vw, 56px);
+  height: clamp(46px, 2.7vw, 56px);
+  border: 1px solid rgba(255, 253, 249, 0.72);
+  border-radius: 18px;
+  background: rgba(255, 253, 249, 0.96);
+  box-shadow:
+    0 8px 18px rgba(1, 23, 18, 0.2),
+    inset 0 0 0 1px rgba(5, 47, 41, 0.08);
+}
+
+.app-shell--login .brand-logo-image--mark,
+.test-app-shell .brand-logo-image--mark {
+  padding: 3px;
+}
+
+.app-shell--login .brand-link,
+.test-app-shell .brand-link {
+  gap: 12px;
+}
+
+.app-shell--login .brand-link strong,
+.test-app-shell .brand-link strong {
+  color: #fff8df;
+  font-family: var(--serif);
+  font-size: clamp(20px, 1.35vw, 26px);
+  font-weight: 950;
+  line-height: 1.05;
+}
+
+.app-shell--login .brand-link small,
+.test-app-shell .brand-link small {
+  display: block;
+  margin-top: 4px;
+  color: rgba(255, 248, 223, 0.78);
+  font-size: clamp(8px, 0.54vw, 10px);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.app-shell--login .desktop-nav,
+.test-app-shell .desktop-nav {
+  gap: clamp(8px, 1vw, 20px);
+}
+
+.app-shell--login .desktop-nav a,
+.test-app-shell .desktop-nav a,
+.app-shell--login .nav-login-link,
+.test-app-shell .nav-login-link,
+.app-shell--login .top-nav-actions .nav-login-link,
+.test-app-shell .top-nav-actions .nav-login-link,
+.app-shell--login .nav-button-link,
+.test-app-shell .nav-button-link {
+  color: rgba(255, 248, 223, 0.9);
+  font-family: var(--serif);
+  font-size: clamp(13px, 0.8vw, 16px);
+  line-height: 1;
+}
+
+.app-shell--login .desktop-nav a.active,
+.test-app-shell .desktop-nav a.active {
+  color: #073228;
+  text-decoration: none;
+  text-underline-offset: 0;
+  text-decoration-thickness: initial;
+}
+
+.app-shell--login .top-nav-actions,
+.test-app-shell .top-nav-actions {
+  gap: clamp(12px, 1.35vw, 22px);
+}
+
+.app-shell--login .top-nav-actions .nav-login-link[href='/signup'],
+.test-app-shell .top-nav-actions .nav-login-link[href='/signup'] {
+  min-height: 44px;
+  min-width: clamp(108px, 6.4vw, 136px);
+  border: 1px solid rgba(255, 248, 223, 0.62);
+  padding: 0 clamp(16px, 1.25vw, 26px);
+  color: #082f26;
+  background:
+    linear-gradient(180deg, #f8e8b7 0%, #ddb85f 58%, #c79a49 100%);
+  box-shadow:
+    0 12px 22px rgba(1, 22, 18, 0.24),
+    inset 0 1px 0 rgba(255, 253, 238, 0.84),
+    inset 0 -1px 0 rgba(91, 63, 23, 0.22);
+  font-weight: 950;
+  line-height: 1;
+}
+
+@media (max-width: 1320px) and (min-width: 921px) {
+  .app-shell--login .top-nav,
+  .test-app-shell .top-nav {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 18px;
+    min-height: 74px;
+    padding-inline: 24px;
+  }
+
+  .app-shell--login .brand-mark,
+  .test-app-shell .brand-mark {
+    width: 46px;
+    height: 46px;
+    border-radius: 15px;
+  }
+
+  .app-shell--login .brand-link strong,
+  .test-app-shell .brand-link strong {
+    font-size: 20px;
+  }
+
+  .app-shell--login .brand-link small,
+  .test-app-shell .brand-link small {
+    display: none;
+  }
+
+  .app-shell--login .desktop-nav,
+  .test-app-shell .desktop-nav {
+    min-height: 46px;
+    justify-content: flex-start;
+    gap: 12px;
+    overflow-x: auto;
+    padding: 0 16px;
+    scrollbar-width: none;
+  }
+
+  .app-shell--login .desktop-nav::-webkit-scrollbar,
+  .test-app-shell .desktop-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .app-shell--login .desktop-nav a,
+  .test-app-shell .desktop-nav a {
+    min-height: 34px;
+    padding: 0 12px;
+    font-size: 14px;
+  }
+
+  .app-shell--login .nav-login-link,
+  .test-app-shell .nav-login-link {
+    font-size: 14px;
+  }
+
+  .app-shell--login .top-nav-actions,
+  .test-app-shell .top-nav-actions {
+    gap: 10px;
+  }
+
+  .app-shell--login .top-nav-actions .nav-login-link[href='/signup'],
+  .test-app-shell .top-nav-actions .nav-login-link[href='/signup'] {
+    min-width: 98px;
+    min-height: 38px;
+    padding-inline: 16px;
+  }
+}
+
+@media (max-width: 920px) {
+  .app-shell--login .top-nav,
+  .test-app-shell .top-nav {
+    grid-template-columns: 1fr auto;
+    min-height: 66px;
+    gap: 12px;
+    padding: 9px 18px;
+  }
+
+  .app-shell--login .desktop-nav,
+  .test-app-shell .desktop-nav {
+    display: none;
+  }
+
+  .app-shell--login .brand-link,
+  .test-app-shell .brand-link {
+    gap: 10px;
+  }
+
+  .app-shell--login .brand-mark,
+  .test-app-shell .brand-mark {
+    width: 40px;
+    height: 40px;
+    border-radius: 13px;
+  }
+
+  .app-shell--login .brand-link strong,
+  .test-app-shell .brand-link strong {
+    font-size: 19px;
+  }
+
+  .app-shell--login .brand-link small,
+  .test-app-shell .brand-link small {
+    margin-top: 3px;
+    font-size: 10px;
+  }
+
+  .app-shell--login .top-nav-actions,
+  .test-app-shell .top-nav-actions {
+    gap: 10px;
+  }
+
+  .app-shell--login .nav-login-link,
+  .test-app-shell .nav-login-link,
+  .app-shell--login .top-nav-actions .nav-login-link,
+  .test-app-shell .top-nav-actions .nav-login-link,
+  .app-shell--login .nav-button-link,
+  .test-app-shell .nav-button-link {
+    color: rgba(255, 248, 223, 0.9);
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 640px) {
+  .app-shell--login .top-nav,
+  .test-app-shell .top-nav {
+    min-height: 62px;
+    padding: 10px 14px;
+  }
+
+  .app-shell--login .brand-link,
+  .test-app-shell .brand-link {
+    gap: 9px;
+  }
+
+  .app-shell--login .brand-mark,
+  .test-app-shell .brand-mark {
+    width: 38px;
+    height: 38px;
+    border-radius: 13px;
+  }
+
+  .app-shell--login .brand-link strong,
+  .test-app-shell .brand-link strong {
+    font-size: 18px;
+  }
+
+  .app-shell--login .brand-link small,
+  .test-app-shell .brand-link small {
+    display: none;
+  }
+
+  .app-shell--login .top-nav-actions,
+  .test-app-shell .top-nav-actions {
+    gap: 8px;
+  }
+
+  .app-shell--login .nav-login-link,
+  .test-app-shell .nav-login-link,
+  .app-shell--login .top-nav-actions .nav-login-link,
+  .test-app-shell .top-nav-actions .nav-login-link,
+  .app-shell--login .nav-button-link,
+  .test-app-shell .nav-button-link {
+    min-height: 32px;
+    padding: 0 7px;
+    color: rgba(255, 248, 223, 0.9);
+    font-family: var(--serif);
+    font-size: 12px;
+  }
+
+  .app-shell--login .top-nav-actions .nav-login-link[href='/signup'],
+  .test-app-shell .top-nav-actions .nav-login-link[href='/signup'] {
+    min-width: 78px;
+    min-height: 34px;
+    padding: 0 12px;
+    line-height: 1;
+  }
+}
+
+.top-nav .brand-mark {
+  background:
+    rgba(255, 253, 249, 0.96)
+    url('/images/brand/logo-mark.webp') center / calc(100% - 4px) calc(100% - 4px)
+    no-repeat;
+}
+
+.top-nav .brand-logo-image--mark {
+  opacity: 0;
 }

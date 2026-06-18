@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 import {
   getCurrentUser,
@@ -45,17 +45,22 @@ export function TopNavBar() {
           <small>YEONGJU SEONBI TRAIL</small>
         </span>
       </Link>
+      <span className="top-nav-rule" aria-hidden="true" />
       <nav className="desktop-nav" aria-label="주요 메뉴">
-        {navItems.map((item) => (
-          <NavLink
-            key={item.to}
-            to={item.to}
-            className={({ isActive }) => (isActive ? 'active' : '')}
-          >
-            {item.label}
-          </NavLink>
+        {navItems.map((item, index) => (
+          <Fragment key={item.to}>
+            <NavLink to={item.to} className={({ isActive }) => (isActive ? 'active' : '')}>
+              {item.label}
+            </NavLink>
+            {index < navItems.length - 1 && (
+              <span className="desktop-nav-separator" aria-hidden="true">
+                ·
+              </span>
+            )}
+          </Fragment>
         ))}
       </nav>
+      <span className="top-nav-rule" aria-hidden="true" />
       <div className="top-nav-actions">
         {authUser ? (
           <>

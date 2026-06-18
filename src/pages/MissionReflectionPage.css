@@ -1477,3 +1477,34 @@
     font-size: 23px;
   }
 }
+
+@media (max-width: 1040px) and (min-width: 921px) {
+  .mission-reflection-shell .top-nav {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 18px;
+  }
+
+  .mission-reflection-shell .top-nav-rule {
+    display: none;
+  }
+
+  .mission-reflection-shell .desktop-nav {
+    display: flex;
+    min-height: 56px;
+    justify-content: flex-start;
+    gap: 12px;
+    overflow-x: auto;
+    padding: 0 16px;
+    scrollbar-width: none;
+  }
+
+  .mission-reflection-shell .desktop-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .mission-reflection-shell .desktop-nav a {
+    min-height: 40px;
+    padding: 0 14px;
+    font-size: 14px;
+  }
+}
