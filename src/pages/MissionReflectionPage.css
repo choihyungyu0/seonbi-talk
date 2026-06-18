@@ -91,7 +91,7 @@
 .mission-reflection-header h1 {
   color: #073924;
   font-family: var(--serif);
-  font-size: 58px;
+  font-size: clamp(42px, 3.05vw, 58px);
   font-weight: 950;
   line-height: 1.05;
   text-shadow: 0 2px 0 rgba(255, 248, 226, 0.9);
@@ -229,7 +229,7 @@
 
 .mission-reflection-grid {
   display: grid;
-  grid-template-columns: 430px minmax(0, 1fr) 500px;
+  grid-template-columns: minmax(360px, 430px) minmax(600px, 1fr) minmax(380px, 500px);
   gap: 20px;
   min-height: 0;
   align-items: stretch;
@@ -698,14 +698,12 @@
 }
 
 .mission-reflection-next-card strong {
-  overflow: hidden;
   color: #151a12;
   font-family: var(--serif);
   font-size: 29px;
   font-weight: 950;
   line-height: 1.06;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  word-break: keep-all;
 }
 
 .mission-reflection-next-card p,
@@ -824,6 +822,209 @@
   white-space: nowrap;
 }
 
+@media (max-width: 1660px) and (min-width: 1461px), (max-height: 930px) and (min-width: 1461px) {
+  .mission-reflection-page {
+    grid-template-rows: 206px minmax(0, 1fr) 78px;
+    gap: 8px;
+    padding-top: 8px;
+    padding-bottom: 10px;
+  }
+
+  .mission-reflection-header {
+    gap: 2px;
+  }
+
+  .mission-reflection-badge {
+    min-height: 30px;
+    min-width: 142px;
+    padding-inline: 18px;
+    font-size: 16px;
+  }
+
+  .mission-reflection-header h1 {
+    font-size: clamp(38px, 3vw, 46px);
+  }
+
+  .mission-reflection-header p {
+    font-size: 17px;
+  }
+
+  .mission-reflection-progress-text {
+    font-size: 22px;
+  }
+
+  .mission-reflection-stepper {
+    min-height: 58px;
+    gap: 10px;
+    margin-top: 6px;
+  }
+
+  .mission-reflection-stepper::before {
+    top: 24px;
+  }
+
+  .mission-reflection-stepper li {
+    grid-template-columns: 46px minmax(0, 1fr);
+    min-height: 54px;
+    gap: 8px;
+    padding: 6px 12px 6px 6px;
+  }
+
+  .mission-reflection-step-marker {
+    width: 42px;
+    height: 42px;
+    font-size: 20px;
+  }
+
+  .mission-reflection-stepper strong {
+    font-size: 14px;
+  }
+
+  .mission-reflection-card-title {
+    right: 30px;
+    left: 30px;
+    min-height: 42px;
+    gap: 12px;
+    font-size: 18px;
+  }
+
+  .mission-reflection-summary-card {
+    gap: 8px;
+    padding: 54px 18px 86px;
+  }
+
+  .mission-reflection-badge-block {
+    grid-template-columns: 112px minmax(0, 1fr);
+    gap: 10px;
+    min-height: 112px;
+  }
+
+  .mission-reflection-badge-block > img {
+    width: 112px;
+    height: 112px;
+  }
+
+  .mission-reflection-badge-block span {
+    font-size: 17px;
+  }
+
+  .mission-reflection-badge-block strong {
+    font-size: 22px;
+  }
+
+  .mission-reflection-list-box,
+  .mission-reflection-reward-box {
+    padding: 9px 12px;
+  }
+
+  .mission-reflection-list-box h3,
+  .mission-reflection-reward-box h3 {
+    margin-bottom: 5px;
+    font-size: 14px;
+  }
+
+  .mission-reflection-list-box ul,
+  .mission-reflection-reward-box ul {
+    gap: 5px;
+  }
+
+  .mission-reflection-list-box li,
+  .mission-reflection-reward-box li {
+    gap: 7px;
+    font-size: 13px;
+  }
+
+  .mission-reflection-reward-box img {
+    width: 28px;
+    height: 28px;
+  }
+
+  .mission-reflection-reward-box strong {
+    font-size: 22px;
+  }
+
+  .mission-reflection-summary-art {
+    height: 72px;
+  }
+
+  .mission-reflection-ai-card {
+    grid-template-rows: minmax(0, 1fr) 16px 124px;
+    gap: 6px;
+    padding: 58px 18px 14px;
+  }
+
+  .mission-reflection-ai-content {
+    grid-template-columns: 116px minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .mission-reflection-scholar {
+    width: 116px;
+    height: 154px;
+  }
+
+  .mission-reflection-ai-copy {
+    gap: 10px;
+  }
+
+  .mission-reflection-ai-chips {
+    gap: 7px;
+  }
+
+  .mission-reflection-ai-chips span {
+    min-height: 32px;
+    padding-inline: 12px;
+    font-size: 14px;
+  }
+
+  .mission-reflection-ai-copy p {
+    font-size: 16px;
+    line-height: 1.42;
+  }
+
+  .mission-reflection-writing-card blockquote {
+    right: 18%;
+    left: 7%;
+    grid-template-columns: 52px minmax(0, 1fr);
+    font-size: 16px;
+    line-height: 1.38;
+  }
+
+  .mission-reflection-next-card {
+    grid-template-columns: minmax(0, 1fr) 132px;
+    gap: 10px;
+  }
+
+  .mission-reflection-next-card strong {
+    font-size: 23px;
+  }
+
+  .mission-reflection-next-card p,
+  .mission-reflection-next-card em {
+    font-size: 13px;
+  }
+
+  .mission-reflection-next-card > img {
+    min-height: 104px;
+  }
+
+  .mission-reflection-action-bar {
+    grid-template-columns: 190px 420px 300px;
+    gap: 26px;
+    min-height: 78px;
+  }
+
+  .mission-reflection-action img,
+  .mission-reflection-action--edit img,
+  .mission-reflection-action--next img {
+    height: 52px;
+  }
+
+  .mission-reflection-action--save img {
+    height: 68px;
+  }
+}
+
 @media (max-width: 1460px) {
   .mission-reflection-page {
     height: auto;
@@ -846,6 +1047,16 @@
   }
 }
 
+@media (max-width: 1040px) {
+  .mission-reflection-shell .top-nav {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .mission-reflection-shell .desktop-nav {
+    display: none;
+  }
+}
+
 @media (max-width: 980px) {
   .mission-reflection-page {
     display: block;
@@ -859,7 +1070,12 @@
   }
 
   .mission-reflection-header h1 {
-    font-size: 38px;
+    font-size: clamp(30px, 6.3vw, 38px);
+  }
+
+  .mission-reflection-header p {
+    max-width: 34rem;
+    font-size: 17px;
   }
 
   .mission-reflection-stepper,
@@ -876,5 +1092,306 @@
   .mission-reflection-action-bar {
     gap: 8px;
     padding: 12px;
+  }
+}
+
+@media (max-width: 760px) {
+  .mission-reflection-ai-card {
+    padding: 66px 22px 22px;
+  }
+
+  .mission-reflection-ai-content {
+    grid-template-columns: 128px minmax(0, 1fr);
+    gap: 14px;
+  }
+
+  .mission-reflection-scholar {
+    width: 126px;
+    height: 174px;
+  }
+
+  .mission-reflection-ai-copy {
+    gap: 12px;
+  }
+
+  .mission-reflection-ai-chips {
+    gap: 7px;
+  }
+
+  .mission-reflection-ai-chips span {
+    min-height: 34px;
+    padding-inline: 13px;
+    font-size: 14px;
+  }
+
+  .mission-reflection-ai-copy p {
+    font-size: 17px;
+    line-height: 1.48;
+  }
+
+  .mission-reflection-next-card {
+    grid-template-columns: minmax(0, 1fr) minmax(128px, 42%);
+    gap: 10px;
+  }
+
+  .mission-reflection-next-card strong {
+    font-size: 25px;
+  }
+}
+
+@media (max-width: 640px) {
+  .mission-reflection-page {
+    width: min(100% - 16px, 720px);
+    padding-top: 10px;
+  }
+
+  .mission-reflection-header {
+    gap: 5px;
+  }
+
+  .mission-reflection-badge {
+    min-height: 30px;
+    min-width: 132px;
+    padding-inline: 16px;
+    font-size: 15px;
+  }
+
+  .mission-reflection-progress-text {
+    font-size: 22px;
+  }
+
+  .mission-reflection-stepper {
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .mission-reflection-stepper li {
+    grid-template-columns: 46px minmax(0, 1fr);
+    min-height: 58px;
+    padding: 6px 14px 6px 6px;
+  }
+
+  .mission-reflection-step-marker {
+    width: 44px;
+    height: 44px;
+    font-size: 21px;
+  }
+
+  .mission-reflection-summary-card {
+    grid-template-rows: auto auto auto auto;
+    gap: 12px;
+    padding: 58px 20px 114px;
+  }
+
+  .mission-reflection-badge-block {
+    grid-template-columns: 118px minmax(0, 1fr);
+    gap: 12px;
+    min-height: 118px;
+  }
+
+  .mission-reflection-badge-block > img {
+    width: 118px;
+    height: 118px;
+  }
+
+  .mission-reflection-badge-block span {
+    font-size: 17px;
+  }
+
+  .mission-reflection-badge-block strong {
+    font-size: 24px;
+  }
+
+  .mission-reflection-list-box,
+  .mission-reflection-reward-box {
+    padding-inline: 14px;
+  }
+
+  .mission-reflection-list-box li,
+  .mission-reflection-reward-box li {
+    font-size: 14px;
+  }
+
+  .mission-reflection-summary-art {
+    height: 96px;
+  }
+
+  .mission-reflection-writing-card {
+    display: grid;
+    min-height: 0;
+    gap: 13px;
+    overflow: hidden;
+    border: 1px solid rgba(182, 132, 52, 0.55);
+    padding: 0 18px 20px;
+    background:
+      linear-gradient(180deg, rgba(255, 252, 245, 0.96), rgba(244, 231, 207, 0.9)),
+      var(--mr-paper);
+    box-shadow:
+      0 18px 34px rgba(58, 43, 19, 0.16),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.66),
+      inset 0 0 0 4px rgba(255, 246, 219, 0.26);
+  }
+
+  .mission-reflection-writing-template {
+    display: none;
+  }
+
+  .mission-reflection-writing-card h2 {
+    position: relative;
+    top: auto;
+    right: auto;
+    left: auto;
+    display: flex;
+    width: min(300px, calc(100% - 42px));
+    min-height: 44px;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 4px;
+    border: 1px solid rgba(225, 179, 79, 0.7);
+    border-top: 0;
+    border-radius: 0 0 22px 22px;
+    background:
+      linear-gradient(180deg, rgba(8, 72, 49, 0.98), rgba(2, 45, 32, 0.98)),
+      var(--mr-green);
+    box-shadow:
+      0 10px 18px rgba(53, 33, 8, 0.18),
+      inset 0 -1px 0 rgba(255, 238, 179, 0.2);
+    font-size: clamp(22px, 5.9vw, 28px);
+  }
+
+  .mission-reflection-writing-prompt {
+    position: relative;
+    top: auto;
+    right: auto;
+    left: auto;
+    display: grid;
+    grid-template-columns: 32px minmax(0, 1fr);
+    min-height: 0;
+    gap: 9px;
+  }
+
+  .mission-reflection-writing-prompt img {
+    width: 32px;
+    height: 32px;
+  }
+
+  .mission-reflection-writing-prompt strong {
+    font-size: 16px;
+  }
+
+  .mission-reflection-writing-card textarea {
+    position: relative;
+    top: auto;
+    right: auto;
+    left: auto;
+    width: 100%;
+    height: 152px;
+    border: 1px solid rgba(184, 132, 50, 0.42);
+    border-radius: 8px;
+    padding: 20px 18px 38px;
+    background: rgba(255, 250, 237, 0.66);
+    box-shadow:
+      inset 0 0 0 1px rgba(255, 255, 255, 0.56),
+      0 8px 14px rgba(58, 43, 19, 0.08);
+    font-size: 16px;
+    line-height: 1.55;
+  }
+
+  .mission-reflection-counter {
+    position: relative;
+    top: auto;
+    right: auto;
+    justify-self: end;
+    margin: -45px 14px 11px 0;
+    font-size: 18px;
+    pointer-events: none;
+  }
+
+  .mission-reflection-writing-card blockquote {
+    position: relative;
+    top: auto;
+    right: auto;
+    left: auto;
+    grid-template-columns: auto minmax(0, 1fr);
+    min-height: 0;
+    border: 1px solid rgba(184, 132, 50, 0.36);
+    border-radius: 8px;
+    padding: 13px 14px;
+    background: rgba(255, 248, 232, 0.68);
+    font-size: 15px;
+    line-height: 1.45;
+  }
+
+  .mission-reflection-keywords {
+    position: relative;
+    right: auto;
+    bottom: auto;
+    left: auto;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .mission-reflection-keywords span {
+    grid-column: 1 / -1;
+    font-size: 15px;
+  }
+
+  .mission-reflection-keywords button {
+    min-height: 34px;
+    padding-inline: 8px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 430px) {
+  .mission-reflection-card-title {
+    right: 30px;
+    left: 30px;
+    min-height: 44px;
+    gap: 10px;
+    font-size: 18px;
+  }
+
+  .mission-reflection-summary-card {
+    padding-inline: 18px;
+  }
+
+  .mission-reflection-badge-block {
+    grid-template-columns: 112px minmax(0, 1fr);
+  }
+
+  .mission-reflection-badge-block > img {
+    width: 112px;
+    height: 112px;
+  }
+
+  .mission-reflection-badge-block strong {
+    font-size: 22px;
+  }
+
+  .mission-reflection-ai-card {
+    padding: 62px 18px 20px;
+  }
+
+  .mission-reflection-ai-content {
+    grid-template-columns: 112px minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .mission-reflection-scholar {
+    width: 112px;
+    height: 158px;
+  }
+
+  .mission-reflection-ai-copy p {
+    font-size: 16px;
+  }
+
+  .mission-reflection-next-card {
+    grid-template-columns: minmax(0, 1fr) minmax(118px, 43%);
+  }
+
+  .mission-reflection-next-card strong {
+    font-size: 23px;
   }
 }

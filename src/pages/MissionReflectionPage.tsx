@@ -178,7 +178,7 @@ export function MissionReflectionPage() {
   }
 
   return (
-    <AppLayout hideBottomNavigation hideChatbot>
+    <AppLayout className="mission-reflection-shell" hideBottomNavigation hideChatbot>
       <section className="mission-reflection-page" aria-labelledby="mission-reflection-title">
         <MissionReflectionHeader data={currentData} progressText={progressText} />
         <section className="mission-reflection-grid" aria-label="미션 완료 기록 대시보드">
