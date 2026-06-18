@@ -3355,12 +3355,8 @@ a {
 
 .tour3d-mission-panel::before,
 .tour3d-mission-panel::after {
-  position: absolute;
-  width: 54px;
-  height: 54px;
-  border-color: rgba(186, 135, 50, 0.42);
-  pointer-events: none;
-  content: '';
+  display: none;
+  content: none;
 }
 
 .tour3d-mission-panel::before {

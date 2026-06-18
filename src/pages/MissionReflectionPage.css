@@ -259,6 +259,7 @@
 .mission-reflection-card::before,
 .mission-reflection-card::after {
   display: none;
+  content: none;
 }
 
 .mission-reflection-card::before {
