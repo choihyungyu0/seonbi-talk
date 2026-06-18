@@ -957,12 +957,6 @@ function HeroProductShowcase() {
         />
         <HomeImage src={HOME_ASSETS.heroFrame} alt="" aria-hidden="true" eager />
       </div>
-      <div className="home-route-line" aria-hidden="true">
-        <span />
-        <span />
-        <span />
-      </div>
-
       <div className="home-showcase-top-card">
         <HomeImage
           src={HOME_ASSETS.heroChoicePanel}
