@@ -573,13 +573,6 @@ function publicImageAsset(path: string) {
   return encodeURI(path)
 }
 
-function getRouteStopImageUrl(
-  stop: RoutePreviewStop,
-  imageUrls: MissionTourApiImageUrls,
-) {
-  return imageUrls[stop.spotId] ?? publicImageAsset(stop.iconPath)
-}
-
 function getMissionHeroImageUrl(
   stop: RoutePreviewStop,
   detail: (typeof missionDetails)[MissionSpotId],
@@ -738,10 +731,6 @@ export function GoogleTour3DPreviewPage() {
     currentMissionDetail,
     missionTourApiImageUrls,
   )
-  const nextDestinationImageUrl = getRouteStopImageUrl(
-    nextMissionStop ?? currentMissionStop,
-    missionTourApiImageUrls,
-  )
   const courseRoutePathKey = useMemo(() => {
     return courseRouteState.path
       .map((point) => `${point.lat.toFixed(5)},${point.lng.toFixed(5)}`)
@@ -764,6 +753,8 @@ export function GoogleTour3DPreviewPage() {
   })
 
   useEffect(() => {
+    if (!isMissionMode) return undefined
+
     let isDisposed = false
 
     async function loadMissionTourApiImages() {
@@ -790,7 +781,7 @@ export function GoogleTour3DPreviewPage() {
     return () => {
       isDisposed = true
     }
-  }, [])
+  }, [isMissionMode])
 
   useEffect(() => {
     let isDisposed = false
@@ -968,19 +959,6 @@ export function GoogleTour3DPreviewPage() {
       marker.classList.toggle('is-active', isSelected)
     })
   }, [selectedSpotId])
-
-  useEffect(() => {
-    markerElementsRef.current.forEach((marker, markerId) => {
-      if (!isMissionSpotId(markerId)) return
-
-      const imageUrl = missionTourApiImageUrls[markerId]
-      if (!imageUrl) return
-
-      marker
-        .querySelector<SVGImageElement>('.tour3d-route-pin-image')
-        ?.setAttribute('href', imageUrl)
-    })
-  }, [missionTourApiImageUrls, status])
 
   function moveToPlace(place: Tour3DCameraTarget) {
     setActivePlaceId(place.id)
@@ -1244,7 +1222,10 @@ export function GoogleTour3DPreviewPage() {
               className="tour3d-next-destination-card"
               onClick={() => navigate(nextMissionRoute)}
             >
-              <img src={nextDestinationImageUrl} alt="" />
+              <img
+                src={publicImageAsset(nextMissionStop?.iconPath ?? currentMissionStop.iconPath)}
+                alt=""
+              />
               <span>
                 <strong>
                   {nextMissionStop ? `다음 장소: ${nextMissionStop.name}` : '여정 마무리'}
@@ -1422,7 +1403,7 @@ export function GoogleTour3DPreviewPage() {
                 onClick={() => selectRouteStop(stop.spotId)}
               >
                 <span>{stop.number}</span>
-                <img src={getRouteStopImageUrl(stop, missionTourApiImageUrls)} alt="" />
+                <img src={publicImageAsset(stop.iconPath)} alt="" />
                 <strong>{stop.name}</strong>
                 <small>{stop.mission}</small>
               </button>
