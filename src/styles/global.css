@@ -351,6 +351,35 @@ a {
   text-align: center;
 }
 
+@media (max-width: 1120px) and (min-width: 921px) {
+  .top-nav {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 14px;
+    padding-inline: 24px;
+  }
+
+  .brand-link {
+    gap: 8px;
+  }
+
+  .brand-link small {
+    display: none;
+  }
+
+  .desktop-nav {
+    gap: clamp(10px, 1.6vw, 18px);
+  }
+
+  .desktop-nav a,
+  .nav-login-link {
+    font-size: 14px;
+  }
+
+  .top-nav-actions {
+    gap: 8px;
+  }
+}
+
 .home-hero {
   position: relative;
   min-height: min(720px, calc(100svh - 48px));
@@ -2115,6 +2144,182 @@ a {
   }
 }
 
+@media (max-height: 940px) and (min-width: 1181px) {
+  .heatmap-page-inner {
+    gap: 6px;
+    padding-block: 6px;
+  }
+
+  .heatmap-dashboard {
+    gap: 10px;
+  }
+
+  .heatmap-analysis-sidebar {
+    gap: 6px;
+  }
+
+  .heatmap-analysis-card {
+    gap: 4px;
+    padding: 8px 10px;
+  }
+
+  .heatmap-card-title-row {
+    grid-template-columns: 30px minmax(0, 1fr) auto;
+    gap: 6px;
+  }
+
+  .heatmap-card-title-row img {
+    width: 30px;
+    height: 30px;
+  }
+
+  .heatmap-card-title-row span,
+  .heatmap-card-title-row em {
+    font-size: 10px;
+  }
+
+  .heatmap-card-title-row h2 {
+    font-size: 15px;
+  }
+
+  .heatmap-card-title-row em {
+    padding: 4px 6px;
+  }
+
+  .heatmap-analysis-card > strong {
+    font-size: 14px;
+  }
+
+  .heatmap-analysis-card p,
+  .heatmap-insight-list li,
+  .heatmap-point-list strong {
+    font-size: 11px;
+    line-height: 1.26;
+  }
+
+  .heatmap-insight-list {
+    gap: 3px;
+    padding-left: 14px;
+  }
+
+  .heatmap-place-meta {
+    gap: 4px;
+  }
+
+  .heatmap-place-meta div {
+    min-height: 23px;
+    padding-inline: 8px;
+  }
+
+  .heatmap-place-meta dt,
+  .heatmap-place-meta dd {
+    font-size: 10px;
+  }
+
+  .heatmap-ai-suggestion {
+    padding-top: 5px;
+  }
+
+  .heatmap-point-list li {
+    grid-template-columns: 20px minmax(0, 1fr) 54px;
+    min-height: 18px;
+    gap: 6px;
+  }
+
+  .heatmap-point-list i {
+    width: 16px;
+    height: 16px;
+    font-size: 10px;
+  }
+
+  .heatmap-point-list em {
+    min-width: 48px;
+    height: 18px;
+    font-size: 11px;
+  }
+
+  .heatmap-action-list {
+    gap: 6px;
+  }
+
+  .heatmap-action-list span {
+    min-height: 25px;
+    padding-inline: 6px;
+    font-size: 11px;
+  }
+
+  .heatmap-map-controller {
+    width: min(222px, calc(100% - 36px));
+    gap: 7px;
+    padding: 12px;
+  }
+
+  .heatmap-map-controller strong {
+    font-size: 14px;
+  }
+
+  .heatmap-controller-section,
+  .heatmap-controller-mode-grid,
+  .heatmap-radius-chips {
+    gap: 4px;
+  }
+
+  .heatmap-controller-mode-grid button,
+  .heatmap-radius-chips button {
+    min-height: 26px;
+    padding-inline: 7px;
+    font-size: 11px;
+  }
+
+  .heatmap-controller-stats {
+    gap: 3px;
+    padding-top: 6px;
+  }
+
+  .heatmap-controller-location-count {
+    min-height: 25px;
+    font-size: 11px;
+  }
+
+  .heatmap-map-legend {
+    left: min(292px, calc(100% - 288px));
+    width: min(270px, calc(100% - 36px));
+  }
+
+  .heatmap-map-source {
+    bottom: 82px;
+  }
+}
+
+@media (max-height: 860px) and (min-width: 1181px) {
+  .heatmap-page {
+    height: auto;
+    min-height: calc(100svh - 74px);
+    overflow: visible;
+  }
+
+  .heatmap-page-inner {
+    height: auto;
+    grid-template-rows: auto auto auto auto;
+    padding-bottom: 14px;
+  }
+
+  .heatmap-dashboard {
+    min-height: 560px;
+  }
+
+  .heatmap-analysis-sidebar {
+    grid-template-rows: none;
+    grid-auto-rows: max-content;
+    overflow: visible;
+  }
+
+  .heatmap-analysis-card {
+    min-height: max-content;
+    overflow: visible;
+  }
+}
+
 @media (max-width: 1180px) {
   .heatmap-page {
     height: auto;
@@ -2129,9 +2334,13 @@ a {
   }
 
   .heatmap-dashboard,
-  .heatmap-layer-band,
-  .heatmap-metric-row {
+  .heatmap-layer-band {
     grid-template-columns: 1fr;
+  }
+
+  .heatmap-metric-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
   }
 
   .heatmap-layer-tabs,
@@ -11111,9 +11320,30 @@ a {
 
   .course-map-shell,
   .course-map-canvas,
-  .map-empty,
-  .heatmap-map-shell {
+  .map-empty {
     min-height: 320px;
+  }
+
+  .heatmap-map-shell {
+    min-height: clamp(480px, 74svh, 560px);
+  }
+
+  .heatmap-map-source {
+    right: 14px;
+    bottom: 82px;
+    max-width: min(240px, calc(100% - 28px));
+    font-size: 11px;
+    line-height: 1.25;
+    text-align: right;
+  }
+
+  .heatmap-map-legend {
+    bottom: 14px;
+    width: min(260px, calc(100% - 28px));
+  }
+
+  .heatmap-metric-row {
+    grid-template-columns: 1fr;
   }
 
   .heatmap-summary-grid {
@@ -11127,7 +11357,7 @@ a {
   .heatmap-map-controller {
     top: 12px;
     left: 12px;
-    width: min(300px, calc(100% - 24px));
+    width: min(280px, calc(100% - 86px));
     padding: 12px;
     max-height: calc(100% - 24px);
     overflow: auto;
