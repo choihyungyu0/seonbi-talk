@@ -2277,10 +2277,10 @@
 }
 
 .home-experience-panel {
-  border: 0;
+  border: 1px solid rgba(199, 155, 69, 0.84);
   background:
-    linear-gradient(135deg, rgba(18, 60, 45, 0.94), rgba(18, 60, 45, 0.78)),
-    url('/images/home/optimized/image-Photoroom (10).webp') center / 100% 100% no-repeat;
+    linear-gradient(135deg, rgba(255, 255, 255, 0.08), transparent 45%),
+    linear-gradient(180deg, #104b3a 0%, #073b2e 100%);
 }
 
 .home-experience-panel li {
