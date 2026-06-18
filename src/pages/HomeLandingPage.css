@@ -5896,7 +5896,6 @@
 
 .home-product-float-shell {
   transform-origin: center;
-  will-change: transform;
 }
 
 .home-animated-route-line path {

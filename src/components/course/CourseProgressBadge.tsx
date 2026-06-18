@@ -11,7 +11,13 @@ export function CourseProgressBadge({
 }: CourseProgressBadgeProps) {
   return (
     <div className={['course-progress-badge', className].filter(Boolean).join(' ')}>
-      <img className="course-progress-badge__image" src={courseProgressBadgeSrc} alt={label} />
+      <img
+        className="course-progress-badge__image"
+        src={courseProgressBadgeSrc}
+        alt={label}
+        loading="lazy"
+        decoding="async"
+      />
     </div>
   )
 }

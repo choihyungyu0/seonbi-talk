@@ -41,6 +41,8 @@ export function BrandLogo({
       src={src}
       alt={decorative ? '' : '영주선비길 로고'}
       aria-hidden={decorative}
+      loading="eager"
+      decoding="async"
       onError={() => setHasImageError(true)}
     />
   )

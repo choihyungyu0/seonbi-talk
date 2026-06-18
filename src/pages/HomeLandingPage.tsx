@@ -103,10 +103,10 @@ const HOME_ASSETS = {
   targetTeaserCourse: '/images/home/optimized/target-teaser-course.webp',
   targetTeaserHeatmap: '/images/home/optimized/target-teaser-heatmap.webp',
   targetTeaserGraph: '/images/home/optimized/target-teaser-graph.webp',
-  coreFeatureHeatmap: '/images/home/core-feature-heatmap.png',
-  coreFeatureCourse: '/images/home/core-feature-course.png',
-  coreFeatureGraph: '/images/home/core-feature-graph.png',
-  coreFeatureDiary: '/images/home/core-feature-diary.png',
+  coreFeatureHeatmap: '/images/home/core-feature-heatmap.webp',
+  coreFeatureCourse: '/images/home/core-feature-course.webp',
+  coreFeatureGraph: '/images/home/core-feature-graph.webp',
+  coreFeatureDiary: '/images/home/core-feature-diary.webp',
   paperFrameWide: '/images/home/optimized/image-Photoroom (32).webp',
   paperFrameDark: '/images/home/optimized/image-Photoroom (28).webp',
   paperFrameLight: '/images/home/optimized/image-Photoroom (29).webp',
@@ -1075,25 +1075,10 @@ function OrnamentalButton({
 }
 
 function FloatingProductShowcase() {
-  const prefersReducedMotion = useReducedMotion()
-  const isPageVisible = usePageVisibility()
-
   return (
-    <motion.div
-      className="home-product-float-shell"
-      animate={
-        prefersReducedMotion || !isPageVisible
-          ? { y: 0 }
-          : { y: [0, -7, 0] }
-      }
-      transition={{
-        duration: 6.4,
-        repeat: prefersReducedMotion || !isPageVisible ? 0 : Infinity,
-        ease: 'easeInOut',
-      }}
-    >
+    <div className="home-product-float-shell">
       <HeroProductShowcase />
-    </motion.div>
+    </div>
   )
 }
 
@@ -1560,27 +1545,6 @@ function SoftGlowCta({ children }: { children: ReactNode }) {
       {children}
     </motion.div>
   )
-}
-
-function usePageVisibility() {
-  const [isPageVisible, setIsPageVisible] = useState(() =>
-    typeof document === 'undefined' ? true : !document.hidden,
-  )
-
-  useEffect(() => {
-    function handleVisibilityChange() {
-      setIsPageVisible(!document.hidden)
-    }
-
-    handleVisibilityChange()
-    document.addEventListener('visibilitychange', handleVisibilityChange)
-
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange)
-    }
-  }, [])
-
-  return isPageVisible
 }
 
 function ResultPanel({ profile }: { profile: SeonbiProfile }) {

@@ -107,6 +107,8 @@ export function TourismDetailPanel({
                 className="tourism-detail-main-image"
                 src={mainImage.url}
                 alt={cleanText(item.title) || mainImage.name}
+                loading="eager"
+                decoding="async"
               />
             ) : (
               <ImagePlaceholder label="대표 이미지 정보 없음" />
@@ -115,7 +117,7 @@ export function TourismDetailPanel({
             {images.length > 1 && (
               <div className="tourism-detail-image-list" aria-label="추가 이미지">
                 {images.slice(1).map((image) => (
-                  <img key={image.url} src={image.url} alt={image.name} />
+                  <img key={image.url} src={image.url} alt={image.name} loading="lazy" decoding="async" />
                 ))}
               </div>
             )}

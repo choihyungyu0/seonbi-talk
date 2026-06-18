@@ -37,7 +37,7 @@ export function TourismCard({
       }}
     >
       {imageUrl ? (
-        <img className="tourism-image" src={imageUrl} alt="" />
+        <img className="tourism-image" src={imageUrl} alt="" loading="lazy" decoding="async" />
       ) : (
         <ImagePlaceholder label="이미지 정보 없음" />
       )}
