@@ -111,7 +111,7 @@ const missionReflectionData = {
     nextPlace: '선비의 한마디',
     nextMission: '오늘의 생각 정리하기',
     nextMoveTime: '5분',
-    nextRoute: '/tour-3d?mode=mission&place=seonbi-record',
+    nextRoute: '/mission-complete/seonbi-record',
     badgeAsset: '1 (3).png',
     summaryAsset: 'image-Photoroom (76).png',
     nextThumbnailAsset: '1 (6).png',

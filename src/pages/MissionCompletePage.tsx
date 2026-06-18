@@ -1,7 +1,13 @@
-import type { CSSProperties } from 'react'
+import { useEffect, useState, type CSSProperties } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { CourseProgressBadge } from '../components/course/CourseProgressBadge'
 import { AppLayout } from '../components/layout/AppLayout'
+import {
+  getYeongjuTourismContents,
+  searchYeongjuTourismByKeyword,
+} from '../features/tourism/tourismApi'
+import { getTourismPrimaryImageUrl } from '../features/tourism/tourismImageUrl'
+import type { TourismContent } from '../features/tourism/tourismTypes'
 import './MissionCompletePage.css'
 
 const completedSteps = [
@@ -110,12 +116,42 @@ const routeStops = [
   { label: '5. 선비의 한마디', x: 42, y: 88 },
 ]
 
+const tourApiReflectionPlaces = ['소수서원', '선비촌', '부석사', '무섬마을'] as const
+const reflectionTourApiImageCacheKey = 'yeongju-journey-reflection-tour-api-images'
+
+type TourApiReflectionPlace = (typeof tourApiReflectionPlaces)[number]
+type ReflectionTourApiImageUrls = Partial<Record<TourApiReflectionPlace, string>>
+
+let reflectionTourApiImageMemoryCache: ReflectionTourApiImageUrls | null = null
+let reflectionTourApiImageRequestPromise: Promise<ReflectionTourApiImageUrls> | null = null
+
 function imageAsset(fileName: string) {
   return encodeURI(`/images/new/${fileName}`)
 }
 
 export function MissionCompletePage() {
   const navigate = useNavigate()
+  const [reflectionImageUrls, setReflectionImageUrls] =
+    useState<ReflectionTourApiImageUrls>(() => readReflectionTourApiImageCache())
+
+  useEffect(() => {
+    let isDisposed = false
+
+    async function loadReflectionImages() {
+      const imageUrls = await getReflectionTourApiImageUrls()
+      if (isDisposed) return
+
+      setReflectionImageUrls((previousImageUrls) =>
+        mergeReflectionTourApiImageUrls(previousImageUrls, imageUrls),
+      )
+    }
+
+    void loadReflectionImages()
+
+    return () => {
+      isDisposed = true
+    }
+  }, [])
 
   async function handleShareCard() {
     // TODO: Connect this to a dedicated share-card creation route when that screen exists.
@@ -144,7 +180,7 @@ export function MissionCompletePage() {
           <CompletionStatsRow />
           <section className="journey-report-main" aria-label="여정 완료 리포트 대시보드">
             <CompletedCourseMapCard />
-            <JourneyReflectionTimelineCard />
+            <JourneyReflectionTimelineCard imageUrls={reflectionImageUrls} />
             <AiJourneyAnalysisCard />
           </section>
           <section className="journey-report-bottom" aria-label="획득 배지와 다음 추천">
@@ -223,11 +259,6 @@ function CompletedCourseMapCard() {
           src={imageAsset('1 (2).png')}
           alt=""
         />
-        <img
-          className="journey-map-temple journey-map-temple--village"
-          src={imageAsset('image-removebg-preview (84).png')}
-          alt=""
-        />
         <svg className="journey-map-route" viewBox="0 0 100 100" aria-hidden="true">
           <path d="M17 29 C24 50 44 24 55 35 S49 58 28 58 S39 78 60 72 S52 91 42 88" />
         </svg>
@@ -263,21 +294,32 @@ function CompletedCourseMapCard() {
   )
 }
 
-function JourneyReflectionTimelineCard() {
+function JourneyReflectionTimelineCard({
+  imageUrls,
+}: {
+  imageUrls: ReflectionTourApiImageUrls
+}) {
   return (
     <article className="journey-card journey-timeline-card">
       <CardTitle>나의 선비길 기록</CardTitle>
       <ol className="journey-reflection-list">
-        {journeyReportData.reflections.map((reflection, index) => (
-          <li key={reflection.place}>
-            <span className="journey-reflection-number">{index + 1}</span>
-            <img src={imageAsset(reflection.asset)} alt="" />
-            <div>
-              <strong>{reflection.place}</strong>
-              <p>“{reflection.quote}”</p>
-            </div>
-          </li>
-        ))}
+        {journeyReportData.reflections.map((reflection, index) => {
+          const tourApiImageUrl = isTourApiReflectionPlace(reflection.place)
+            ? imageUrls[reflection.place]
+            : undefined
+          const imageUrl = tourApiImageUrl || imageAsset(reflection.asset)
+
+          return (
+            <li key={reflection.place}>
+              <span className="journey-reflection-number">{index + 1}</span>
+              <img src={imageUrl} alt="" />
+              <div>
+                <strong>{reflection.place}</strong>
+                <p>“{reflection.quote}”</p>
+              </div>
+            </li>
+          )
+        })}
       </ol>
       <button
         type="button"
@@ -475,4 +517,168 @@ function CardTitle({ children }: { children: string }) {
       <span aria-hidden="true">✤</span>
     </h2>
   )
+}
+
+async function getReflectionTourApiImageUrls() {
+  const cachedImageUrls = readReflectionTourApiImageCache()
+  const missingPlaces = tourApiReflectionPlaces.filter((place) => !cachedImageUrls[place])
+  if (missingPlaces.length === 0) return cachedImageUrls
+
+  if (!reflectionTourApiImageRequestPromise) {
+    reflectionTourApiImageRequestPromise = requestMissingReflectionTourApiImageUrls(
+      cachedImageUrls,
+      missingPlaces,
+    ).finally(() => {
+      reflectionTourApiImageRequestPromise = null
+    })
+  }
+
+  return reflectionTourApiImageRequestPromise
+}
+
+async function requestMissingReflectionTourApiImageUrls(
+  cachedImageUrls: ReflectionTourApiImageUrls,
+  missingPlaces: TourApiReflectionPlace[],
+) {
+  const areaBasedResponse = await getYeongjuTourismContents()
+  const areaBasedImageUrls = getReflectionImageUrlsFromTourismItems(
+    areaBasedResponse.contents,
+    missingPlaces,
+  )
+  const mergedAreaBasedImageUrls = mergeReflectionTourApiImageUrls(
+    cachedImageUrls,
+    areaBasedImageUrls,
+  )
+  writeReflectionTourApiImageCache(mergedAreaBasedImageUrls)
+
+  const stillMissingPlaces = missingPlaces.filter(
+    (place) => !mergedAreaBasedImageUrls[place],
+  )
+  if (stillMissingPlaces.length === 0) return mergedAreaBasedImageUrls
+
+  const keywordImageUrls: ReflectionTourApiImageUrls = {}
+
+  for (const place of stillMissingPlaces) {
+    const keywordResponse = await searchYeongjuTourismByKeyword(place)
+    const imageUrl = getBestMatchingReflectionImageUrl(keywordResponse.contents, place)
+    if (imageUrl) {
+      keywordImageUrls[place] = imageUrl
+      writeReflectionTourApiImageCache(
+        mergeReflectionTourApiImageUrls(mergedAreaBasedImageUrls, keywordImageUrls),
+      )
+    }
+  }
+
+  return mergeReflectionTourApiImageUrls(mergedAreaBasedImageUrls, keywordImageUrls)
+}
+
+function getReflectionImageUrlsFromTourismItems(
+  items: TourismContent[],
+  places: readonly TourApiReflectionPlace[] = tourApiReflectionPlaces,
+) {
+  const imageUrls: ReflectionTourApiImageUrls = {}
+
+  for (const place of places) {
+    const imageUrl = getBestMatchingReflectionImageUrl(items, place)
+    if (imageUrl) imageUrls[place] = imageUrl
+  }
+
+  return imageUrls
+}
+
+function getBestMatchingReflectionImageUrl(
+  items: TourismContent[],
+  place: TourApiReflectionPlace,
+) {
+  const candidates = items
+    .map((item) => ({
+      item,
+      imageUrl: getTourismPrimaryImageUrl(item),
+      score: getReflectionPlaceMatchScore(item, place),
+    }))
+    .filter((candidate) => candidate.imageUrl && candidate.score > 0)
+    .sort((a, b) => b.score - a.score)
+
+  return candidates[0]?.imageUrl ?? ''
+}
+
+function getReflectionPlaceMatchScore(
+  item: TourismContent,
+  place: TourApiReflectionPlace,
+) {
+  const itemTitle = normalizeReflectionPlaceName(item.title ?? item.name)
+  const placeName = normalizeReflectionPlaceName(place)
+  if (!itemTitle || !placeName) return 0
+
+  let score = 0
+
+  if (itemTitle === placeName) score += 100
+  else if (itemTitle.startsWith(placeName)) score += 70
+  else if (itemTitle.includes(placeName)) score += 40
+  else if (placeName.includes(itemTitle)) score += 20
+
+  if (score === 0) return 0
+  if (item.source === 'TourAPI') score += 10
+  if (item.contentTypeId === '12' || item.contentTypeId === '14') score += 8
+  if (item.address?.includes('영주')) score += 4
+
+  return score
+}
+
+function normalizeReflectionPlaceName(value: string | undefined) {
+  return value
+    ?.replace(/\[[^\]]+\]/g, '')
+    .replace(/\([^)]*\)/g, '')
+    .replace(/\s+/g, '')
+    .trim()
+    .toLowerCase()
+}
+
+function isTourApiReflectionPlace(place: string): place is TourApiReflectionPlace {
+  return tourApiReflectionPlaces.some((candidate) => candidate === place)
+}
+
+function mergeReflectionTourApiImageUrls(
+  ...imageUrlSets: ReflectionTourApiImageUrls[]
+) {
+  return imageUrlSets.reduce<ReflectionTourApiImageUrls>((mergedImageUrls, imageUrls) => {
+    for (const place of tourApiReflectionPlaces) {
+      const imageUrl = imageUrls[place]
+      if (imageUrl) mergedImageUrls[place] = imageUrl
+    }
+
+    return mergedImageUrls
+  }, {})
+}
+
+function readReflectionTourApiImageCache() {
+  if (reflectionTourApiImageMemoryCache) return reflectionTourApiImageMemoryCache
+  if (typeof window === 'undefined') return {}
+
+  try {
+    const cachedValue = window.localStorage.getItem(reflectionTourApiImageCacheKey)
+    if (!cachedValue) return {}
+
+    const parsedValue = JSON.parse(cachedValue) as ReflectionTourApiImageUrls
+    reflectionTourApiImageMemoryCache = mergeReflectionTourApiImageUrls(parsedValue)
+    return reflectionTourApiImageMemoryCache
+  } catch {
+    return {}
+  }
+}
+
+function writeReflectionTourApiImageCache(imageUrls: ReflectionTourApiImageUrls) {
+  const safeImageUrls = mergeReflectionTourApiImageUrls(imageUrls)
+  reflectionTourApiImageMemoryCache = safeImageUrls
+
+  if (typeof window === 'undefined') return
+
+  try {
+    window.localStorage.setItem(
+      reflectionTourApiImageCacheKey,
+      JSON.stringify(safeImageUrls),
+    )
+  } catch {
+    // The report can still render with local fallback images if storage is unavailable.
+  }
 }

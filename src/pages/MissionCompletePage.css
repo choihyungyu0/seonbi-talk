@@ -353,13 +353,6 @@
   width: 30%;
 }
 
-.journey-map-temple--village {
-  right: 3%;
-  bottom: 12%;
-  width: 25%;
-  opacity: 0.9;
-}
-
 .journey-map-route {
   position: absolute;
   inset: 4% 5% 8%;
