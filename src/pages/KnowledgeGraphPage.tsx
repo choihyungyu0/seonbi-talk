@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState, type RefObject } from 'react'
 import { Link } from 'react-router-dom'
 import ForceGraph3D from 'react-force-graph-3d'
 import type { ForceGraphMethods, LinkObject, NodeObject } from 'react-force-graph-3d'
-import * as THREE from 'three'
 import { StatusBadge } from '../components/common/StatusBadge'
 import { AppLayout } from '../components/layout/AppLayout'
 import {
@@ -1744,7 +1743,7 @@ export function KnowledgeGraphPage() {
                     width={width}
                     height={height}
                     backgroundColor="rgba(0,0,0,0)"
-                    nodeLabel={(node) => createNodeTooltip(node as KnowledgeNode)}
+                    nodeLabel=""
                     nodeRelSize={6.5}
                     nodeColor={(node) => {
                       const graphNode = node as KnowledgeNode
@@ -1755,7 +1754,7 @@ export function KnowledgeGraphPage() {
                       return getNodeValue(graphNode, getNodeVisualStateForId(graphNode.id))
                     }}
                     nodeOpacity={1}
-                    linkLabel={(link) => (link as RuntimeKnowledgeLink).label}
+                    linkLabel=""
                     linkColor={(link) => {
                       const graphLink = link as RuntimeKnowledgeLink
                       return getLinkColor(graphLink, getLinkVisualStateForLink(graphLink))
@@ -1782,11 +1781,6 @@ export function KnowledgeGraphPage() {
                     linkDirectionalParticleSpeed={(link) =>
                       0.0025 + (link as RuntimeKnowledgeLink).strength * 0.004
                     }
-                    nodeThreeObject={(node: object) => {
-                      const graphNode = node as KnowledgeNode
-                      return createNodeLabel(graphNode, getNodeVisualStateForId(graphNode.id))
-                    }}
-                    nodeThreeObjectExtend
                     showNavInfo={false}
                     cooldownTicks={90}
                     enableNodeDrag={false}
@@ -3007,121 +3001,4 @@ function getLinkParticleWidth(link: RuntimeKnowledgeLink, visualState: VisualSta
   if (visualState === 'related') return 1.9
   if (link.label === '위험') return 2.4
   return 0.9 + link.strength * 1.5
-}
-
-function createNodeTooltip(node: KnowledgeNode) {
-  return `${node.label} | ${nodeKindLabels[node.kind]}${
-    node.score ? ` | ${node.score}점` : ''
-  }`
-}
-
-function createNodeLabel(node: KnowledgeNode, visualState: VisualState) {
-  const canvas = document.createElement('canvas')
-  const context = canvas.getContext('2d')
-  const label = node.label
-  const fontSize = node.id === 'course-main' ? 40 : node.kind === 'course' ? 34 : 28
-  const icon = getNodeIconLabel(node.kind)
-  const paddingX = 36
-  const paddingY = node.id === 'course-main' ? 24 : 16
-  const scale = 2
-  const isDimmed = visualState === 'faded'
-  const isHighlighted = visualState === 'focused' || visualState === 'path'
-  const isMainCourse = node.id === 'course-main'
-
-  canvas.width = 560
-  canvas.height = 176
-
-  if (!context) return new THREE.Object3D()
-
-  context.scale(scale, scale)
-  context.font = `800 ${fontSize / scale}px Manrope, sans-serif`
-  const measuredWidth = context.measureText(label).width
-  const boxWidth = Math.max(isMainCourse ? 152 : 112, Math.min(270, measuredWidth + paddingX + 24))
-  const boxHeight = isMainCourse ? 52 : 38 + paddingY / 2
-  const color = isMainCourse ? '#f3c95f' : isHighlighted ? '#fff2a8' : nodeColors[node.kind]
-
-  context.clearRect(0, 0, canvas.width, canvas.height)
-  context.globalAlpha = isDimmed ? 0.38 : 1
-  if (isMainCourse) {
-    context.shadowColor = '#f3c95f'
-    context.shadowBlur = 26
-    context.strokeStyle = 'rgba(243, 201, 95, 0.36)'
-    context.lineWidth = 3
-    context.beginPath()
-    context.ellipse(boxWidth / 2, boxHeight / 2 + 8, boxWidth / 2 + 20, boxHeight / 2 + 14, 0, 0, Math.PI * 2)
-    context.stroke()
-  }
-
-  context.shadowColor = isHighlighted || isMainCourse ? color : 'transparent'
-  context.shadowBlur = isHighlighted || isMainCourse ? 18 : 0
-  context.fillStyle = isHighlighted ? 'rgba(29, 31, 22, 0.9)' : 'rgba(5, 7, 13, 0.78)'
-  roundRect(context, 0, 5, boxWidth, boxHeight, 7)
-  context.fill()
-  context.shadowBlur = 0
-  context.strokeStyle = color
-  context.lineWidth = isHighlighted ? 2.2 : 1.4
-  roundRect(context, 0.7, 5.7, boxWidth - 1.4, boxHeight - 1.4, 7)
-  context.stroke()
-  context.fillStyle = color
-  context.beginPath()
-  context.arc(17, boxHeight / 2 + 5, isHighlighted || isMainCourse ? 6.2 : 4.8, 0, Math.PI * 2)
-  context.fill()
-  context.fillStyle = isDimmed ? 'rgba(5, 7, 13, 0.72)' : '#07100d'
-  context.font = '900 7px Manrope, sans-serif'
-  context.textAlign = 'center'
-  context.fillText(icon, 17, boxHeight / 2 + 7.5)
-  context.textAlign = 'start'
-  context.fillStyle = isDimmed ? 'rgba(248, 250, 252, 0.64)' : '#f8fafc'
-  context.fillText(label, 33, isMainCourse ? 34 : 28)
-
-  const texture = new THREE.CanvasTexture(canvas)
-  texture.needsUpdate = true
-  const material = new THREE.SpriteMaterial({
-    map: texture,
-    transparent: true,
-    depthWrite: false,
-    opacity: isDimmed ? 0.46 : 1,
-  })
-  const sprite = new THREE.Sprite(material)
-  const scaleFactor = isMainCourse ? 0.56 : isHighlighted ? 0.4 : 0.32
-  sprite.scale.set(boxWidth * scaleFactor, boxHeight * scaleFactor, 1)
-  sprite.position.set(0, isMainCourse ? 33 : node.kind === 'course' ? 21 : 13, 0)
-
-  return sprite
-}
-
-function getNodeIconLabel(kind: KnowledgeNodeKind) {
-  if (kind === 'course') return 'GO'
-  if (kind === 'user') return 'ME'
-  if (kind === 'tag') return 'TAG'
-  if (kind === 'place') return 'PIN'
-  if (kind === 'data') return 'DB'
-  if (kind === 'facility') return 'OK'
-  if (kind === 'risk') return '!'
-  if (kind === 'evidence') return 'AI'
-  return 'SRC'
-}
-
-function roundRect(
-  context: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  width: number,
-  height: number,
-  radius: number,
-) {
-  const right = x + width
-  const bottom = y + height
-
-  context.beginPath()
-  context.moveTo(x + radius, y)
-  context.lineTo(right - radius, y)
-  context.quadraticCurveTo(right, y, right, y + radius)
-  context.lineTo(right, bottom - radius)
-  context.quadraticCurveTo(right, bottom, right - radius, bottom)
-  context.lineTo(x + radius, bottom)
-  context.quadraticCurveTo(x, bottom, x, bottom - radius)
-  context.lineTo(x, y + radius)
-  context.quadraticCurveTo(x, y, x + radius, y)
-  context.closePath()
 }
