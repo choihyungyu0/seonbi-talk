@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
 import { CourseProgressBadge } from '../components/course/CourseProgressBadge'
+import { CourseMap } from '../components/tourism/CourseMap'
 import {
   toegyeCourseStops,
   type CourseStop,
@@ -185,6 +186,19 @@ type Tour3DRouteStop = Extract<
 const tour3DRouteStops = toegyeCourseStops.filter(
   (stop): stop is Tour3DRouteStop => stop.id !== 'seonbi-record',
 )
+
+const tour2DRouteItems: TourismContent[] = tour3DRouteStops.map((stop) => ({
+  contentId: stop.id,
+  title: stop.name,
+  name: stop.name,
+  address: stop.address,
+  mapX: stop.lng,
+  mapY: stop.lat,
+  category: 'course',
+  source: 'NationalTourismStandardData',
+  sourceLabel: '퇴계형 선비길 코스',
+  dataEvidence: ['3D 코스 미리보기의 주요 경유지 좌표'],
+}))
 
 const tour3DFallbackRoutePath: RouteCoordinate[] = [
   { lat: 36.92556, lng: 128.58 },
@@ -676,6 +690,7 @@ export function GoogleTour3DPreviewPage() {
     }
   })
   const [saveStatusMessage, setSaveStatusMessage] = useState('')
+  const [activeMapView, setActiveMapView] = useState<'3d' | '2d'>('3d')
   const [missionStatusMessage, setMissionStatusMessage] = useState('')
   const [missionTourApiImageUrls, setMissionTourApiImageUrls] =
     useState<MissionTourApiImageUrls>({})
@@ -751,6 +766,19 @@ export function GoogleTour3DPreviewPage() {
     if (row.label === '추천 대상') return { ...row, value: courseCopy.target }
     return row
   })
+  const twoDimensionalRouteSource =
+    courseRouteState.source === 'google-routes-api' ? 'directions-api' : 'straight-line'
+  const twoDimensionalMapTitle =
+    activeMapView === '3d' ? 'AI 선비길 3D 경로' : '카카오 2D 코스 지도'
+  const selectTwoDimensionalRouteItem = useCallback((item: TourismContent) => {
+    const spot = tour3DSpots.find((place) => place.id === item.contentId)
+    if (!spot) return
+
+    setActivePlaceId(spot.id)
+    setSelectedSpotId(spot.id)
+    const mapElement = mapElementRef.current
+    if (mapElement) moveMapCamera(mapElement, spot)
+  }, [])
 
   useEffect(() => {
     if (!isMissionMode) return undefined
@@ -1254,20 +1282,36 @@ export function GoogleTour3DPreviewPage() {
           <div className="tour3d-map-card">
             <div className="tour3d-map-card-head">
               <div>
-                <span>AI 선비길 3D 경로</span>
+                <span>{twoDimensionalMapTitle}</span>
                 <strong>{activePlaceName}</strong>
               </div>
-              <button
-                type="button"
-                className="tour3d-mini-reset-button"
-                disabled={status !== 'ready'}
-                onClick={resetToFullRoute}
-              >
-                전체 보기
-              </button>
+              <div className="tour3d-map-card-actions">
+                <div className="tour3d-map-view-toggle" role="group" aria-label="지도 보기 방식">
+                  <button
+                    type="button"
+                    className={activeMapView === '3d' ? 'is-active' : ''}
+                    aria-pressed={activeMapView === '3d'}
+                    onClick={() => setActiveMapView('3d')}
+                  >
+                    3D 경로
+                  </button>
+                  <button
+                    type="button"
+                    className={activeMapView === '2d' ? 'is-active' : ''}
+                    aria-pressed={activeMapView === '2d'}
+                    onClick={() => setActiveMapView('2d')}
+                  >
+                    2D 지도
+                  </button>
+                </div>
+              </div>
             </div>
-            <div className="tour3d-map-frame">
-              <div className="tour3d-map-host" ref={mapHostRef} />
+            <div className={`tour3d-map-frame${activeMapView === '2d' ? ' is-2d-active' : ''}`}>
+              <div
+                className="tour3d-map-host"
+                ref={mapHostRef}
+                aria-hidden={activeMapView === '2d'}
+              />
 
               <div className="tour3d-map-controls" aria-label="3D 지도 조작">
                 <button
@@ -1344,6 +1388,21 @@ export function GoogleTour3DPreviewPage() {
                 <div className="tour3d-map-fallback" role="status">
                   <strong>{getStatusTitle(status)}</strong>
                   <p>{message || getStatusMessage(status)}</p>
+                </div>
+              )}
+
+              {activeMapView === '2d' && (
+                <div className="tour3d-2d-map-overlay">
+                  <CourseMap
+                    items={tour2DRouteItems}
+                    routeItems={tour2DRouteItems}
+                    routePath={courseRouteState.path}
+                    routeSource={twoDimensionalRouteSource}
+                    locationMessage={`${courseCopy.courseName}의 주요 경유지를 2D 지도에서 확인합니다.`}
+                    routeLabel={`${courseCopy.courseName} 2D 코스`}
+                    selectedContentId={selectedSpotId}
+                    onSelectItem={selectTwoDimensionalRouteItem}
+                  />
                 </div>
               )}
             </div>
