@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { execFileSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 
 function runGit(args) {
   return execFileSync('git', args, {
@@ -26,13 +27,32 @@ const nameStatus = runGit(['diff', '--name-status']);
 const diff = runGit(['diff', '--', '.']);
 const findings = [];
 
+function isEnvExample(filePath) {
+  return filePath === '.env.example' || filePath.endsWith('/.env.example') || filePath.endsWith('\\.env.example');
+}
+
+function hasFilledEnvExampleValue(filePath) {
+  try {
+    const text = readFileSync(filePath, 'utf8');
+    return text
+      .split(/\r?\n/)
+      .some((line) => /^[A-Z0-9_]+\s*=\s*\S+/.test(line.trim()));
+  } catch {
+    return true;
+  }
+}
+
 for (const line of nameStatus.split(/\r?\n/).filter(Boolean)) {
   const [status, ...pathParts] = line.split(/\s+/);
   const filePath = pathParts.join(' ');
 
   if (filePath === 'package.json') findings.push({ level: 'fail', reason: 'package.json changed' });
   if (filePath === 'app.json') findings.push({ level: 'fail', reason: 'app.json changed' });
-  if (/\.env(?:\.|$)/.test(filePath)) findings.push({ level: 'fail', reason: `.env file changed: ${filePath}` });
+  if (/\.env(?:\.|$)/.test(filePath)) {
+    if (!isEnvExample(filePath) || hasFilledEnvExampleValue(filePath)) {
+      findings.push({ level: 'fail', reason: `.env file changed: ${filePath}` });
+    }
+  }
   if (status.startsWith('D') && /\.(test|spec)\.tsx?$/.test(filePath)) {
     findings.push({ level: 'fail', reason: `test file deleted: ${filePath}` });
   }
