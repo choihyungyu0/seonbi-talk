@@ -394,8 +394,11 @@
 .badge-progress-ring {
   position: relative;
   display: grid;
+  grid-template-rows: auto auto;
+  align-content: center;
   width: 128px;
   height: 128px;
+  gap: 3px;
   place-items: center;
   justify-self: center;
   color: #15170f;
@@ -442,15 +445,14 @@
 }
 
 .badge-progress-ring span {
-  margin-top: 10px;
   color: #5f5137;
   font-size: 13px;
   font-weight: 850;
+  line-height: 1.1;
 }
 
 .badge-progress-ring strong {
-  margin-top: 30px;
-  font-size: 38px;
+  font-size: 34px;
   font-weight: 950;
   line-height: 1;
 }
@@ -1016,5 +1018,166 @@
   .my-badges-main {
     grid-template-rows: none;
     overflow: visible;
+  }
+}
+
+@media (max-width: 1540px) {
+  .my-badges-app main {
+    overflow: visible;
+  }
+
+  .my-badges {
+    height: auto;
+    min-height: calc(100svh - 74px);
+    overflow: visible;
+  }
+
+  .my-badges-shell,
+  .my-badges-main {
+    height: auto;
+  }
+
+  .my-badges-main {
+    grid-template-rows: none;
+    overflow: visible;
+  }
+
+  .my-badges-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+  }
+
+  .my-badges-dashboard {
+    grid-template-columns: minmax(260px, 0.82fr) minmax(0, 1.18fr);
+    grid-template-rows: auto auto;
+  }
+
+  .badge-progress-panel,
+  .badge-gallery-panel,
+  .selected-badge-panel,
+  .next-badge-goals {
+    overflow: visible;
+  }
+
+  .selected-badge-panel {
+    grid-column: 1 / -1;
+    grid-template-columns: 240px minmax(0, 1fr);
+    grid-template-rows: auto auto auto auto;
+    align-items: center;
+  }
+
+  .selected-badge-panel .badge-card-title {
+    grid-column: 1 / -1;
+  }
+
+  .selected-badge-preview {
+    grid-row: 2 / 5;
+  }
+
+  .selected-badge-details {
+    width: min(520px, 100%);
+  }
+
+  .selected-share-button {
+    width: min(360px, 100%);
+  }
+
+  .next-badge-goals {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+
+  .next-goal-list,
+  .my-badges-action-bar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .my-badges-action-bar {
+    gap: 16px;
+  }
+}
+
+@media (max-width: 1180px) {
+  .my-badges-dashboard,
+  .my-badges-stats,
+  .next-goal-list,
+  .my-badges-action-bar {
+    grid-template-columns: 1fr;
+  }
+
+  .selected-badge-panel {
+    grid-template-columns: 1fr;
+    grid-template-rows: none;
+  }
+
+  .selected-badge-preview {
+    grid-row: auto;
+  }
+}
+
+@media (max-width: 640px) {
+  .my-badges-main {
+    gap: 12px;
+    padding: 16px 12px 18px;
+  }
+
+  .my-badges-header {
+    padding: 14px 16px 16px;
+  }
+
+  .my-badges-header h1 {
+    font-size: clamp(30px, 10vw, 38px);
+    line-height: 1.08;
+  }
+
+  .my-badges-stat-card {
+    min-height: 82px;
+    padding: 10px 16px;
+  }
+
+  .badge-gallery-heading {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .badge-gallery-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: none;
+  }
+
+  .badge-gallery-card {
+    grid-template-rows: minmax(92px, auto) auto auto;
+  }
+
+  .badge-gallery-card strong,
+  .badge-gallery-card span,
+  .unlock-goal-row strong,
+  .unlock-goal-row small,
+  .next-goal-card strong,
+  .next-goal-card span {
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+  }
+
+  .selected-badge-preview::before {
+    width: 190px;
+    height: 190px;
+  }
+
+  .selected-badge-preview img {
+    width: 172px;
+    height: 172px;
+  }
+
+  .selected-badge-details div,
+  .next-goal-card {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .selected-badge-details dd,
+  .next-goal-card b {
+    text-align: left;
   }
 }
