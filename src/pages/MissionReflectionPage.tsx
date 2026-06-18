@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState, type RefObject } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
+import { CourseProgressBadge } from '../components/course/CourseProgressBadge'
 import { AppLayout } from '../components/layout/AppLayout'
 import './MissionReflectionPage.css'
 
@@ -210,11 +211,7 @@ function MissionReflectionHeader({
 }) {
   return (
     <header className="mission-reflection-header">
-      <span className="mission-reflection-badge">
-        <span aria-hidden="true">✤</span>
-        미션 완료
-        <span aria-hidden="true">✤</span>
-      </span>
+      <CourseProgressBadge className="mission-reflection-progress-badge" />
       <h1 id="mission-reflection-title">{data.title}</h1>
       <p>오늘의 배움과 생각을 선비의 한마디로 남겨보세요.</p>
       <strong className="mission-reflection-progress-text">{progressText}</strong>

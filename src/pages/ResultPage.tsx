@@ -209,7 +209,7 @@ const seonbiResultDataByType: Record<SeonbiType, SeonbiResultData> = {
     stats: [
       { label: '충의 포인트', value: '13,240P', icon: newImage('image-removebg-preview (62).png') },
       { label: '추천 코스', value: '7개', icon: newImage('image-removebg-preview (27).png') },
-      { label: '체험 난이도', value: '보통', icon: newImage('image-removebg-preview (35).png') },
+      { label: '체험 난이도', value: '보통', icon: newImage('image-removebg-preview (63).png') },
     ],
     aiReasons: [
       {

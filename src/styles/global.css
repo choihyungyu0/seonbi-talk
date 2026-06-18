@@ -938,6 +938,38 @@ a {
   background: var(--paper-deep);
 }
 
+.course-progress-badge {
+  position: relative;
+  isolation: isolate;
+  display: block;
+  width: clamp(176px, 16vw, 218px);
+  aspect-ratio: 850 / 198;
+  overflow: hidden;
+  justify-self: center;
+  margin: 0 auto 10px;
+}
+
+.course-progress-badge__image {
+  position: absolute;
+  top: calc(-35 / 198 * 100%);
+  left: calc(-8 / 850 * 100%);
+  display: block;
+  width: calc(866 / 850 * 100%);
+  height: auto;
+  max-width: none;
+  filter: drop-shadow(0 8px 12px rgba(46, 29, 6, 0.24));
+}
+
+.course-page-progress-badge {
+  margin-bottom: 14px;
+}
+
+.tour3d-course-progress-badge,
+.mission-reflection-progress-badge,
+.journey-report-progress-badge {
+  margin-bottom: 4px;
+}
+
 .common-button {
   display: inline-flex;
   max-width: 100%;
@@ -2357,11 +2389,11 @@ a {
 .tour3d-page {
   position: relative;
   display: grid;
-  width: min(1840px, calc(100% - 40px));
+  width: 100%;
   min-height: calc(100svh - 74px);
   gap: 10px;
   overflow: hidden;
-  padding: 10px 0 12px;
+  padding: 10px 24px 12px;
   isolation: isolate;
 }
 
@@ -2566,6 +2598,11 @@ a {
 .tour3d-route-map-marker[data-route-stop-id='seonbichon'] {
   --tour3d-pin-x: 72px;
   --tour3d-pin-y: 12px;
+}
+
+.tour3d-route-map-marker[data-route-stop-id='sosu-seowon'] {
+  --tour3d-pin-x: 176px;
+  --tour3d-pin-y: -54px;
 }
 
 .tour3d-route-pin {
@@ -3096,11 +3133,11 @@ a {
 
 .tour3d-page--mission {
   grid-template-rows: auto minmax(0, 1fr) auto;
-  width: min(1840px, calc(100% - 48px));
+  width: 100%;
   height: calc(100svh - 74px);
   min-height: calc(100svh - 74px);
   gap: 10px;
-  padding: 10px 0 14px;
+  padding: 10px 24px 14px;
 }
 
 .tour3d-page--mission::before {
@@ -3887,7 +3924,7 @@ a {
 @media (max-height: 760px) and (min-width: 900px) {
   .tour3d-page--mission {
     gap: 8px;
-    padding: 8px 0 10px;
+    padding-block: 8px 10px;
   }
 
   .tour3d-mission-hero {
@@ -6614,6 +6651,187 @@ a {
 
   .seonbi-theme-card img {
     min-height: 78px;
+  }
+
+  .seonbi-theme-card strong {
+    min-height: 32px;
+    font-size: 13px;
+  }
+}
+
+@media (min-width: 1501px) and (max-height: 930px) {
+  .seonbi-result-inner {
+    grid-template-rows: minmax(0, 1fr) minmax(0, clamp(214px, 28svh, 244px));
+    gap: clamp(10px, 1.45svh, 14px);
+    padding: clamp(12px, 1.8svh, 16px) 0 clamp(8px, 1.2svh, 12px);
+  }
+
+  .seonbi-result-main-grid {
+    align-items: stretch;
+  }
+
+  .seonbi-result-hero-card {
+    align-self: stretch;
+    place-items: center;
+  }
+
+  .seonbi-result-hero-card img {
+    width: 100%;
+    height: 100%;
+    max-height: none;
+    object-fit: contain;
+    transform: translateX(-20px);
+  }
+
+  .seonbi-result-summary {
+    align-content: center;
+    gap: 8px;
+    padding: 0 4px;
+  }
+
+  .seonbi-result-badge {
+    min-height: 34px;
+    min-width: 180px;
+    padding-inline: 22px;
+    font-size: 15px;
+  }
+
+  .seonbi-result-summary h1 {
+    font-size: clamp(52px, 3.8vw, 66px);
+  }
+
+  .seonbi-result-subtitle {
+    font-size: clamp(17px, 1.2vw, 21px);
+  }
+
+  .seonbi-result-description {
+    max-width: 500px;
+    padding-top: 12px;
+    font-size: clamp(14px, 0.88vw, 16px);
+    line-height: 1.52;
+  }
+
+  .seonbi-result-stat-grid {
+    gap: 10px;
+    margin-top: 8px;
+  }
+
+  .seonbi-result-stat-card {
+    min-height: 88px;
+    padding: 8px 9px 9px;
+  }
+
+  .seonbi-result-stat-card dt {
+    font-size: 13px;
+  }
+
+  .seonbi-result-stat-card dt img {
+    width: 38px;
+    height: 38px;
+  }
+
+  .seonbi-result-stat-card dd {
+    font-size: clamp(20px, 1.45vw, 25px);
+  }
+
+  .seonbi-ai-panel {
+    align-self: stretch;
+    max-height: none;
+    margin-top: 0;
+    padding: 18px 26px;
+  }
+
+  .seonbi-ai-panel h2 {
+    min-height: 30px;
+    gap: 16px;
+  }
+
+  .seonbi-ai-panel h2,
+  .seonbi-result-panel h2 {
+    font-size: 21px;
+  }
+
+  .seonbi-ai-panel h2::before,
+  .seonbi-ai-panel h2::after,
+  .seonbi-result-panel h2::before,
+  .seonbi-result-panel h2::after {
+    width: 54px;
+  }
+
+  .seonbi-ai-list {
+    grid-auto-rows: minmax(0, 1fr);
+    margin-top: 8px;
+  }
+
+  .seonbi-ai-row {
+    grid-template-columns: 58px minmax(0, 1fr);
+    gap: 12px;
+    min-height: 0;
+    padding: 7px 2px;
+  }
+
+  .seonbi-ai-row > img {
+    width: 54px;
+    height: 54px;
+  }
+
+  .seonbi-ai-row h3 {
+    font-size: 15px;
+  }
+
+  .seonbi-ai-row p {
+    margin-top: 4px;
+    font-size: 13px;
+    line-height: 1.4;
+  }
+
+  .seonbi-result-panel {
+    gap: 10px;
+    padding: 17px 18px 16px;
+  }
+
+  .seonbi-result-panel h2 {
+    gap: 16px;
+  }
+
+  .seonbi-category-list {
+    gap: 8px;
+  }
+
+  .seonbi-category-item {
+    gap: 6px;
+  }
+
+  .seonbi-category-item span {
+    width: clamp(62px, 4.1vw, 78px);
+  }
+
+  .seonbi-category-item strong {
+    font-size: 13px;
+    line-height: 1.15;
+  }
+
+  .seonbi-start-button {
+    width: min(100%, 340px);
+    padding-right: 60px;
+    padding-left: 30px;
+    font-size: clamp(25px, 1.75vw, 30px);
+  }
+
+  .seonbi-save-button {
+    width: min(88%, 292px);
+  }
+
+  .seonbi-theme-panel {
+    padding-inline: 16px;
+  }
+
+  .seonbi-theme-list {
+    gap: 10px;
+  }
+
+  .seonbi-theme-card img {
+    min-height: 80px;
   }
 
   .seonbi-theme-card strong {
@@ -11305,9 +11523,9 @@ a {
   }
 
   .tour3d-page {
-    width: min(100% - 28px, 1840px);
+    width: 100%;
     overflow: visible;
-    padding-block: 14px;
+    padding: 14px;
   }
 
   .tour3d-heading {

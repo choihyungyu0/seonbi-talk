@@ -84,6 +84,7 @@ const HOME_ASSETS = {
   heroMapButtonPanel: '/images/home/optimized/image-Photoroom (14).webp',
   heroNextStopPanel: '/images/home/optimized/image-Photoroom (16).webp',
   heroAiCourseFrame: '/images/home/optimized/image-Photoroom (10).webp',
+  heroShowcaseBackground: '/images/home/optimized/target-hero-background.webp',
   heroShowcaseSnapshot: '/images/home/optimized/target-hero-showcase.webp',
   heroTypePreview: '/images/home/optimized/image-Photoroom (3).webp',
   heroCoursePreview: '/images/home/optimized/image-Photoroom (50).webp',
@@ -93,6 +94,10 @@ const HOME_ASSETS = {
   targetTeaserCourse: '/images/home/optimized/target-teaser-course.webp',
   targetTeaserHeatmap: '/images/home/optimized/target-teaser-heatmap.webp',
   targetTeaserGraph: '/images/home/optimized/target-teaser-graph.webp',
+  coreFeatureHeatmap: '/images/home/core-feature-heatmap.png',
+  coreFeatureCourse: '/images/home/core-feature-course.png',
+  coreFeatureGraph: '/images/home/core-feature-graph.png',
+  coreFeatureDiary: '/images/home/core-feature-diary.png',
   paperFrameWide: '/images/home/optimized/image-Photoroom (32).webp',
   paperFrameDark: '/images/home/optimized/image-Photoroom (28).webp',
   paperFrameLight: '/images/home/optimized/image-Photoroom (29).webp',
@@ -269,6 +274,7 @@ const coreFeatures: FeatureDetail[] = [
     to: '/heatmap',
     variant: 'heatmap',
     label: 'Heatmap preview placeholder',
+    imageSrc: HOME_ASSETS.coreFeatureHeatmap,
     icon: HOME_ASSETS.iconTarget,
   },
   {
@@ -278,6 +284,7 @@ const coreFeatures: FeatureDetail[] = [
     to: '/tour-3d',
     variant: 'course3d',
     label: '3D route visual placeholder',
+    imageSrc: HOME_ASSETS.coreFeatureCourse,
     icon: HOME_ASSETS.iconCulture,
   },
   {
@@ -287,6 +294,7 @@ const coreFeatures: FeatureDetail[] = [
     to: '/knowledge-graph',
     variant: 'graph',
     label: 'Knowledge graph preview placeholder',
+    imageSrc: HOME_ASSETS.coreFeatureGraph,
     icon: HOME_ASSETS.iconChart,
   },
   {
@@ -296,6 +304,7 @@ const coreFeatures: FeatureDetail[] = [
     to: '/judge',
     variant: 'diary',
     label: 'Diary preview placeholder',
+    imageSrc: HOME_ASSETS.coreFeatureDiary,
     icon: HOME_ASSETS.panelBook,
   },
 ]
@@ -697,7 +706,11 @@ export function HomeLandingPage() {
                   <h3>{feature.title}</h3>
                 </div>
                 <p>{feature.description}</p>
-                <CoreFeaturePreview variant={feature.variant} />
+                <CoreFeaturePreview
+                  imageSrc={feature.imageSrc}
+                  label={feature.label}
+                  variant={feature.variant}
+                />
                 <Link className="home-card-link" to={feature.to}>
                   자세히 보기
                   <span aria-hidden="true">→</span>
@@ -925,12 +938,21 @@ function HeroProductShowcase() {
     <div className="home-product-showcase" aria-label="AI 추천 코스 미리보기">
       <div className="home-product-photo-slot" aria-label="추후 삽입할 1번째 화면 대표 사진 영역">
         <HomeImage
+          className="home-product-background"
+          src={HOME_ASSETS.heroShowcaseBackground}
+          alt=""
+          aria-hidden="true"
+          priority
+          responsiveWidths={[960, 1366, 1792]}
+          sizes="(min-width: 1200px) 54vw, 92vw"
+        />
+        <HomeImage
           className="home-product-showcase-snapshot"
           src={HOME_ASSETS.heroShowcaseSnapshot}
           alt=""
           aria-hidden="true"
           priority
-          responsiveWidths={[480, 960]}
+          responsiveWidths={[480, 960, 1366]}
           sizes="(min-width: 1200px) 54vw, 92vw"
         />
         <HomeImage src={HOME_ASSETS.heroFrame} alt="" aria-hidden="true" eager />
@@ -975,7 +997,8 @@ function HeroProductShowcase() {
           responsiveWidths={[480, 960, 1440]}
           sizes="(min-width: 1200px) 12vw, 48vw"
         />
-        <span className="home-sr-only">영주시 24도</span>
+        <span className="home-weather-location" aria-hidden="true">영주시</span>
+        <span className="home-weather-temp" aria-hidden="true">24°C</span>
       </div>
 
       <article className="home-ai-course-card">
@@ -1111,7 +1134,26 @@ function FeatureTeaserCard({ card, index }: { card: FeatureTeaser; index: number
   )
 }
 
-function CoreFeaturePreview({ variant }: { variant: VisualVariant }) {
+function CoreFeaturePreview({
+  imageSrc,
+  label,
+  variant,
+}: {
+  imageSrc?: string
+  label: string
+  variant: VisualVariant
+}) {
+  if (imageSrc) {
+    return (
+      <div
+        className={`home-core-preview home-core-preview--asset home-core-preview--${variant}`}
+        aria-label={label}
+      >
+        <HomeImage className="home-core-preview-image" src={imageSrc} alt="" aria-hidden="true" />
+      </div>
+    )
+  }
+
   if (variant === 'heatmap') {
     return (
       <div className="home-core-preview home-core-preview--heatmap" aria-hidden="true">

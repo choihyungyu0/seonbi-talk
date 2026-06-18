@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
+import { CourseProgressBadge } from '../components/course/CourseProgressBadge'
 import {
   toegyeCourseStops,
   type CourseStop,
@@ -899,10 +900,7 @@ export function GoogleTour3DPreviewPage() {
           aria-labelledby="tour3d-mission-title"
         >
           <section className="tour3d-mission-hero">
-            <span className="tour3d-preview-badge tour3d-mission-badge">
-              <img src={imageAsset('image-removebg-preview (83).png')} alt="" />
-              코스 진행
-            </span>
+            <CourseProgressBadge className="tour3d-course-progress-badge" />
             <h1 id="tour3d-mission-title">{courseCopy.title} 미션 진행</h1>
             <p>{currentMissionStop.name}에서 이어지는 배움과 성찰의 여정</p>
 
@@ -1126,10 +1124,7 @@ export function GoogleTour3DPreviewPage() {
     <AppLayout hideBottomNavigation hideChatbot>
       <section className="page-section page-container tour3d-page">
         <section className="tour3d-heading">
-          <span className="tour3d-preview-badge">
-            <img src={imageAsset('image-Photoroom (40).png')} alt="" />
-            3D 코스 프리뷰
-          </span>
+          <CourseProgressBadge className="tour3d-course-progress-badge" />
           <h1>{courseCopy.title} 3D 코스 미리보기</h1>
           <p>{courseCopy.subtitle}</p>
         </section>

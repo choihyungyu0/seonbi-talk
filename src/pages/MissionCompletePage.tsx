@@ -1,5 +1,6 @@
 import type { CSSProperties } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { CourseProgressBadge } from '../components/course/CourseProgressBadge'
 import { AppLayout } from '../components/layout/AppLayout'
 import './MissionCompletePage.css'
 
@@ -165,11 +166,7 @@ export function MissionCompletePage() {
 function JourneyCompletionHeader() {
   return (
     <header className="journey-report-header">
-      <img
-        className="journey-report-status-image"
-        src={imageAsset('image-Photoroom (85).png')}
-        alt="여정 완료"
-      />
+      <CourseProgressBadge className="journey-report-progress-badge" />
       <h1 id="journey-report-title">{journeyReportData.title}</h1>
       <p>{journeyReportData.subtitle}</p>
       <strong>{journeyReportData.completion}</strong>

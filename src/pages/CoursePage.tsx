@@ -3,6 +3,7 @@ import { AppLayout } from '../components/layout/AppLayout'
 import { BrandLoading } from '../components/common/BrandLoading'
 import { StatusBadge } from '../components/common/StatusBadge'
 import { CommonButton } from '../components/common/CommonButton'
+import { CourseProgressBadge } from '../components/course/CourseProgressBadge'
 import { SeonbiPreviewPanel } from '../components/SeonbiPreviewPanel'
 import { TourismCard } from '../components/tourism/TourismCard'
 import { CourseMap } from '../components/tourism/CourseMap'
@@ -418,6 +419,7 @@ export function CoursePage() {
   return (
     <AppLayout hideBottomNavigation>
       <section className="page-section page-container course-page">
+        <CourseProgressBadge className="course-page-progress-badge" />
         <div className="section-heading">
           <StatusBadge>추천 코스</StatusBadge>
           <h1>유형별 영주 관광 추천 코스</h1>

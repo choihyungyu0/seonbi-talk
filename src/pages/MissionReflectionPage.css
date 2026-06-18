@@ -11,13 +11,17 @@
   display: grid;
   grid-template-rows: 255px minmax(0, 1fr) 98px;
   gap: 12px;
-  width: min(1896px, calc(100% - 24px));
+  width: 100%;
   height: calc(100svh - 74px);
   min-height: 720px;
-  margin: 0 auto;
+  margin: 0;
   overflow: hidden;
   padding: 12px 18px 14px;
   color: var(--mr-ink);
+}
+
+.mission-reflection-shell main {
+  background: #f6ead3;
 }
 
 .mission-reflection-page::before {
@@ -254,12 +258,7 @@
 
 .mission-reflection-card::before,
 .mission-reflection-card::after {
-  position: absolute;
-  width: 52px;
-  height: 52px;
-  border-color: rgba(184, 132, 50, 0.48);
-  pointer-events: none;
-  content: '';
+  display: none;
 }
 
 .mission-reflection-card::before {
@@ -566,15 +565,19 @@
   font-weight: 950;
 }
 
+.mission-reflection-writing-card blockquote span {
+  min-width: 0;
+}
+
 .mission-reflection-keywords {
   position: absolute;
-  right: 7%;
-  bottom: 10%;
-  left: 7%;
+  right: 8%;
+  bottom: max(44px, 10%);
+  left: 8%;
   z-index: 1;
   display: grid;
-  grid-template-columns: 132px repeat(4, minmax(0, 1fr));
-  gap: 12px;
+  grid-template-columns: minmax(112px, auto) repeat(4, minmax(0, 1fr));
+  gap: 10px;
   align-items: center;
 }
 
@@ -611,6 +614,8 @@
 }
 
 .mission-reflection-keywords button {
+  overflow: hidden;
+  text-overflow: ellipsis;
   cursor: pointer;
 }
 
@@ -834,6 +839,23 @@
     gap: 2px;
   }
 
+  .mission-reflection-progress-badge {
+    width: 170px;
+    height: 34px;
+    margin-bottom: 0;
+  }
+
+  .mission-reflection-progress-badge .course-progress-badge__content {
+    max-width: calc(100% - 34px);
+    gap: 6px;
+    font-size: 14px;
+  }
+
+  .mission-reflection-progress-badge .course-progress-badge__content img {
+    width: 16px;
+    height: 16px;
+  }
+
   .mission-reflection-badge {
     min-height: 30px;
     min-width: 142px;
@@ -842,42 +864,49 @@
   }
 
   .mission-reflection-header h1 {
-    font-size: clamp(38px, 3vw, 46px);
+    font-size: clamp(36px, 2.7vw, 42px);
+    line-height: 1.02;
   }
 
   .mission-reflection-header p {
-    font-size: 17px;
+    font-size: 16px;
+    line-height: 1.2;
   }
 
   .mission-reflection-progress-text {
-    font-size: 22px;
+    font-size: 20px;
+    line-height: 1.05;
   }
 
   .mission-reflection-stepper {
-    min-height: 58px;
+    min-height: 52px;
     gap: 10px;
-    margin-top: 6px;
+    margin-top: 4px;
   }
 
   .mission-reflection-stepper::before {
-    top: 24px;
+    top: 22px;
   }
 
   .mission-reflection-stepper li {
-    grid-template-columns: 46px minmax(0, 1fr);
-    min-height: 54px;
+    grid-template-columns: 42px minmax(0, 1fr);
+    min-height: 50px;
     gap: 8px;
     padding: 6px 12px 6px 6px;
   }
 
   .mission-reflection-step-marker {
-    width: 42px;
-    height: 42px;
-    font-size: 20px;
+    width: 38px;
+    height: 38px;
+    font-size: 19px;
   }
 
   .mission-reflection-stepper strong {
-    font-size: 14px;
+    font-size: 13px;
+  }
+
+  .mission-reflection-stepper small {
+    font-size: 10px;
   }
 
   .mission-reflection-card-title {
@@ -983,11 +1012,31 @@
   }
 
   .mission-reflection-writing-card blockquote {
+    top: 64.5%;
     right: 18%;
     left: 7%;
     grid-template-columns: 52px minmax(0, 1fr);
-    font-size: 16px;
-    line-height: 1.38;
+    min-height: 68px;
+    font-size: 15px;
+    line-height: 1.34;
+  }
+
+  .mission-reflection-keywords {
+    right: 8.5%;
+    bottom: max(40px, 9%);
+    left: 8.5%;
+    grid-template-columns: 104px repeat(4, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .mission-reflection-keywords span {
+    font-size: 14px;
+  }
+
+  .mission-reflection-keywords button {
+    min-height: 34px;
+    padding-inline: 10px;
+    font-size: 14px;
   }
 
   .mission-reflection-next-card {
@@ -1061,6 +1110,7 @@
   .mission-reflection-page {
     display: block;
     width: min(100% - 20px, 720px);
+    margin: 0 auto;
     padding: 18px 0 24px;
   }
 
