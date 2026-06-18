@@ -87,11 +87,35 @@ export async function searchYeongjuTourismByKeyword(
   keyword: string,
 ): Promise<TourismApiResponse> {
   const query = [yeongjuKeyword, keyword].filter(Boolean).join(' ')
-  return requestTourismProxyWithLocal(
+  const scopedResponse = await requestTourismProxyWithLocal(
     { type: 'keyword', keyword: query },
     'all',
     keyword,
   )
+  if (hasTourApiContent(scopedResponse)) return scopedResponse
+
+  const fallbackResponse = await requestTourismProxyWithLocal(
+    { type: 'keyword', keyword },
+    'all',
+    keyword,
+  )
+  const contents = mergeTourismContentLists(
+    scopedResponse.contents,
+    fallbackResponse.contents,
+  )
+
+  if (contents.length === 0) return fallbackResponse
+
+  return {
+    ...fallbackResponse,
+    contents,
+    status: 'ready',
+    reason: undefined,
+    message: createMergedTourismMessage(
+      combineTourismMessages(scopedResponse.message, fallbackResponse.message),
+      0,
+    ),
+  }
 }
 
 export async function getTourismDetail(
@@ -429,4 +453,16 @@ function createMergedTourismMessage(message: string | undefined, localCount: num
 
   const localMessage = `영주시 보강 공공데이터 ${localCount}건을 함께 적용했습니다.`
   return message ? `${message} ${localMessage}` : localMessage
+}
+
+function hasTourApiContent(response: TourismApiResponse) {
+  return response.contents.some((content) => content.source === 'TourAPI')
+}
+
+function combineTourismMessages(...messages: Array<string | undefined>) {
+  return messages
+    .filter((message, index, messageList) => {
+      return Boolean(message) && messageList.indexOf(message) === index
+    })
+    .join(' ') || undefined
 }

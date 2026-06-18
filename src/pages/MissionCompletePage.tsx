@@ -3,10 +3,11 @@ import { useNavigate } from 'react-router-dom'
 import { CourseProgressBadge } from '../components/course/CourseProgressBadge'
 import { AppLayout } from '../components/layout/AppLayout'
 import {
+  getTourismDetail,
   getYeongjuTourismContents,
   searchYeongjuTourismByKeyword,
 } from '../features/tourism/tourismApi'
-import { getTourismPrimaryImageUrl } from '../features/tourism/tourismImageUrl'
+import { getTourismDisplayImageUrl } from '../features/tourism/tourismImageUrl'
 import type { TourismContent } from '../features/tourism/tourismTypes'
 import './MissionCompletePage.css'
 
@@ -79,7 +80,7 @@ const journeyReportData = {
     {
       place: '선비의 한마디',
       quote: '오늘의 길은 나를 돌아보는 시간이 되었다.',
-      asset: '1 (6).png',
+      asset: 'image-Photoroom (77).png',
     },
   ],
   aiAnalysis: {
@@ -105,6 +106,7 @@ const journeyReportData = {
     title: '처사형 자연 사색 코스도 둘러보세요.',
     body: '이번 여정에서 자연과 사색 키워드가 높게 나타났습니다.',
     thumbnail: 'image-removebg-preview (84).png',
+    imageKeywords: ['무섬마을', '부석사', '죽령옛길'],
   },
 }
 
@@ -118,12 +120,16 @@ const routeStops = [
 
 const tourApiReflectionPlaces = ['소수서원', '선비촌', '부석사', '무섬마을'] as const
 const reflectionTourApiImageCacheKey = 'yeongju-journey-reflection-tour-api-images'
+const nextRecommendationTourApiImageCacheKey =
+  'yeongju-next-recommendation-tour-api-image'
 
 type TourApiReflectionPlace = (typeof tourApiReflectionPlaces)[number]
 type ReflectionTourApiImageUrls = Partial<Record<TourApiReflectionPlace, string>>
 
 let reflectionTourApiImageMemoryCache: ReflectionTourApiImageUrls | null = null
 let reflectionTourApiImageRequestPromise: Promise<ReflectionTourApiImageUrls> | null = null
+let nextRecommendationTourApiImageMemoryCache: string | null = null
+let nextRecommendationTourApiImageRequestPromise: Promise<string> | null = null
 
 function imageAsset(fileName: string) {
   return encodeURI(`/images/new/${fileName}`)
@@ -133,6 +139,9 @@ export function MissionCompletePage() {
   const navigate = useNavigate()
   const [reflectionImageUrls, setReflectionImageUrls] =
     useState<ReflectionTourApiImageUrls>(() => readReflectionTourApiImageCache())
+  const [nextRecommendationImageUrl, setNextRecommendationImageUrl] = useState(
+    () => readNextRecommendationTourApiImageCache(),
+  )
 
   useEffect(() => {
     let isDisposed = false
@@ -146,7 +155,15 @@ export function MissionCompletePage() {
       )
     }
 
+    async function loadNextRecommendationImage() {
+      const imageUrl = await getNextRecommendationTourApiImageUrl()
+      if (isDisposed || !imageUrl) return
+
+      setNextRecommendationImageUrl(imageUrl)
+    }
+
     void loadReflectionImages()
+    void loadNextRecommendationImage()
 
     return () => {
       isDisposed = true
@@ -185,7 +202,10 @@ export function MissionCompletePage() {
           </section>
           <section className="journey-report-bottom" aria-label="획득 배지와 다음 추천">
             <EarnedBadgesCard />
-            <NextRecommendationCard onRecommend={() => navigate('/course')} />
+            <NextRecommendationCard
+              imageUrl={nextRecommendationImageUrl}
+              onRecommend={() => navigate('/course')}
+            />
           </section>
           <JourneyReportActionBar
             onArchive={() => navigate('/mypage')}
@@ -424,13 +444,22 @@ function EarnedBadgesCard() {
   )
 }
 
-function NextRecommendationCard({ onRecommend }: { onRecommend: () => void }) {
+function NextRecommendationCard({
+  imageUrl,
+  onRecommend,
+}: {
+  imageUrl: string
+  onRecommend: () => void
+}) {
+  const thumbnailSrc =
+    imageUrl || imageAsset(journeyReportData.nextRecommendation.thumbnail)
+
   return (
     <article className="journey-card journey-next-card">
       <CardTitle>다음 추천</CardTitle>
       <img
         className="journey-next-thumb"
-        src={imageAsset(journeyReportData.nextRecommendation.thumbnail)}
+        src={thumbnailSrc}
         alt=""
       />
       <div>
@@ -556,20 +585,37 @@ async function requestMissingReflectionTourApiImageUrls(
   )
   if (stillMissingPlaces.length === 0) return mergedAreaBasedImageUrls
 
+  const areaBasedDetailImageUrls = await getReflectionDetailImageUrlsFromTourismItems(
+    areaBasedResponse.contents,
+    stillMissingPlaces,
+  )
+  const mergedDetailImageUrls = mergeReflectionTourApiImageUrls(
+    mergedAreaBasedImageUrls,
+    areaBasedDetailImageUrls,
+  )
+  writeReflectionTourApiImageCache(mergedDetailImageUrls)
+
+  const keywordMissingPlaces = stillMissingPlaces.filter(
+    (place) => !mergedDetailImageUrls[place],
+  )
+  if (keywordMissingPlaces.length === 0) return mergedDetailImageUrls
+
   const keywordImageUrls: ReflectionTourApiImageUrls = {}
 
-  for (const place of stillMissingPlaces) {
+  for (const place of keywordMissingPlaces) {
     const keywordResponse = await searchYeongjuTourismByKeyword(place)
-    const imageUrl = getBestMatchingReflectionImageUrl(keywordResponse.contents, place)
+    const imageUrl =
+      getBestMatchingReflectionImageUrl(keywordResponse.contents, place) ||
+      (await getBestMatchingReflectionDetailImageUrl(keywordResponse.contents, place))
     if (imageUrl) {
       keywordImageUrls[place] = imageUrl
       writeReflectionTourApiImageCache(
-        mergeReflectionTourApiImageUrls(mergedAreaBasedImageUrls, keywordImageUrls),
+        mergeReflectionTourApiImageUrls(mergedDetailImageUrls, keywordImageUrls),
       )
     }
   }
 
-  return mergeReflectionTourApiImageUrls(mergedAreaBasedImageUrls, keywordImageUrls)
+  return mergeReflectionTourApiImageUrls(mergedDetailImageUrls, keywordImageUrls)
 }
 
 function getReflectionImageUrlsFromTourismItems(
@@ -590,21 +636,115 @@ function getBestMatchingReflectionImageUrl(
   items: TourismContent[],
   place: TourApiReflectionPlace,
 ) {
-  const candidates = items
-    .map((item) => ({
-      item,
-      imageUrl: getTourismPrimaryImageUrl(item),
-      score: getReflectionPlaceMatchScore(item, place),
+  return getBestMatchingTourismImageUrl(items, place)
+}
+
+async function getReflectionDetailImageUrlsFromTourismItems(
+  items: TourismContent[],
+  places: readonly TourApiReflectionPlace[],
+) {
+  const imageUrls: ReflectionTourApiImageUrls = {}
+
+  for (const place of places) {
+    const imageUrl = await getBestMatchingReflectionDetailImageUrl(items, place)
+    if (imageUrl) imageUrls[place] = imageUrl
+  }
+
+  return imageUrls
+}
+
+async function getBestMatchingReflectionDetailImageUrl(
+  items: TourismContent[],
+  place: TourApiReflectionPlace,
+) {
+  return getBestMatchingTourismDetailImageUrl(items, place)
+}
+
+async function getNextRecommendationTourApiImageUrl() {
+  const cachedImageUrl = readNextRecommendationTourApiImageCache()
+  if (cachedImageUrl) return cachedImageUrl
+
+  if (!nextRecommendationTourApiImageRequestPromise) {
+    nextRecommendationTourApiImageRequestPromise = requestNextRecommendationTourApiImageUrl()
+      .finally(() => {
+        nextRecommendationTourApiImageRequestPromise = null
+      })
+  }
+
+  return nextRecommendationTourApiImageRequestPromise
+}
+
+async function requestNextRecommendationTourApiImageUrl() {
+  for (const keyword of journeyReportData.nextRecommendation.imageKeywords) {
+    const keywordResponse = await searchYeongjuTourismByKeyword(keyword)
+    const imageUrl =
+      getBestMatchingTourismImageUrl(keywordResponse.contents, keyword) ||
+      (await getBestMatchingTourismDetailImageUrl(keywordResponse.contents, keyword))
+
+    if (imageUrl) {
+      writeNextRecommendationTourApiImageCache(imageUrl)
+      return imageUrl
+    }
+  }
+
+  return ''
+}
+
+function getBestMatchingTourismImageUrl(
+  items: TourismContent[],
+  place: string,
+) {
+  const candidates = getSortedTourismPlaceCandidates(items, place)
+    .map((candidate) => ({
+      ...candidate,
+      imageUrl: getTourismDisplayImageUrl(candidate.item),
     }))
-    .filter((candidate) => candidate.imageUrl && candidate.score > 0)
-    .sort((a, b) => b.score - a.score)
+    .filter((candidate) => candidate.imageUrl)
 
   return candidates[0]?.imageUrl ?? ''
 }
 
+async function getBestMatchingTourismDetailImageUrl(
+  items: TourismContent[],
+  place: string,
+) {
+  const candidates = getSortedTourismPlaceCandidates(items, place).filter(
+    ({ item }) => item.source === 'TourAPI' && item.contentId && item.contentTypeId,
+  )
+
+  for (const { item } of candidates) {
+    const detailResponse = await getTourismDetail(item)
+    const detail = detailResponse.detail
+    if (!detail || detailResponse.status !== 'ready') continue
+
+    const detailItemImageUrl = getTourismDisplayImageUrl(detail.item)
+    if (detailItemImageUrl) return detailItemImageUrl
+
+    const detailImageUrl = detail.images
+      .map((image) => getTourismDisplayImageUrl(image))
+      .find(Boolean)
+    if (detailImageUrl) return detailImageUrl
+  }
+
+  return ''
+}
+
+function getSortedTourismPlaceCandidates(
+  items: TourismContent[],
+  place: string,
+) {
+  return items
+    .map((item) => ({
+      item,
+      score: getReflectionPlaceMatchScore(item, place),
+    }))
+    .filter((candidate) => candidate.score > 0)
+    .sort((a, b) => b.score - a.score)
+}
+
 function getReflectionPlaceMatchScore(
   item: TourismContent,
-  place: TourApiReflectionPlace,
+  place: string,
 ) {
   const itemTitle = normalizeReflectionPlaceName(item.title ?? item.name)
   const placeName = normalizeReflectionPlaceName(place)
@@ -680,5 +820,34 @@ function writeReflectionTourApiImageCache(imageUrls: ReflectionTourApiImageUrls)
     )
   } catch {
     // The report can still render with local fallback images if storage is unavailable.
+  }
+}
+
+function readNextRecommendationTourApiImageCache() {
+  if (nextRecommendationTourApiImageMemoryCache) {
+    return nextRecommendationTourApiImageMemoryCache
+  }
+  if (typeof window === 'undefined') return ''
+
+  try {
+    const cachedValue = window.localStorage.getItem(nextRecommendationTourApiImageCacheKey)
+    if (!cachedValue) return ''
+
+    nextRecommendationTourApiImageMemoryCache = cachedValue
+    return cachedValue
+  } catch {
+    return ''
+  }
+}
+
+function writeNextRecommendationTourApiImageCache(imageUrl: string) {
+  nextRecommendationTourApiImageMemoryCache = imageUrl
+
+  if (typeof window === 'undefined') return
+
+  try {
+    window.localStorage.setItem(nextRecommendationTourApiImageCacheKey, imageUrl)
+  } catch {
+    // The recommendation card can still render with its local fallback image.
   }
 }

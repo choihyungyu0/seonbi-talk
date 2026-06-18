@@ -27,3 +27,14 @@ export function getTourismPrimaryImageUrl(
 ) {
   return normalizeTourApiImageUrl(item.firstImage || item.firstImage2)
 }
+
+export function getTourismDisplayImageUrl(
+  item: Pick<
+    TourismContent,
+    'firstImage' | 'firstImage2' | 'originImage' | 'smallImage'
+  >,
+) {
+  return normalizeTourApiImageUrl(
+    item.firstImage || item.firstImage2 || item.originImage || item.smallImage,
+  )
+}
