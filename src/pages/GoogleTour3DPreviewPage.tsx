@@ -67,6 +67,11 @@ interface GoogleMap3DMarkerElement extends HTMLElement {
   zIndex?: number
 }
 
+interface GoogleMap3DPlaceClickEvent extends Event {
+  placeId?: string
+  preventDefault: () => void
+}
+
 interface GoogleMaps3DLibrary {
   Map3DElement: new (options?: GoogleMap3DCamera & { mode?: string }) => GoogleMap3DElement
   Marker3DInteractiveElement: new (options?: {
@@ -728,6 +733,7 @@ export function GoogleTour3DPreviewPage() {
             'Google 3D 지도를 초기화하지 못했습니다. API 키 권한, HTTP referrer 제한, Maps JavaScript API 활성화를 확인해주세요.',
           )
         })
+        mapElement.addEventListener('gmp-click', preventGooglePlaceDetailsPopover)
         const markerElements = createSpotMarkers(maps3d, mapElement, (spot) => {
           if (isDisposed) return
           setActivePlaceId(spot.id)
@@ -1382,6 +1388,13 @@ export function GoogleTour3DPreviewPage() {
       </section>
     </AppLayout>
   )
+}
+
+function preventGooglePlaceDetailsPopover(event: Event) {
+  const placeClickEvent = event as GoogleMap3DPlaceClickEvent
+  if (typeof placeClickEvent.placeId === 'string') {
+    placeClickEvent.preventDefault()
+  }
 }
 
 function createSpotMarkers(
