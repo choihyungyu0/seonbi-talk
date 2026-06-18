@@ -4,9 +4,18 @@ import {
   useState,
   type CSSProperties,
   type ImgHTMLAttributes,
+  type ReactNode,
 } from 'react'
+import { motion, useReducedMotion } from 'motion/react'
 import { Link } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
+import { homeMotionEase } from '../components/homeMotionConfig'
+import {
+  AnimatedRouteLine,
+  AnimatedSection,
+  HomeScrollProgress,
+  RevealItem,
+} from '../components/homeMotion'
 import './HomeLandingPage.css'
 
 type VisualVariant =
@@ -357,6 +366,54 @@ const experienceItems = [
   ['여행 후 기록 저장', HOME_ASSETS.panelBrush],
 ]
 
+const heroChipListVariants = {
+  hidden: {},
+  show: {
+    transition: {
+      staggerChildren: 0.08,
+      delayChildren: 0.18,
+    },
+  },
+}
+
+const heroChipVariants = {
+  hidden: {
+    opacity: 0,
+    y: 14,
+    scale: 0.96,
+  },
+  show: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: {
+      duration: 0.56,
+      ease: homeMotionEase,
+    },
+  },
+}
+
+const journeyConnectorVariants = {
+  hidden: {
+    scaleX: 0,
+  },
+  show: {
+    scaleX: 1,
+    transition: {
+      duration: 0.95,
+      ease: homeMotionEase,
+    },
+  },
+}
+
+const graphPreviewNodes = [
+  { id: 'history', x: -58, y: -54 },
+  { id: 'view', x: 60, y: -42 },
+  { id: 'review', x: 72, y: 46 },
+  { id: 'access', x: -58, y: 52 },
+  { id: 'experience', x: 0, y: -76 },
+]
+
 export function HomeLandingPage() {
   const [activeSectionId, setActiveSectionId] = useState(snapSections[0].id)
   const [selectedCompanion, setSelectedCompanion] = useState('혼자')
@@ -495,6 +552,20 @@ export function HomeLandingPage() {
     }
   }, [])
 
+  useEffect(() => {
+    function syncVisibilityClass() {
+      document.documentElement.classList.toggle('home-document-hidden', document.hidden)
+    }
+
+    syncVisibilityClass()
+    document.addEventListener('visibilitychange', syncVisibilityClass)
+
+    return () => {
+      document.documentElement.classList.remove('home-document-hidden')
+      document.removeEventListener('visibilitychange', syncVisibilityClass)
+    }
+  }, [])
+
   function handleSectionDotClick(sectionId: string) {
     document.getElementById(sectionId)?.scrollIntoView({
       block: 'start',
@@ -516,11 +587,12 @@ export function HomeLandingPage() {
 
   return (
     <AppLayout
-      className="home-app-shell"
+      className="home-app-shell home-motion-page"
       hideBottomNavigation
       hideChatbot
     >
       <div className="home-snap-container">
+        <HomeScrollProgress />
         <ScrollSnapIndicator
           activeSectionId={activeSectionId}
           onSelectSection={handleSectionDotClick}
@@ -528,38 +600,54 @@ export function HomeLandingPage() {
 
         <section id="home-hero" className="home-snap-section home-hero-screen">
           <div className="home-atmosphere" aria-hidden="true" />
-          <div className="home-section-inner home-hero-grid">
+          <AnimatedSection
+            className="home-section-inner home-hero-grid"
+            animateOnLoad
+            staggerChildren={0.12}
+          >
             <div className="home-hero-copy">
-              <Badge imageSrc={HOME_ASSETS.heroBadgeFrame} eager>
-                AI 문화 여행 플랫폼
-              </Badge>
-              <h1>
-                AI가 설계하는
-                <span>영주의 선비길</span>
-              </h1>
-              <p>
-                3D 인터랙티브 코스와 AI 추천으로 영주의 선비 문화와 관광을
-                스마트하게 탐험하세요.
-              </p>
-              <div className="home-action-row">
-                <OrnamentalButton
-                  imageSrc={HOME_ASSETS.primaryTestButton}
-                  to="/test"
-                  variant="primary"
-                  eager
-                >
-                  선비 테스트 시작하기
-                </OrnamentalButton>
-                <OrnamentalButton
-                  imageSrc={HOME_ASSETS.secondaryCourseButton}
-                  to="/course"
-                  variant="secondary"
-                  eager
-                >
-                  추천 코스 둘러보기
-                </OrnamentalButton>
-              </div>
-              <ul className="home-micro-strip" aria-label="핵심 미리보기">
+              <RevealItem>
+                <Badge imageSrc={HOME_ASSETS.heroBadgeFrame} eager>
+                  AI 문화 여행 플랫폼
+                </Badge>
+              </RevealItem>
+              <RevealItem>
+                <h1>
+                  AI가 설계하는
+                  <span>영주의 선비길</span>
+                </h1>
+              </RevealItem>
+              <RevealItem>
+                <p>
+                  3D 인터랙티브 코스와 AI 추천으로 영주의 선비 문화와 관광을
+                  스마트하게 탐험하세요.
+                </p>
+              </RevealItem>
+              <RevealItem>
+                <div className="home-action-row">
+                  <OrnamentalButton
+                    imageSrc={HOME_ASSETS.primaryTestButton}
+                    to="/test"
+                    variant="primary"
+                    eager
+                  >
+                    선비 테스트 시작하기
+                  </OrnamentalButton>
+                  <OrnamentalButton
+                    imageSrc={HOME_ASSETS.secondaryCourseButton}
+                    to="/course"
+                    variant="secondary"
+                    eager
+                  >
+                    추천 코스 둘러보기
+                  </OrnamentalButton>
+                </div>
+              </RevealItem>
+              <motion.ul
+                className="home-micro-strip"
+                aria-label="핵심 미리보기"
+                variants={heroChipListVariants}
+              >
                 <HomeImage src={HOME_ASSETS.microStrip} alt="" aria-hidden="true" eager />
                 {[
                   ['유형별 선비 콘텐츠', HOME_ASSETS.iconPerson],
@@ -567,252 +655,305 @@ export function HomeLandingPage() {
                   ['AI 해설', HOME_ASSETS.iconBook],
                   ['여행 기록 저장', HOME_ASSETS.iconBook],
                 ].map(([label, icon]) => (
-                  <li key={label}>
+                  <motion.li key={label} variants={heroChipVariants}>
                     <HomeImage src={icon} alt="" aria-hidden="true" eager />
                     <span>{label}</span>
-                  </li>
+                  </motion.li>
                 ))}
-              </ul>
+              </motion.ul>
             </div>
 
-            <HeroProductShowcase />
-          </div>
+            <RevealItem
+              className="home-product-motion-shell"
+              direction="right"
+              distance={54}
+              scale={0.97}
+            >
+              <FloatingProductShowcase />
+            </RevealItem>
+          </AnimatedSection>
 
-          <div className="home-section-inner home-feature-teaser-grid" aria-label="주요 기능">
+          <AnimatedSection
+            className="home-section-inner home-feature-teaser-grid"
+            animateOnLoad
+            delayChildren={0.45}
+            staggerChildren={0.08}
+            aria-label="주요 기능"
+          >
             {heroFeatureCards.map((card, index) => (
-              <FeatureTeaserCard
-                card={card}
-                index={index}
-                key={card.title}
-              />
+              <RevealItem key={card.title} distance={18}>
+                <FeatureTeaserCard card={card} index={index} />
+              </RevealItem>
             ))}
-          </div>
+          </AnimatedSection>
         </section>
 
         <section id="home-type-finder" className="home-snap-section home-type-screen">
           <div className="home-atmosphere home-atmosphere--right" aria-hidden="true" />
-          <div className="home-section-inner home-type-layout">
-            <div className="home-section-copy">
-              <Badge imageSrc={HOME_ASSETS.typeBadge} textMode="hidden">
-                선비 유형 찾기
-              </Badge>
-              <h2>
-                나에게 맞는
-                <span>
-                  <strong>선비 유형</strong>을 찾아보세요
-                </span>
-              </h2>
-              <p>
-                30초 성향 선택으로 나의 여행 성향을 파악하고, 퇴계형·율곡형·처사형·우국형
-                중 가장 잘 맞는 선비 유형을 찾아보세요.
+          <AnimatedSection className="home-type-motion-stage" amount={0.34} staggerChildren={0.1}>
+            <div className="home-section-inner home-type-layout">
+              <div className="home-section-copy">
+                <RevealItem>
+                  <Badge imageSrc={HOME_ASSETS.typeBadge} textMode="hidden">
+                    선비 유형 찾기
+                  </Badge>
+                </RevealItem>
+                <RevealItem>
+                  <h2>
+                    나에게 맞는
+                    <span>
+                      <strong>선비 유형</strong>을 찾아보세요
+                    </span>
+                  </h2>
+                </RevealItem>
+                <RevealItem>
+                  <p>
+                    30초 성향 선택으로 나의 여행 성향을 파악하고, 퇴계형·율곡형·처사형·우국형
+                    중 가장 잘 맞는 선비 유형을 찾아보세요.
+                  </p>
+                </RevealItem>
+              </div>
+
+              <RevealItem>
+                <div className="home-selection-panel">
+                  <div className="home-panel-heading">
+                    <h3>나의 여행 성향 선택</h3>
+                  </div>
+                  <div className="home-choice-group">
+                    <p>함께하는 사람</p>
+                    <div className="home-chip-row">
+                      {companionOptions.map((option) => (
+                        <button
+                          type="button"
+                          className={selectedCompanion === option ? 'home-chip is-selected' : 'home-chip'}
+                          aria-pressed={selectedCompanion === option}
+                          onClick={() => setSelectedCompanion(option)}
+                          key={option}
+                        >
+                          <HomeImage src={companionOptionIcons[option]} alt="" aria-hidden="true" />
+                          {option}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="home-choice-group">
+                    <p>여행 선호 키워드 <small>(복수 선택 가능)</small></p>
+                    <div className="home-chip-row home-chip-row--wrap">
+                      {keywordOptions.map((option) => (
+                        <button
+                          type="button"
+                          className={selectedKeywords.includes(option) ? 'home-chip is-selected' : 'home-chip'}
+                          aria-pressed={selectedKeywords.includes(option)}
+                          onClick={() => toggleKeyword(option)}
+                          key={option}
+                        >
+                          <HomeImage src={keywordOptionIcons[option]} alt="" aria-hidden="true" />
+                          {option}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </RevealItem>
+
+              <RevealItem>
+                <ResultPanel profile={recommendedType} />
+              </RevealItem>
+            </div>
+
+            <div className="home-section-inner home-type-card-grid">
+              <RevealItem className="home-type-card-reveal home-type-card-reveal--highlighted" direction="left" distance={44}>
+                <SeonbiTypeCard profile={seonbiProfiles.toegye} highlighted />
+              </RevealItem>
+              <RevealItem className="home-type-card-reveal">
+                <SeonbiTypeCard profile={seonbiProfiles.yulgok} />
+              </RevealItem>
+              <RevealItem className="home-type-card-reveal">
+                <SeonbiTypeCard profile={seonbiProfiles.cheosa} />
+              </RevealItem>
+              <RevealItem className="home-type-card-reveal">
+                <SeonbiTypeCard profile={seonbiProfiles.uguk} />
+              </RevealItem>
+            </div>
+
+            <RevealItem className="home-section-inner home-centered-actions">
+              <div className="home-type-footer-actions">
+                <OrnamentalButton
+                  imageSrc={HOME_ASSETS.primaryTestButton}
+                  to="/test"
+                  variant="primary"
+                >
+                  선비 테스트 시작하기
+                </OrnamentalButton>
+                <OrnamentalButton
+                  imageSrc={HOME_ASSETS.typeCourseButton}
+                  to="/course"
+                  variant="secondary"
+                >
+                  유형별 코스 미리보기
+                </OrnamentalButton>
+              </div>
+              <p className="home-type-footer-note">
+                30초면 완료되는 간단한 성향 테스트로 나에게 꼭 맞는 선비 유형을 찾아보세요.
               </p>
-            </div>
-
-            <div className="home-selection-panel">
-              <div className="home-panel-heading">
-                <h3>나의 여행 성향 선택</h3>
-              </div>
-              <div className="home-choice-group">
-                <p>함께하는 사람</p>
-                <div className="home-chip-row">
-                  {companionOptions.map((option) => (
-                    <button
-                      type="button"
-                      className={selectedCompanion === option ? 'home-chip is-selected' : 'home-chip'}
-                      aria-pressed={selectedCompanion === option}
-                      onClick={() => setSelectedCompanion(option)}
-                      key={option}
-                    >
-                      <HomeImage src={companionOptionIcons[option]} alt="" aria-hidden="true" />
-                      {option}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="home-choice-group">
-                <p>여행 선호 키워드 <small>(복수 선택 가능)</small></p>
-                <div className="home-chip-row home-chip-row--wrap">
-                  {keywordOptions.map((option) => (
-                    <button
-                      type="button"
-                      className={selectedKeywords.includes(option) ? 'home-chip is-selected' : 'home-chip'}
-                      aria-pressed={selectedKeywords.includes(option)}
-                      onClick={() => toggleKeyword(option)}
-                      key={option}
-                    >
-                      <HomeImage src={keywordOptionIcons[option]} alt="" aria-hidden="true" />
-                      {option}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <ResultPanel profile={recommendedType} />
-          </div>
-
-          <div className="home-section-inner home-type-card-grid">
-            <SeonbiTypeCard profile={seonbiProfiles.toegye} highlighted />
-            <SeonbiTypeCard profile={seonbiProfiles.yulgok} />
-            <SeonbiTypeCard profile={seonbiProfiles.cheosa} />
-            <SeonbiTypeCard profile={seonbiProfiles.uguk} />
-          </div>
-
-          <div className="home-section-inner home-centered-actions">
-            <div className="home-type-footer-actions">
-              <OrnamentalButton
-                imageSrc={HOME_ASSETS.primaryTestButton}
-                to="/test"
-                variant="primary"
-              >
-                선비 테스트 시작하기
-              </OrnamentalButton>
-              <OrnamentalButton
-                imageSrc={HOME_ASSETS.typeCourseButton}
-                to="/course"
-                variant="secondary"
-              >
-                유형별 코스 미리보기
-              </OrnamentalButton>
-            </div>
-            <p className="home-type-footer-note">
-              30초면 완료되는 간단한 성향 테스트로 나에게 꼭 맞는 선비 유형을 찾아보세요.
-            </p>
-          </div>
+            </RevealItem>
+          </AnimatedSection>
         </section>
 
         <section id="home-core-features" className="home-snap-section home-core-screen">
           <div className="home-atmosphere home-atmosphere--wide" aria-hidden="true" />
-          <div className="home-section-inner home-section-heading">
-            <Badge imageSrc={HOME_ASSETS.heroBadgeFrame}>서비스 핵심 기능</Badge>
-            <h2>AI가 영주 여행을 설계하는 방식</h2>
-            <p>
-              관광 데이터의 시각화, AI의 설명, 3D 경로 미리보기, 여행 기록까지
-              영주선비길이 맞춤형 여행을 완성합니다.
-            </p>
-          </div>
+          <AnimatedSection className="home-core-motion-stage" amount={0.3} staggerChildren={0.1}>
+            <div className="home-section-inner home-section-heading">
+              <RevealItem>
+                <Badge imageSrc={HOME_ASSETS.heroBadgeFrame}>서비스 핵심 기능</Badge>
+              </RevealItem>
+              <RevealItem>
+                <h2>AI가 영주 여행을 설계하는 방식</h2>
+              </RevealItem>
+              <RevealItem>
+                <p>
+                  관광 데이터의 시각화, AI의 설명, 3D 경로 미리보기, 여행 기록까지
+                  영주선비길이 맞춤형 여행을 완성합니다.
+                </p>
+              </RevealItem>
+            </div>
 
-          <div className="home-section-inner home-core-card-grid">
-            {coreFeatures.map((feature, index) => (
-              <article
-                className="home-core-card"
-                key={feature.title}
-                style={{ '--home-stagger': `${index * 110}ms` } as CSSProperties}
-              >
-                <div className="home-feature-title-row">
-                  <span className="home-feature-icon">
-                    <HomeImage src={feature.icon} alt="" aria-hidden="true" />
-                  </span>
-                  <h3>{feature.title}</h3>
+            <div className="home-section-inner home-core-card-grid">
+              {coreFeatures.map((feature, index) => (
+                <RevealItem
+                  className="home-core-card-reveal"
+                  key={feature.title}
+                  distance={24}
+                  style={{ '--home-story-index': index } as CSSProperties}
+                >
+                  <article className="home-core-card">
+                    <div className="home-feature-title-row">
+                      <span className="home-feature-icon">
+                        <HomeImage src={feature.icon} alt="" aria-hidden="true" />
+                      </span>
+                      <h3>{feature.title}</h3>
+                    </div>
+                    <p>{feature.description}</p>
+                    <CoreFeaturePreview
+                      imageSrc={feature.imageSrc}
+                      label={feature.label}
+                      variant={feature.variant}
+                    />
+                    <Link className="home-card-link" to={feature.to}>
+                      자세히 보기
+                      <span aria-hidden="true">→</span>
+                    </Link>
+                  </article>
+                </RevealItem>
+              ))}
+            </div>
+
+            <RevealItem className="home-section-inner home-value-strip" aria-label="서비스 가치">
+              {valueItems.map(([title, description, icon]) => (
+                <div className="home-value-item" key={title}>
+                  <HomeImage src={icon} alt="" aria-hidden="true" />
+                  <strong>{title}</strong>
+                  <span>{description}</span>
                 </div>
-                <p>{feature.description}</p>
-                <CoreFeaturePreview
-                  imageSrc={feature.imageSrc}
-                  label={feature.label}
-                  variant={feature.variant}
-                />
-                <Link className="home-card-link" to={feature.to}>
-                  자세히 보기
-                  <span aria-hidden="true">→</span>
-                </Link>
-              </article>
-            ))}
-          </div>
-
-          <div className="home-section-inner home-value-strip" aria-label="서비스 가치">
-            {valueItems.map(([title, description, icon], index) => (
-              <div
-                className="home-value-item"
-                key={title}
-                style={{ '--home-stagger': `${index * 80}ms` } as CSSProperties}
-              >
-                <HomeImage src={icon} alt="" aria-hidden="true" />
-                <strong>{title}</strong>
-                <span>{description}</span>
-              </div>
-            ))}
-          </div>
+              ))}
+            </RevealItem>
+          </AnimatedSection>
         </section>
 
         <section id="home-journey-flow" className="home-snap-section home-journey-screen">
           <div className="home-atmosphere home-atmosphere--bottom" aria-hidden="true" />
-          <div className="home-section-inner home-section-heading home-journey-heading">
-            <Badge imageSrc={HOME_ASSETS.journeyBadge} textMode="hidden">
-              나만의 선비 여정, 이렇게 시작됩니다
-            </Badge>
-            <h2>AI와 함께, 나만의 선비길을 시작해보세요</h2>
-            <p>
-              선비 테스트로 나의 유형을 찾고, 추천 코스를 확인하고, 여행 미션을 수행하며,
-              선비의 한마디로 나만의 여정을 기록해보세요.
-            </p>
-          </div>
-
-          <div className="home-section-inner home-journey-layout">
-            <div className="home-timeline" aria-label="서비스 이용 흐름">
-              {journeySteps.map((step, index) => (
-                <article
-                  className="home-step-card"
-                  key={step.number}
-                  style={{ '--home-stagger': `${index * 120}ms` } as CSSProperties}
-                >
-                  <span className="home-step-number">{step.number}</span>
-                  <VisualPlaceholder variant="step" icon={step.icon} compact />
-                  <h3>{step.title}</h3>
-                  <p>{step.description}</p>
-                </article>
-              ))}
+          <AnimatedSection className="home-journey-motion-stage" amount={0.3} staggerChildren={0.1}>
+            <div className="home-section-inner home-section-heading home-journey-heading">
+              <RevealItem>
+                <Badge imageSrc={HOME_ASSETS.journeyBadge} textMode="hidden">
+                  나만의 선비 여정, 이렇게 시작됩니다
+                </Badge>
+              </RevealItem>
+              <RevealItem>
+                <h2>AI와 함께, 나만의 선비길을 시작해보세요</h2>
+              </RevealItem>
+              <RevealItem>
+                <p>
+                  선비 테스트로 나의 유형을 찾고, 추천 코스를 확인하고, 여행 미션을 수행하며,
+                  선비의 한마디로 나만의 여정을 기록해보세요.
+                </p>
+              </RevealItem>
             </div>
 
-            <aside className="home-experience-panel">
-              <h3>영주선비길과 함께하는 특별한 경험</h3>
-              <ul>
-                {experienceItems.map(([item, icon]) => (
-                  <li key={item}>
-                    <HomeImage src={icon} alt="" aria-hidden="true" />
-                    <span>{item}</span>
-                  </li>
+            <div className="home-section-inner home-journey-layout">
+              <div className="home-timeline" aria-label="서비스 이용 흐름">
+                <motion.span
+                  className="home-timeline-connector"
+                  variants={journeyConnectorVariants}
+                  aria-hidden="true"
+                />
+                {journeySteps.map((step) => (
+                  <RevealItem className="home-step-card-reveal" key={step.number}>
+                    <article className="home-step-card">
+                      <span className="home-step-number">{step.number}</span>
+                      <VisualPlaceholder variant="step" icon={step.icon} compact />
+                      <h3>{step.title}</h3>
+                      <p>{step.description}</p>
+                    </article>
+                  </RevealItem>
                 ))}
-              </ul>
-              <dl className="home-stat-grid">
-                <div>
-                  <dt>추천 코스</dt>
-                  <dd>24+</dd>
-                </div>
-                <div>
-                  <dt>문화 지점</dt>
-                  <dd>60+</dd>
-                </div>
-                <div>
-                  <dt>여행 기록</dt>
-                  <dd>1,200+</dd>
-                </div>
-              </dl>
-              <OrnamentalButton
-                imageSrc={HOME_ASSETS.primaryTestButtonWithTassel}
-                to="/test"
-                variant="primary"
-                full
-              >
-                지금 선비 테스트 시작하기
-              </OrnamentalButton>
-              <OrnamentalButton
-                imageSrc={HOME_ASSETS.secondaryCourseButtonPlain}
-                to="/course"
-                variant="light"
-                full
-              >
-                추천 코스 먼저 보기
-              </OrnamentalButton>
-            </aside>
-          </div>
+              </div>
 
-          <div className="home-section-inner home-slogan">
-            <HomeImage src={HOME_ASSETS.iconCompassTiny} alt="" aria-hidden="true" />
-            <p>
-              영주의 선비 정신을 따라, 나를 이해하고 세상을 만나는 여정을 시작하세요.
-              <span>데이터 기반 · AI 맞춤 추천 · 문화여행 경험</span>
-            </p>
-          </div>
+              <RevealItem className="home-experience-panel-reveal" delay={0.16}>
+                <aside className="home-experience-panel">
+                  <h3>영주선비길과 함께하는 특별한 경험</h3>
+                  <ul>
+                    {experienceItems.map(([item, icon]) => (
+                      <li key={item}>
+                        <HomeImage src={icon} alt="" aria-hidden="true" />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <dl className="home-stat-grid">
+                    <div>
+                      <dt>추천 코스</dt>
+                      <dd>24+</dd>
+                    </div>
+                    <div>
+                      <dt>문화 지점</dt>
+                      <dd>60+</dd>
+                    </div>
+                    <div>
+                      <dt>여행 기록</dt>
+                      <dd>1,200+</dd>
+                    </div>
+                  </dl>
+                  <SoftGlowCta>
+                    <OrnamentalButton
+                      imageSrc={HOME_ASSETS.primaryTestButtonWithTassel}
+                      to="/test"
+                      variant="primary"
+                      full
+                    >
+                      지금 선비 테스트 시작하기
+                    </OrnamentalButton>
+                  </SoftGlowCta>
+                  <OrnamentalButton
+                    imageSrc={HOME_ASSETS.secondaryCourseButtonPlain}
+                    to="/course"
+                    variant="light"
+                    full
+                  >
+                    추천 코스 먼저 보기
+                  </OrnamentalButton>
+                </aside>
+              </RevealItem>
+            </div>
+
+            <RevealItem className="home-section-inner home-slogan">
+              <HomeImage src={HOME_ASSETS.iconCompassTiny} alt="" aria-hidden="true" />
+              <p>
+                영주의 선비 정신을 따라, 나를 이해하고 세상을 만나는 여정을 시작하세요.
+                <span>데이터 기반 · AI 맞춤 추천 · 문화여행 경험</span>
+              </p>
+            </RevealItem>
+          </AnimatedSection>
         </section>
       </div>
     </AppLayout>
@@ -933,6 +1074,29 @@ function OrnamentalButton({
   )
 }
 
+function FloatingProductShowcase() {
+  const prefersReducedMotion = useReducedMotion()
+  const isPageVisible = usePageVisibility()
+
+  return (
+    <motion.div
+      className="home-product-float-shell"
+      animate={
+        prefersReducedMotion || !isPageVisible
+          ? { y: 0 }
+          : { y: [0, -7, 0] }
+      }
+      transition={{
+        duration: 6.4,
+        repeat: prefersReducedMotion || !isPageVisible ? 0 : Infinity,
+        ease: 'easeInOut',
+      }}
+    >
+      <HeroProductShowcase />
+    </motion.div>
+  )
+}
+
 function HeroProductShowcase() {
   return (
     <div className="home-product-showcase" aria-label="AI 추천 코스 미리보기">
@@ -957,6 +1121,7 @@ function HeroProductShowcase() {
         />
         <HomeImage src={HOME_ASSETS.heroFrame} alt="" aria-hidden="true" eager />
       </div>
+      <AnimatedRouteLine className="home-hero-preview-route" drawOnLoad />
       <div className="home-showcase-top-card">
         <HomeImage
           src={HOME_ASSETS.heroChoicePanel}
@@ -1146,6 +1311,7 @@ function CoreFeaturePreview({
         aria-label={label}
       >
         <HomeImage className="home-core-preview-image" src={imageSrc} alt="" aria-hidden="true" />
+        <PreviewMicroEffect variant={variant} />
       </div>
     )
   }
@@ -1176,6 +1342,7 @@ function CoreFeaturePreview({
         {Array.from({ length: 16 }).map((_, index) => (
           <i key={index} />
         ))}
+        <PreviewMicroEffect variant={variant} />
       </div>
     )
   }
@@ -1219,6 +1386,7 @@ function CoreFeaturePreview({
           <span>탐방</span>
           <span>체험</span>
         </div>
+        <PreviewMicroEffect variant={variant} />
       </div>
     )
   }
@@ -1248,6 +1416,7 @@ function CoreFeaturePreview({
           <li>보통 관련</li>
           <li>약한 관련</li>
         </ul>
+        <PreviewMicroEffect variant={variant} />
       </div>
     )
   }
@@ -1274,8 +1443,144 @@ function CoreFeaturePreview({
         />
         <span>부석사 · 안심일</span>
       </article>
+      <PreviewMicroEffect variant={variant} />
     </div>
   )
+}
+
+function PreviewMicroEffect({ variant }: { variant: VisualVariant }) {
+  const prefersReducedMotion = useReducedMotion()
+
+  if (variant === 'heatmap') {
+    return (
+      <motion.span
+        className="home-preview-pulse"
+        initial={prefersReducedMotion ? false : { opacity: 0, scale: 0.6 }}
+        whileInView={
+          prefersReducedMotion
+            ? { opacity: 0.82, scale: 1 }
+            : { opacity: [0, 0.95, 0.72], scale: [0.6, 1.45, 1] }
+        }
+        viewport={{ once: true, amount: 0.55 }}
+        transition={{ duration: prefersReducedMotion ? 0 : 0.8, ease: homeMotionEase }}
+      />
+    )
+  }
+
+  if (variant === 'course3d') {
+    return (
+      <AnimatedRouteLine
+        className="home-preview-route-draw"
+        path="M12 88 C38 46 72 68 94 34 C122 -2 150 56 188 18"
+        viewBox="0 0 200 100"
+      />
+    )
+  }
+
+  if (variant === 'graph') {
+    return (
+      <motion.div
+        className="home-preview-graph-burst"
+        initial="hidden"
+        whileInView="show"
+        viewport={{ once: true, amount: 0.55 }}
+        variants={{
+          hidden: {},
+          show: {
+            transition: {
+              staggerChildren: prefersReducedMotion ? 0 : 0.07,
+              delayChildren: prefersReducedMotion ? 0 : 0.16,
+            },
+          },
+        }}
+      >
+        {graphPreviewNodes.map((node) => (
+          <motion.span
+            key={node.id}
+            variants={{
+              hidden: prefersReducedMotion
+                ? { opacity: 1, scale: 1, x: node.x, y: node.y }
+                : { opacity: 0, scale: 0.38, x: 0, y: 0 },
+              show: {
+                opacity: 1,
+                scale: 1,
+                x: node.x,
+                y: node.y,
+                transition: {
+                  duration: prefersReducedMotion ? 0 : 0.58,
+                  ease: homeMotionEase,
+                },
+              },
+            }}
+          />
+        ))}
+      </motion.div>
+    )
+  }
+
+  if (variant === 'diary') {
+    return (
+      <motion.div
+        className="home-preview-parchment"
+        initial={prefersReducedMotion ? false : { opacity: 0, y: 28 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.55 }}
+        transition={{ duration: prefersReducedMotion ? 0 : 0.68, ease: homeMotionEase }}
+      >
+        <span>오늘의 기록</span>
+        <b>선비촌의 오후</b>
+      </motion.div>
+    )
+  }
+
+  return null
+}
+
+function SoftGlowCta({ children }: { children: ReactNode }) {
+  const prefersReducedMotion = useReducedMotion()
+
+  return (
+    <motion.div
+      className="home-primary-cta-glow"
+      initial={false}
+      whileInView={
+        prefersReducedMotion
+          ? { filter: 'drop-shadow(0 0 0 rgba(199, 155, 69, 0))' }
+          : {
+              filter: [
+                'drop-shadow(0 0 0 rgba(199, 155, 69, 0))',
+                'drop-shadow(0 0 20px rgba(234, 214, 165, 0.72))',
+                'drop-shadow(0 0 0 rgba(199, 155, 69, 0))',
+              ],
+            }
+      }
+      viewport={{ once: true, amount: 0.7 }}
+      transition={{ delay: prefersReducedMotion ? 0 : 0.38, duration: prefersReducedMotion ? 0 : 1.15 }}
+    >
+      {children}
+    </motion.div>
+  )
+}
+
+function usePageVisibility() {
+  const [isPageVisible, setIsPageVisible] = useState(() =>
+    typeof document === 'undefined' ? true : !document.hidden,
+  )
+
+  useEffect(() => {
+    function handleVisibilityChange() {
+      setIsPageVisible(!document.hidden)
+    }
+
+    handleVisibilityChange()
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
+  }, [])
+
+  return isPageVisible
 }
 
 function ResultPanel({ profile }: { profile: SeonbiProfile }) {
