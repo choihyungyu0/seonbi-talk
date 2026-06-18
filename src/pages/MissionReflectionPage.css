@@ -571,21 +571,23 @@
 
 .mission-reflection-keywords {
   position: absolute;
-  right: 8%;
+  right: 0;
   bottom: max(44px, 10%);
-  left: 8%;
+  left: 0;
   z-index: 1;
-  display: grid;
-  grid-template-columns: minmax(112px, auto) repeat(4, minmax(0, 1fr));
-  gap: 10px;
-  align-items: center;
+  display: block;
+  height: 34px;
 }
 
 .mission-reflection-keywords span {
+  position: absolute;
+  top: 50%;
+  left: 7.3%;
   color: #46381f;
   font-family: var(--serif);
   font-size: 16px;
   font-weight: 950;
+  transform: translateY(-55%);
   white-space: nowrap;
 }
 
@@ -614,9 +616,35 @@
 }
 
 .mission-reflection-keywords button {
+  position: absolute;
+  top: 50%;
+  height: 34px;
+  min-height: 0;
+  padding-inline: 8px;
   overflow: hidden;
   text-overflow: ellipsis;
+  transform: translateY(-50%);
   cursor: pointer;
+}
+
+.mission-reflection-keywords button:nth-of-type(1) {
+  left: 22.9%;
+  width: 15.1%;
+}
+
+.mission-reflection-keywords button:nth-of-type(2) {
+  left: 40%;
+  width: 16.5%;
+}
+
+.mission-reflection-keywords button:nth-of-type(3) {
+  left: 58.6%;
+  width: 16.8%;
+}
+
+.mission-reflection-keywords button:nth-of-type(4) {
+  left: 77.5%;
+  width: 16.5%;
 }
 
 .mission-reflection-ai-card {
@@ -1022,11 +1050,7 @@
   }
 
   .mission-reflection-keywords {
-    right: 8.5%;
     bottom: max(40px, 9%);
-    left: 8.5%;
-    grid-template-columns: 104px repeat(4, minmax(0, 1fr));
-    gap: 8px;
   }
 
   .mission-reflection-keywords span {
@@ -1034,8 +1058,7 @@
   }
 
   .mission-reflection-keywords button {
-    min-height: 34px;
-    padding-inline: 10px;
+    height: 32px;
     font-size: 14px;
   }
 
@@ -1377,19 +1400,27 @@
     right: auto;
     bottom: auto;
     left: auto;
+    display: grid;
+    height: auto;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 8px;
   }
 
   .mission-reflection-keywords span {
+    position: static;
     grid-column: 1 / -1;
     font-size: 15px;
+    transform: none;
   }
 
   .mission-reflection-keywords button {
+    position: static;
+    width: auto;
+    height: auto;
     min-height: 34px;
     padding-inline: 8px;
     font-size: 14px;
+    transform: none;
   }
 }
 

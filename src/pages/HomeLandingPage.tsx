@@ -1095,15 +1095,17 @@ function HeroProductShowcase() {
       </div>
 
       <div className="home-showcase-controls" aria-hidden="true">
-        <HomeImage
-          src={HOME_ASSETS.heroMapButtonPanel}
-          alt=""
-          eager
-          responsiveWidths={[480, 960, 1440]}
-          sizes="(min-width: 1200px) 18vw, 70vw"
-        />
-        <HomeImage src={HOME_ASSETS.iconSettings} alt="" eager />
-        <HomeImage src={HOME_ASSETS.zoomControl} alt="" eager />
+        <span className="home-map-control">
+          <HomeImage src={HOME_ASSETS.iconBook} alt="" eager />
+          2D 지도 보기
+        </span>
+        <span className="home-icon-control">
+          <HomeImage src={HOME_ASSETS.iconSettings} alt="" eager />
+        </span>
+        <span className="home-zoom-control">
+          <span>-</span>
+          <span>+</span>
+        </span>
       </div>
     </div>
   )
