@@ -299,6 +299,14 @@ interface RoutePreviewStop {
   iconPath: `/images/new/${string}`
 }
 
+interface RouteMarkerDisplayOffset {
+  lat: number
+  lng: number
+  altitude: number
+  collisionPriority: number
+  zIndex: number
+}
+
 type MissionTourApiImageUrls = Partial<Record<Tour3DRouteStopId, string>>
 
 interface TourismProxyImageResponse {
@@ -313,6 +321,24 @@ const routePreviewStops: RoutePreviewStop[] = tour3DRouteStops.map((stop) => ({
   mission: missionCopyByStopId[stop.id],
   iconPath: stop.iconPath,
 }))
+
+// Keep actual route coordinates intact; only spread close marker billboards in overview.
+const routeMarkerDisplayOffsets: Partial<Record<Tour3DRouteStopId, RouteMarkerDisplayOffset>> = {
+  'sosu-seowon': {
+    lat: -0.007,
+    lng: -0.0105,
+    altitude: 140,
+    collisionPriority: 420,
+    zIndex: 420,
+  },
+  seonbichon: {
+    lat: 0.0105,
+    lng: 0.015,
+    altitude: 220,
+    collisionPriority: 440,
+    zIndex: 440,
+  },
+}
 
 type MissionSpotId = Tour3DRouteStopId
 type MissionChecklistStatus = 'completed' | 'active' | 'idle'
@@ -927,9 +953,16 @@ export function GoogleTour3DPreviewPage() {
   useEffect(() => {
     markerElementsRef.current.forEach((marker, markerId) => {
       const isSelected = markerId === selectedSpotId
-      const isRouteStop = isMissionSpotId(markerId)
-      marker.zIndex = isSelected ? 120 : isRouteStop ? 80 : 10
-      marker.collisionPriority = isSelected ? 120 : isRouteStop ? 90 : 20
+      const routeStop = routePreviewStops.find((stop) => stop.spotId === markerId)
+      const isRouteStop = Boolean(routeStop)
+      const zIndex = getRouteMarkerZIndex(routeStop)
+      const collisionPriority = getRouteMarkerCollisionPriority(routeStop)
+      marker.zIndex = isSelected ? zIndex + 100 : isRouteStop ? zIndex : 10
+      marker.collisionPriority = isSelected
+        ? collisionPriority + 100
+        : isRouteStop
+          ? collisionPriority
+          : 20
       marker.drawsWhenOccluded = isSelected || isRouteStop
       marker.extruded = isSelected
       marker.classList.toggle('is-active', isSelected)
@@ -1556,6 +1589,36 @@ function createRouteMarkerGraphic(stop: RoutePreviewStop) {
   return template
 }
 
+function getMarkerPosition(
+  spot: Tour3DSpot,
+  routeStop: RoutePreviewStop | undefined,
+): GoogleMap3DCenter {
+  const displayOffset = routeStop
+    ? routeMarkerDisplayOffsets[routeStop.spotId]
+    : undefined
+
+  return {
+    lat: spot.lat + (displayOffset?.lat ?? 0),
+    lng: spot.lng + (displayOffset?.lng ?? 0),
+    altitude: displayOffset?.altitude ?? (routeStop ? 48 : 70),
+  }
+}
+
+function getRouteMarkerZIndex(routeStop: RoutePreviewStop | undefined) {
+  if (!routeStop) return 0
+
+  return routeMarkerDisplayOffsets[routeStop.spotId]?.zIndex ?? 180 + routeStop.number
+}
+
+function getRouteMarkerCollisionPriority(routeStop: RoutePreviewStop | undefined) {
+  if (!routeStop) return 20
+
+  return (
+    routeMarkerDisplayOffsets[routeStop.spotId]?.collisionPriority ??
+    180 + routeStop.number
+  )
+}
+
 function preventGooglePlaceDetailsPopover(event: Event) {
   const placeClickEvent = event as GoogleMap3DPlaceClickEvent
   if (typeof placeClickEvent.placeId === 'string') {
@@ -1633,25 +1696,21 @@ function createSpotMarkers(
     maps3d.CollisionBehavior?.OPTIONAL_AND_HIDES_LOWER_PRIORITY ??
     maps3d.CollisionBehavior?.REQUIRED ??
     'OPTIONAL_AND_HIDES_LOWER_PRIORITY'
-  const requiredCollisionBehavior = maps3d.CollisionBehavior?.REQUIRED ?? collisionBehavior
+  const requiredCollisionBehavior = maps3d.CollisionBehavior?.REQUIRED ?? 'REQUIRED'
 
   tour3DSpots.forEach((spot, index) => {
     const routeStop = routePreviewStops.find((stop) => stop.spotId === spot.id)
     const marker = new maps3d.Marker3DInteractiveElement({
       altitudeMode,
       collisionBehavior: routeStop ? requiredCollisionBehavior : collisionBehavior,
-      collisionPriority: routeStop ? 90 + routeStop.number : 20,
+      collisionPriority: getRouteMarkerCollisionPriority(routeStop),
       drawsWhenOccluded: Boolean(routeStop),
       extruded: false,
       label: routeStop ? undefined : spot.name,
-      position: {
-        lat: spot.lat,
-        lng: spot.lng,
-        altitude: routeStop ? 12 : 70,
-      },
+      position: getMarkerPosition(spot, routeStop),
       sizePreserved: true,
       title: spot.name,
-      zIndex: routeStop ? 80 + routeStop.number : index + 1,
+      zIndex: routeStop ? getRouteMarkerZIndex(routeStop) : index + 1,
     })
 
     marker.className = routeStop
@@ -1665,6 +1724,8 @@ function createSpotMarkers(
     )
     if (routeStop) {
       marker.dataset.routeStopId = routeStop.spotId
+      marker.dataset.actualLat = String(spot.lat)
+      marker.dataset.actualLng = String(spot.lng)
       marker.append(createRouteMarkerGraphic(routeStop))
     }
     marker.addEventListener('gmp-click', () => onSelectSpot(spot))

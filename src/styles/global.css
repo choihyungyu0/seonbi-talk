@@ -2596,13 +2596,18 @@ a {
 }
 
 .tour3d-route-map-marker[data-route-stop-id='seonbichon'] {
-  --tour3d-pin-x: 72px;
-  --tour3d-pin-y: 12px;
+  --tour3d-pin-x: 52px;
+  --tour3d-pin-y: -16px;
 }
 
 .tour3d-route-map-marker[data-route-stop-id='sosu-seowon'] {
-  --tour3d-pin-x: 176px;
-  --tour3d-pin-y: -54px;
+  --tour3d-pin-x: -54px;
+  --tour3d-pin-y: 4px;
+}
+
+.tour3d-route-map-marker[data-route-stop-id='seonbichon'] .tour3d-route-pin,
+.tour3d-route-map-marker[data-route-stop-id='sosu-seowon'] .tour3d-route-pin {
+  width: clamp(76px, 5.2vw, 98px);
 }
 
 .tour3d-route-pin {
