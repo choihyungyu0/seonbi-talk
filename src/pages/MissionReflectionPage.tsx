@@ -193,6 +193,7 @@ export function MissionReflectionPage() {
           <AiReflectionInsightCard data={currentData} />
         </section>
         <MissionReflectionActionBar
+          showNextAction={currentData.step < missionSteps.length}
           nextRoute={currentData.nextRoute}
           onEdit={() => textareaRef.current?.focus()}
           onSave={handleSave}
@@ -380,10 +381,12 @@ function AiReflectionInsightCard({ data }: { data: MissionReflectionData }) {
 }
 
 function MissionReflectionActionBar({
+  showNextAction,
   nextRoute,
   onEdit,
   onSave,
 }: {
+  showNextAction: boolean
   nextRoute: string
   onEdit: () => void
   onSave: () => void
@@ -391,7 +394,15 @@ function MissionReflectionActionBar({
   const navigate = useNavigate()
 
   return (
-    <footer className="mission-reflection-action-bar" aria-label="미션 완료 액션">
+    <footer
+      className={[
+        'mission-reflection-action-bar',
+        showNextAction ? '' : 'mission-reflection-action-bar--without-next',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+      aria-label="미션 완료 액션"
+    >
       <button type="button" className="mission-reflection-action mission-reflection-action--edit" onClick={onEdit}>
         <img src={imageAsset('e.png')} alt="수정하기" />
         <span>수정하기</span>
@@ -404,14 +415,16 @@ function MissionReflectionActionBar({
         <img src={imageAsset('z.png')} alt="기록 저장하기" />
         <span>기록 저장하기</span>
       </button>
-      <button
-        type="button"
-        className="mission-reflection-action mission-reflection-action--next"
-        onClick={() => navigate(nextRoute)}
-      >
-        <img src={imageAsset('q.png')} alt="다음 장소로 이동하기" />
-        <span>다음 장소로 이동하기</span>
-      </button>
+      {showNextAction && (
+        <button
+          type="button"
+          className="mission-reflection-action mission-reflection-action--next"
+          onClick={() => navigate(nextRoute)}
+        >
+          <img src={imageAsset('q.png')} alt="다음 장소로 이동하기" />
+          <span>다음 장소로 이동하기</span>
+        </button>
+      )}
     </footer>
   )
 }

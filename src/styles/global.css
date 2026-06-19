@@ -1,3 +1,35 @@
+@font-face {
+  font-family: 'YeongjuSeonbi';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/YEONGJUSeonbi.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'YeongjuSeonbi';
+  font-style: normal;
+  font-weight: 700 950;
+  font-display: swap;
+  src: url('/fonts/YEONGJUSeonbi.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'YeongjuPunggiGinseng';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/YEONGJUPunggiGinseng.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'YeongjuPunggiGinseng';
+  font-style: normal;
+  font-weight: 700 950;
+  font-display: swap;
+  src: url('/fonts/YEONGJUPunggiGinseng.ttf') format('truetype');
+}
+
 :root {
   --paper: #f9f6ef;
   --paper-deep: #f1edec;
@@ -16,9 +48,16 @@
   --error: #a33125;
   --success: #2d654c;
   --shadow: 0 18px 48px rgba(47, 49, 49, 0.08);
-  --serif: 'Noto Serif KR', 'Noto Serif', Georgia, serif;
-  --sans: Manrope, 'Public Sans', system-ui, -apple-system, BlinkMacSystemFont,
-    'Segoe UI', sans-serif;
+  --font-title: 'YeongjuSeonbi', 'Noto Serif KR', 'Noto Serif', Georgia, serif;
+  --font-accent: 'YeongjuPunggiGinseng', 'YeongjuSeonbi', 'Noto Serif KR', Georgia,
+    serif;
+  --font-ui: 'SUIT Variable', SUIT, Pretendard, 'Apple SD Gothic Neo',
+    'Malgun Gothic', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    sans-serif;
+  --font-data: 'SUIT Variable', SUIT, 'Apple SD Gothic Neo', 'Malgun Gothic',
+    system-ui, sans-serif;
+  --serif: var(--font-title);
+  --sans: var(--font-ui);
 
   color: var(--ink);
   background: var(--paper);
@@ -15131,4 +15170,116 @@ a {
 
 .top-nav .brand-logo-image--mark {
   opacity: 0;
+}
+
+/* Font role policy: title = Yeongju Seonbi, UI/data = SUIT, emotional text = Punggi Ginseng. */
+body {
+  font-family: var(--font-ui);
+}
+
+h1,
+.page-title,
+.hero-title-line,
+.brand-link strong,
+.home-app-shell .brand-link strong,
+.app-shell--login .brand-link strong,
+.test-app-shell .brand-link strong {
+  font-family: var(--font-title);
+}
+
+button,
+input,
+select,
+textarea,
+.button,
+.common-button,
+.nav-login-link,
+.nav-button-link,
+.nav-user-label,
+.desktop-nav a,
+.desktop-nav button,
+.bottom-nav a,
+.bottom-nav button,
+.status-badge,
+.form-error,
+.success-message,
+.disabled-notice,
+.admin-status-message,
+.signup-status-message,
+.judge-share-message,
+.knowledge-command-message,
+.rag-chat-message,
+.card-symbol,
+.home-carousel-status,
+.home-hero-fallback-copy,
+.home-floating-image figcaption,
+.course-data-source-note,
+.tourism-data-source-note,
+.feature-card h2,
+.tourism-card h3,
+.admin-panel h2,
+.admin-form h1,
+.admin-stat-card,
+.ai-evidence-page,
+.ai-evidence-card h2,
+.ai-evidence-panel h2,
+.ai-evidence-trace-bar h2,
+.ai-evidence-card strong,
+.ai-evidence-metrics,
+.journey-report-stepper,
+.journey-report-stat-card,
+.journey-report-stat-card strong,
+.journey-card h2,
+.journey-card h3,
+.mission-reflection-stepper,
+.mission-reflection-card-title,
+.mission-reflection-list-box h3,
+.mission-reflection-reward-box h3,
+.mission-reflection-keywords,
+.mission-reflection-ai-chips,
+.mission-reflection-action,
+.mission-reflection-next-card strong,
+.one-line-button,
+.one-line-card-title,
+.one-line-panel-heading,
+.one-line-filter-chips,
+.one-line-sort-controls,
+.one-line-row-tags,
+.one-line-row-actions,
+.my-one-line-stat-card,
+.one-line-mini-stat,
+.reflection-filter-row,
+.seonbi-result-stat-card,
+.seonbi-result-panel h2,
+.seonbi-ai-panel h2,
+.seonbi-theme-card,
+.knowledge-graph-scene,
+.knowledge-panel,
+.knowledge-chip,
+.knowledge-node-detail,
+.tour3d-stepper,
+.tour3d-control-panel,
+.tour3d-map-status,
+.tour3d-course-card,
+.heatmap-control-panel,
+.heatmap-stat-card {
+  font-family: var(--font-ui);
+}
+
+blockquote,
+.quote,
+.seonbi-message,
+.wisdom-visual,
+.wisdom-visual-info h2,
+.judge-advice-quote,
+.judge-advice-quote p,
+.mission-reflection-writing-card blockquote,
+.mission-reflection-writing-card blockquote strong,
+.mission-reflection-writing-card blockquote span,
+.one-line-record-row blockquote,
+.selected-preview-card blockquote,
+.reflection-record-list p,
+.journey-reflection-list p,
+.seonbi-result-subtitle {
+  font-family: var(--font-accent);
 }

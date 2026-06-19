@@ -99,10 +99,10 @@ const HOME_ASSETS = {
   heroCoursePreview: '/images/home/optimized/image-Photoroom (50).webp',
   heroHeatmapPreview: '/images/home/optimized/image-Photoroom (8).webp',
   heroGraphPreview: '/images/home/optimized/image-Photoroom (24).webp',
-  targetTeaserType: '/images/home/optimized/target-teaser-type.webp',
-  targetTeaserCourse: '/images/home/optimized/target-teaser-course.webp',
-  targetTeaserHeatmap: '/images/home/optimized/target-teaser-heatmap.webp',
-  targetTeaserGraph: '/images/home/optimized/target-teaser-graph.webp',
+  targetTeaserType: '/images/home/target-teaser-type.png',
+  targetTeaserCourse: '/images/home/target-teaser-course.png',
+  targetTeaserHeatmap: '/images/home/target-teaser-heatmap.png',
+  targetTeaserGraph: '/images/home/target-teaser-graph.png',
   coreFeatureHeatmap: '/images/home/core-feature-heatmap.webp',
   coreFeatureCourse: '/images/home/core-feature-course.webp',
   coreFeatureGraph: '/images/home/core-feature-graph.webp',
@@ -1296,7 +1296,6 @@ function CoreFeaturePreview({
         aria-label={label}
       >
         <HomeImage className="home-core-preview-image" src={imageSrc} alt="" aria-hidden="true" />
-        <PreviewMicroEffect variant={variant} />
       </div>
     )
   }
