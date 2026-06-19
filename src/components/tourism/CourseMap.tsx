@@ -169,6 +169,21 @@ export function CourseMap({
           })
         }
 
+        const boundsPath =
+          routeLinePath.length >= 2
+            ? routeLinePath
+            : [
+                ...coordinateItems.map(({ lat, lng }) => ({ lat, lng })),
+                ...(currentLocation ? [currentLocation] : []),
+              ]
+        if (boundsPath.length >= 2) {
+          const bounds = new maps.LatLngBounds()
+          boundsPath.forEach((item) => {
+            bounds.extend(new maps.LatLng(item.lat, item.lng))
+          })
+          map.setBounds(bounds)
+        }
+
         setLoadStatus('ready')
       } catch {
         setLoadStatus('error')
@@ -228,6 +243,8 @@ export function CourseMap({
         <div
           ref={mapContainerRef}
           className={status === 'ready' ? 'course-map-canvas ready' : 'course-map-canvas'}
+          data-route-point-count={routeLinePath.length}
+          data-route-source={routeSource}
           aria-label="영주 관광 지도"
         />
       </div>

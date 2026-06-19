@@ -14,8 +14,10 @@ import {
   requestGoogleCourseRoute,
   type GoogleCourseRouteSource,
 } from '../features/tourism/googleRouteApi'
+import { requestRoutePath, type RoutePathSource } from '../features/tourism/routeApi'
 import { getTourismPrimaryImageUrl } from '../features/tourism/tourismImageUrl'
 import type { TourismContent } from '../features/tourism/tourismTypes'
+import { useLanguage, type AppLanguage } from '../features/i18n/LanguageContext'
 
 type GoogleMaps3DLoadStatus = 'idle' | 'loading' | 'ready' | 'missing-key' | 'error'
 
@@ -187,28 +189,120 @@ const tour3DRouteStops = toegyeCourseStops.filter(
   (stop): stop is Tour3DRouteStop => stop.id !== 'seonbi-record',
 )
 
-const tour2DRouteItems: TourismContent[] = tour3DRouteStops.map((stop) => ({
-  contentId: stop.id,
-  title: stop.name,
-  name: stop.name,
-  address: stop.address,
-  mapX: stop.lng,
-  mapY: stop.lat,
-  category: 'course',
-  source: 'NationalTourismStandardData',
-  sourceLabel: '퇴계형 선비길 코스',
-  dataEvidence: ['3D 코스 미리보기의 주요 경유지 좌표'],
-}))
-
 const tour3DFallbackRoutePath: RouteCoordinate[] = [
   { lat: 36.92556, lng: 128.58 },
+  { lat: 36.927133, lng: 128.57988 },
+  { lat: 36.929004, lng: 128.581787 },
+  { lat: 36.928564, lng: 128.583356 },
+  { lat: 36.929461, lng: 128.583452 },
+  { lat: 36.928564, lng: 128.583356 },
   { lat: 36.928557, lng: 128.582677 },
-  { lat: 36.9281, lng: 128.5892 },
-  { lat: 36.9531, lng: 128.626 },
+  { lat: 36.929004, lng: 128.581787 },
+  { lat: 36.9297, lng: 128.58198 },
+  { lat: 36.936633, lng: 128.585853 },
+  { lat: 36.938826, lng: 128.590764 },
+  { lat: 36.946642, lng: 128.5982 },
+  { lat: 36.948042, lng: 128.601289 },
+  { lat: 36.9483, lng: 128.61253 },
+  { lat: 36.949117, lng: 128.615624 },
+  { lat: 36.954049, lng: 128.620016 },
+  { lat: 36.954189, lng: 128.621253 },
+  { lat: 36.9573, lng: 128.625461 },
+  { lat: 36.95901, lng: 128.62625 },
+  { lat: 36.96103, lng: 128.62904 },
+  { lat: 36.96545, lng: 128.63266 },
+  { lat: 36.97369, lng: 128.64481 },
+  { lat: 36.974578, lng: 128.646709 },
+  { lat: 36.975471, lng: 128.654194 },
+  { lat: 36.977159, lng: 128.656561 },
+  { lat: 36.979922, lng: 128.657416 },
+  { lat: 36.981834, lng: 128.664029 },
+  { lat: 36.98113, lng: 128.66757 },
+  { lat: 36.98308, lng: 128.67577 },
+  { lat: 36.98328, lng: 128.68126 },
+  { lat: 36.984437, lng: 128.683481 },
+  { lat: 36.988231, lng: 128.680206 },
+  { lat: 36.992598, lng: 128.680522 },
+  { lat: 36.993906, lng: 128.681323 },
+  { lat: 36.995155, lng: 128.688908 },
+  { lat: 36.996749, lng: 128.690078 },
   { lat: 36.998969, lng: 128.68746 },
-  { lat: 36.9484, lng: 128.6735 },
-  { lat: 36.8766, lng: 128.6428 },
-  { lat: 36.7331746, lng: 128.6210331 },
+  { lat: 36.996749, lng: 128.690078 },
+  { lat: 36.995155, lng: 128.688908 },
+  { lat: 36.993906, lng: 128.681323 },
+  { lat: 36.992598, lng: 128.680522 },
+  { lat: 36.988231, lng: 128.680206 },
+  { lat: 36.984437, lng: 128.683481 },
+  { lat: 36.98328, lng: 128.68126 },
+  { lat: 36.98308, lng: 128.67577 },
+  { lat: 36.98113, lng: 128.66757 },
+  { lat: 36.982005, lng: 128.66474 },
+  { lat: 36.979989, lng: 128.657273 },
+  { lat: 36.977159, lng: 128.656561 },
+  { lat: 36.97556, lng: 128.65428 },
+  { lat: 36.973471, lng: 128.652964 },
+  { lat: 36.971411, lng: 128.653864 },
+  { lat: 36.967657, lng: 128.653547 },
+  { lat: 36.963913, lng: 128.657041 },
+  { lat: 36.956928, lng: 128.656088 },
+  { lat: 36.953911, lng: 128.654304 },
+  { lat: 36.950655, lng: 128.656014 },
+  { lat: 36.944903, lng: 128.650814 },
+  { lat: 36.939877, lng: 128.649631 },
+  { lat: 36.935985, lng: 128.646209 },
+  { lat: 36.932441, lng: 128.645684 },
+  { lat: 36.930011, lng: 128.643964 },
+  { lat: 36.926097, lng: 128.643061 },
+  { lat: 36.923809, lng: 128.644021 },
+  { lat: 36.922622, lng: 128.645588 },
+  { lat: 36.919855, lng: 128.650381 },
+  { lat: 36.918041, lng: 128.655684 },
+  { lat: 36.915879, lng: 128.65919 },
+  { lat: 36.914824, lng: 128.659505 },
+  { lat: 36.912111, lng: 128.658504 },
+  { lat: 36.907259, lng: 128.654782 },
+  { lat: 36.90485, lng: 128.654173 },
+  { lat: 36.903491, lng: 128.652524 },
+  { lat: 36.898601, lng: 128.649704 },
+  { lat: 36.897221, lng: 128.649784 },
+  { lat: 36.894651, lng: 128.648264 },
+  { lat: 36.891331, lng: 128.644464 },
+  { lat: 36.881951, lng: 128.641214 },
+  { lat: 36.879201, lng: 128.638824 },
+  { lat: 36.876771, lng: 128.637894 },
+  { lat: 36.871841, lng: 128.637071 },
+  { lat: 36.869133, lng: 128.638388 },
+  { lat: 36.861903, lng: 128.638919 },
+  { lat: 36.854911, lng: 128.638554 },
+  { lat: 36.851491, lng: 128.637084 },
+  { lat: 36.848761, lng: 128.638184 },
+  { lat: 36.845335, lng: 128.641328 },
+  { lat: 36.839122, lng: 128.642 },
+  { lat: 36.836217, lng: 128.641385 },
+  { lat: 36.833126, lng: 128.639499 },
+  { lat: 36.829847, lng: 128.63574 },
+  { lat: 36.827884, lng: 128.637 },
+  { lat: 36.824958, lng: 128.636561 },
+  { lat: 36.817114, lng: 128.637406 },
+  { lat: 36.801954, lng: 128.630659 },
+  { lat: 36.798469, lng: 128.63198 },
+  { lat: 36.796402, lng: 128.631592 },
+  { lat: 36.793955, lng: 128.63289 },
+  { lat: 36.792745, lng: 128.631955 },
+  { lat: 36.789298, lng: 128.634296 },
+  { lat: 36.786137, lng: 128.634728 },
+  { lat: 36.774337, lng: 128.630093 },
+  { lat: 36.772177, lng: 128.631279 },
+  { lat: 36.766086, lng: 128.629362 },
+  { lat: 36.760302, lng: 128.629794 },
+  { lat: 36.757458, lng: 128.627049 },
+  { lat: 36.753556, lng: 128.625913 },
+  { lat: 36.74687, lng: 128.629326 },
+  { lat: 36.741842, lng: 128.630548 },
+  { lat: 36.736051, lng: 128.630049 },
+  { lat: 36.733588, lng: 128.629457 },
+  { lat: 36.734371, lng: 128.627845 },
+  { lat: 36.733175, lng: 128.621033 },
 ]
 
 const tour3DSpots: Tour3DSpot[] = [
@@ -341,6 +435,71 @@ const routePreviewStops: RoutePreviewStop[] = tour3DRouteStops.map((stop) => ({
   mission: missionCopyByStopId[stop.id],
   iconPath: stop.iconPath,
 }))
+
+const routeStopEnglishCopy: Record<Tour3DRouteStopId, { name: string; mission: string }> = {
+  'sosu-seowon': {
+    name: 'Sosu Seowon',
+    mission: 'Listen to the learning-spirit commentary',
+  },
+  seonbichon: {
+    name: 'Seonbichon',
+    mission: 'Explore traditional living spaces',
+  },
+  buseoksa: {
+    name: 'Buseoksa',
+    mission: 'Complete a nature reflection mission',
+  },
+  'museom-village': {
+    name: 'Museom Village',
+    mission: 'Walk the quiet village path',
+  },
+}
+
+const tour3DSpotEnglishNames: Record<string, string> = {
+  [initialCamera.id]: 'Full Seonbi Trail',
+  'sosu-seowon': 'Sosu Seowon',
+  seonbichon: 'Seonbichon',
+  buseoksa: 'Buseoksa',
+  'museom-village': 'Museom Village',
+}
+
+function getRoutePreviewStops(language: AppLanguage) {
+  if (language === 'ko') return routePreviewStops
+
+  return routePreviewStops.map((stop) => ({
+    ...stop,
+    name: routeStopEnglishCopy[stop.spotId].name,
+    mission: routeStopEnglishCopy[stop.spotId].mission,
+  }))
+}
+
+function getLocalizedSpotName(spotId: string, fallbackName: string, language: AppLanguage) {
+  if (language === 'ko') return fallbackName
+
+  return tour3DSpotEnglishNames[spotId] ?? fallbackName
+}
+
+function getLocalizedTour2DRouteItems(language: AppLanguage): TourismContent[] {
+  return tour3DRouteStops.map((stop) => {
+    const name = language === 'en' ? routeStopEnglishCopy[stop.id].name : stop.name
+
+    return {
+      contentId: stop.id,
+      title: name,
+      name,
+      address: stop.address,
+      mapX: stop.lng,
+      mapY: stop.lat,
+      category: 'course',
+      source: 'NationalTourismStandardData',
+      sourceLabel: language === 'en' ? 'Toegye Seonbi Trail Course' : '퇴계형 선비길 코스',
+      dataEvidence:
+        language === 'en'
+          ? ['Main stop coordinates for the 3D course preview']
+          : ['3D 코스 미리보기의 주요 경유지 좌표'],
+    }
+  })
+}
 
 // Keep actual route coordinates intact; only spread close marker billboards in overview.
 const routeMarkerDisplayOffsets: Partial<Record<Tour3DRouteStopId, RouteMarkerDisplayOffset>> = {
@@ -807,12 +966,14 @@ function isMissionSpotId(spotId: string | null | undefined): spotId is MissionSp
 }
 
 let googleMapsScriptPromise: Promise<void> | null = null
+let googleMapsScriptLanguage: AppLanguage | null = null
 
 type CourseRouteRenderSource = GoogleCourseRouteSource | 'custom-path-fallback'
+type CourseRouteStateSource = CourseRouteRenderSource | RoutePathSource
 
 interface CourseRouteState {
   path: RouteCoordinate[]
-  source: CourseRouteRenderSource
+  source: CourseRouteStateSource
   distanceMeters: number
   duration: string
 }
@@ -827,8 +988,14 @@ export function GoogleTour3DPreviewPage() {
   const routePolylineElementsRef = useRef<GoogleMap3DPolylineElement[]>([])
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
+  const { language } = useLanguage()
   const courseType = getCourseType(searchParams.get('course'))
   const courseCopy = coursePreviewCopy[courseType]
+  const localizedRoutePreviewStops = useMemo(() => getRoutePreviewStops(language), [language])
+  const localizedTour2DRouteItems = useMemo(
+    () => getLocalizedTour2DRouteItems(language),
+    [language],
+  )
   const isMissionMode = searchParams.get('mode') === 'mission'
   const requestedPlaceId = searchParams.get('place')
   const requestedSpot = useMemo(
@@ -865,32 +1032,37 @@ export function GoogleTour3DPreviewPage() {
   const googleMapsApiKey =
     import.meta.env.VITE_GOOGLE_MAPS_BROWSER_KEY ?? import.meta.env.VITE_GOOGLE_MAPS_API_KEY
   const activePlaceName = useMemo(() => {
-    if (activePlaceId === initialCamera.id) return initialCamera.name
-    return (
-      tour3DSpots.find((place) => place.id === activePlaceId)?.name ??
-      initialCamera.name
+    if (activePlaceId === initialCamera.id) {
+      return getLocalizedSpotName(initialCamera.id, initialCamera.name, language)
+    }
+    const activeSpot = tour3DSpots.find((place) => place.id === activePlaceId)
+    return getLocalizedSpotName(
+      activeSpot?.id ?? initialCamera.id,
+      activeSpot?.name ?? initialCamera.name,
+      language,
     )
-  }, [activePlaceId])
+  }, [activePlaceId, language])
   const activeCameraTarget = useMemo(
     () => tour3DSpots.find((spot) => spot.id === activePlaceId) ?? initialCamera,
     [activePlaceId],
   )
   const currentMissionId = isMissionSpotId(requestedSpot?.id)
     ? requestedSpot.id
-    : routePreviewStops[0].spotId
+    : localizedRoutePreviewStops[0].spotId
   const currentMissionStop =
-    routePreviewStops.find((stop) => stop.spotId === currentMissionId) ?? routePreviewStops[0]
+    localizedRoutePreviewStops.find((stop) => stop.spotId === currentMissionId) ??
+    localizedRoutePreviewStops[0]
   const currentMissionDetail = missionDetails[currentMissionId]
   const currentMissionIndex = currentMissionStop.number - 1
-  const previousMissionStop = routePreviewStops[currentMissionIndex - 1] ?? null
-  const nextMissionStop = routePreviewStops[currentMissionIndex + 1] ?? null
+  const previousMissionStop = localizedRoutePreviewStops[currentMissionIndex - 1] ?? null
+  const nextMissionStop = localizedRoutePreviewStops[currentMissionIndex + 1] ?? null
   const currentMissionInfoRows = missionInfoRows.map((item) => {
     if (item.label === '예상 체류') return { ...item, value: currentMissionDetail.stay }
     if (item.label === '난이도') return { ...item, value: currentMissionDetail.difficulty }
     if (item.label === '추천 신뢰도') return { ...item, value: currentMissionDetail.trust }
     return item
   })
-  const currentMissionProgressSteps = routePreviewStops.map((stop) => ({
+  const currentMissionProgressSteps = localizedRoutePreviewStops.map((stop) => ({
     ...stop,
     status:
       stop.number < currentMissionStop.number
@@ -931,8 +1103,12 @@ export function GoogleTour3DPreviewPage() {
     if (row.label === '추천 대상') return { ...row, value: courseCopy.target }
     return row
   })
-  const twoDimensionalRouteSource =
-    courseRouteState.source === 'google-routes-api' ? 'directions-api' : 'straight-line'
+  const twoDimensionalRouteSource: RoutePathSource =
+    courseRouteState.source === 'google-routes-api'
+      ? 'directions-api'
+      : courseRouteState.source === 'custom-path-fallback'
+        ? 'curated-route'
+        : courseRouteState.source
   const twoDimensionalMapTitle =
     activeMapView === '3d' ? 'AI 선비길 3D 경로' : '카카오 2D 코스 지도'
   const selectTwoDimensionalRouteItem = useCallback((item: TourismContent) => {
@@ -975,7 +1151,20 @@ export function GoogleTour3DPreviewPage() {
   useEffect(() => {
     let isDisposed = false
 
-    async function loadGoogleRoute() {
+    async function loadCourseRoute() {
+      const kakaoRoute = await requestRoutePath(getTour3DRouteCoordinates())
+      if (isDisposed) return
+
+      if (kakaoRoute?.path.length) {
+        setCourseRouteState({
+          path: kakaoRoute.path,
+          source: kakaoRoute.source,
+          distanceMeters: getPathDistanceMeters(kakaoRoute.path),
+          duration: '',
+        })
+        return
+      }
+
       const googleRoute = await requestGoogleCourseRoute(tour3DRouteStops)
       if (isDisposed || !googleRoute) return
 
@@ -987,7 +1176,7 @@ export function GoogleTour3DPreviewPage() {
       })
     }
 
-    void loadGoogleRoute()
+    void loadCourseRoute()
 
     return () => {
       isDisposed = true
@@ -1028,7 +1217,7 @@ export function GoogleTour3DPreviewPage() {
       setMessage('')
 
       try {
-        await loadGoogleMaps3DScript(googleMapsApiKey)
+        await loadGoogleMaps3DScript(googleMapsApiKey, language)
         const maps3d = await window.google?.maps?.importLibrary?.('maps3d')
 
         if (!maps3d?.Map3DElement) {
@@ -1054,7 +1243,7 @@ export function GoogleTour3DPreviewPage() {
           )
         })
         mapElement.addEventListener('gmp-click', preventGooglePlaceDetailsPopover)
-        const markerElements = createSpotMarkers(maps3d, mapElement, (spot) => {
+        const markerElements = createSpotMarkers(maps3d, mapElement, language, (spot) => {
           if (isDisposed) return
           setActivePlaceId(spot.id)
           setSelectedSpotId(spot.id)
@@ -1104,7 +1293,7 @@ export function GoogleTour3DPreviewPage() {
       markerElementsRef.current.clear()
       routePolylineElementsRef.current = []
     }
-  }, [googleMapsApiKey, requestedSpot])
+  }, [googleMapsApiKey, language, requestedSpot])
 
   useEffect(() => {
     const mapElement = mapElementRef.current
@@ -1216,7 +1405,7 @@ export function GoogleTour3DPreviewPage() {
 
             <div className="tour3d-mission-progress-shell">
               <div className="tour3d-mission-count" aria-label="현재 진행률">
-                <strong>{currentMissionStop.number} / {routePreviewStops.length}</strong>
+                <strong>{currentMissionStop.number} / {localizedRoutePreviewStops.length}</strong>
                 <span>진행 중</span>
               </div>
               <ol className="tour3d-mission-steps" aria-label="코스 진행 단계">
@@ -1555,8 +1744,8 @@ export function GoogleTour3DPreviewPage() {
               {activeMapView === '2d' && (
                 <div className="tour3d-2d-map-overlay">
                   <CourseMap
-                    items={tour2DRouteItems}
-                    routeItems={tour2DRouteItems}
+                    items={localizedTour2DRouteItems}
+                    routeItems={localizedTour2DRouteItems}
                     routePath={courseRouteState.path}
                     routeSource={twoDimensionalRouteSource}
                     locationMessage={`${courseCopy.courseName}의 주요 경유지를 2D 지도에서 확인합니다.`}
@@ -1615,7 +1804,7 @@ export function GoogleTour3DPreviewPage() {
         <section className="tour3d-timeline" aria-labelledby="tour3d-timeline-title">
           <h2 id="tour3d-timeline-title">오늘의 선비길 미션 타임라인</h2>
           <div className="tour3d-timeline-track">
-            {routePreviewStops.map((stop) => (
+            {localizedRoutePreviewStops.map((stop) => (
               <button
                 type="button"
                 key={stop.spotId}
@@ -1683,6 +1872,10 @@ function createFallbackCourseRouteState(): CourseRouteState {
   }
 }
 
+function getTour3DRouteCoordinates() {
+  return tour3DRouteStops.map(({ lat, lng }) => ({ lat, lng }))
+}
+
 function getFallbackCourseRoutePath() {
   if (tour3DFallbackRoutePath.length >= 2) {
     return tour3DFallbackRoutePath.map(({ lat, lng }) => ({ lat, lng }))
@@ -1735,14 +1928,18 @@ function createRoutePolylineElements(
   return [routeAura, routeLine]
 }
 
-function createRouteMarkerGraphic(stop: RoutePreviewStop) {
+function createRouteMarkerGraphic(stop: RoutePreviewStop, language: AppLanguage) {
   const template = document.createElement('template')
   const svgNamespace = ['http:', '', 'www.w3.org', '2000', 'svg'].join('/')
   const markerGraphic = document.createElementNS(svgNamespace, 'svg')
   markerGraphic.classList.add('tour3d-route-pin')
+  markerGraphic.setAttribute('data-language', language)
   markerGraphic.setAttribute('viewBox', '0 0 136 158')
   markerGraphic.setAttribute('role', 'img')
-  markerGraphic.setAttribute('aria-label', `${stop.number}번 ${stop.name}`)
+  markerGraphic.setAttribute(
+    'aria-label',
+    language === 'en' ? `Stop ${stop.number}, ${stop.name}` : `${stop.number}번 ${stop.name}`,
+  )
 
   const image = document.createElementNS(svgNamespace, 'image')
   image.classList.add('tour3d-route-pin-image')
@@ -1769,9 +1966,9 @@ function createRouteMarkerGraphic(stop: RoutePreviewStop) {
   order.textContent = String(stop.number)
 
   const labelBackground = document.createElementNS(svgNamespace, 'rect')
-  labelBackground.setAttribute('x', '12')
+  labelBackground.setAttribute('x', language === 'en' ? '4' : '12')
   labelBackground.setAttribute('y', '122')
-  labelBackground.setAttribute('width', '112')
+  labelBackground.setAttribute('width', language === 'en' ? '128' : '112')
   labelBackground.setAttribute('height', '28')
   labelBackground.setAttribute('rx', '14')
   labelBackground.setAttribute('fill', '#fff6d8')
@@ -1889,9 +2086,14 @@ function toRadians(value: number) {
 function createSpotMarkers(
   maps3d: GoogleMaps3DLibrary,
   mapElement: GoogleMap3DElement,
+  language: AppLanguage,
   onSelectSpot: (spot: Tour3DSpot) => void,
 ) {
   const markerElements = new Map<string, GoogleMap3DMarkerElement>()
+  const localizedRouteStops = getRoutePreviewStops(language)
+  const localizedRouteStopById = new Map(
+    localizedRouteStops.map((stop) => [stop.spotId, stop]),
+  )
   const altitudeMode = maps3d.AltitudeMode?.RELATIVE_TO_GROUND ?? 'RELATIVE_TO_GROUND'
   const collisionBehavior =
     maps3d.CollisionBehavior?.OPTIONAL_AND_HIDES_LOWER_PRIORITY ??
@@ -1900,17 +2102,18 @@ function createSpotMarkers(
   const requiredCollisionBehavior = maps3d.CollisionBehavior?.REQUIRED ?? 'REQUIRED'
 
   tour3DSpots.forEach((spot, index) => {
-    const routeStop = routePreviewStops.find((stop) => stop.spotId === spot.id)
+    const routeStop = localizedRouteStopById.get(spot.id as Tour3DRouteStopId)
+    const spotName = getLocalizedSpotName(spot.id, spot.name, language)
     const marker = new maps3d.Marker3DInteractiveElement({
       altitudeMode,
       collisionBehavior: routeStop ? requiredCollisionBehavior : collisionBehavior,
       collisionPriority: getRouteMarkerCollisionPriority(routeStop),
       drawsWhenOccluded: Boolean(routeStop),
       extruded: false,
-      label: routeStop ? undefined : spot.name,
+      label: routeStop ? undefined : spotName,
       position: getMarkerPosition(spot, routeStop),
       sizePreserved: true,
-      title: spot.name,
+      title: spotName,
       zIndex: routeStop ? getRouteMarkerZIndex(routeStop) : index + 1,
     })
 
@@ -1920,36 +2123,48 @@ function createSpotMarkers(
     marker.setAttribute(
       'aria-label',
       routeStop
-        ? `${routeStop.number}번 ${routeStop.name} 3D 지도에서 보기`
-        : `${spot.name} 상세 정보 보기`,
+        ? language === 'en'
+          ? `View stop ${routeStop.number}, ${routeStop.name}, on the 3D map`
+          : `${routeStop.number}번 ${routeStop.name} 3D 지도에서 보기`
+        : language === 'en'
+          ? `View ${spotName} details`
+          : `${spot.name} 상세 정보 보기`,
     )
     if (routeStop) {
       marker.dataset.routeStopId = routeStop.spotId
       marker.dataset.actualLat = String(spot.lat)
       marker.dataset.actualLng = String(spot.lng)
-      marker.append(createRouteMarkerGraphic(routeStop))
+      marker.append(createRouteMarkerGraphic(routeStop, language))
     }
     marker.addEventListener('gmp-click', () => onSelectSpot(spot))
     markerElements.set(spot.id, marker)
   })
 
   mapElement.setAttribute('data-marker-count', String(markerElements.size))
-  mapElement.setAttribute('data-route-marker-count', String(routePreviewStops.length))
+  mapElement.setAttribute('data-route-marker-count', String(localizedRouteStops.length))
   return markerElements
 }
 
-function loadGoogleMaps3DScript(apiKey: string) {
+function loadGoogleMaps3DScript(apiKey: string, language: AppLanguage) {
   if (window.google?.maps?.importLibrary) return Promise.resolve()
-  if (googleMapsScriptPromise) return googleMapsScriptPromise
+  if (googleMapsScriptPromise && googleMapsScriptLanguage === language) {
+    return googleMapsScriptPromise
+  }
 
   googleMapsScriptPromise = new Promise<void>((resolve, reject) => {
-    const existingScript = document.getElementById(googleMapsScriptId)
+    const existingScript = document.getElementById(
+      googleMapsScriptId,
+    ) as HTMLScriptElement | null
     if (existingScript) {
-      existingScript.addEventListener('load', () => resolve(), { once: true })
-      existingScript.addEventListener('error', () => reject(createLoadError()), {
-        once: true,
-      })
-      return
+      if (existingScript.dataset.language === language) {
+        existingScript.addEventListener('load', () => resolve(), { once: true })
+        existingScript.addEventListener('error', () => reject(createLoadError()), {
+          once: true,
+        })
+        return
+      }
+
+      existingScript.remove()
     }
 
     const timeoutId = window.setTimeout(() => reject(createLoadError()), googleMapsLoadTimeoutMs)
@@ -1960,9 +2175,10 @@ function loadGoogleMaps3DScript(apiKey: string) {
 
     const script = document.createElement('script')
     script.id = googleMapsScriptId
+    script.dataset.language = language
     script.async = true
     script.defer = true
-    script.src = createGoogleMapsScriptUrl(apiKey)
+    script.src = createGoogleMapsScriptUrl(apiKey, language)
     script.onerror = () => {
       window.clearTimeout(timeoutId)
       reject(createLoadError())
@@ -1970,15 +2186,18 @@ function loadGoogleMaps3DScript(apiKey: string) {
     document.head.appendChild(script)
   })
 
+  googleMapsScriptLanguage = language
   return googleMapsScriptPromise
 }
 
-function createGoogleMapsScriptUrl(apiKey: string) {
+function createGoogleMapsScriptUrl(apiKey: string, language: AppLanguage) {
   const url = new URL('https://maps.googleapis.com/maps/api/js')
   url.searchParams.set('key', apiKey)
-  url.searchParams.set('v', 'alpha')
+  url.searchParams.set('v', 'weekly')
   url.searchParams.set('loading', 'async')
   url.searchParams.set('libraries', 'maps3d')
+  url.searchParams.set('language', language === 'en' ? 'en' : 'ko')
+  url.searchParams.set('region', 'KR')
   url.searchParams.set('callback', googleMapsScriptCallback)
   return url.toString()
 }

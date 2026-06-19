@@ -2947,6 +2947,11 @@ a {
   font-weight: 950;
 }
 
+.tour3d-route-pin[data-language='en'] .tour3d-route-pin-label {
+  font-size: 11px;
+  letter-spacing: 0;
+}
+
 .tour3d-map-controls {
   position: absolute;
   top: 18px;

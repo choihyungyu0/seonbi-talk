@@ -16,6 +16,7 @@ import {
   HomeScrollProgress,
   RevealItem,
 } from '../components/homeMotion'
+import { useLanguage, type AppLanguage } from '../features/i18n/LanguageContext'
 import './HomeLandingPage.css'
 
 type VisualVariant =
@@ -45,6 +46,7 @@ interface FeatureTeaser {
   variant: VisualVariant
   label: string
   imageSrc?: string
+  englishImageSrc?: string
   emptyVisual?: boolean
 }
 
@@ -76,12 +78,18 @@ const HOME_ASSETS = {
   heroFrame: '/images/home/optimized/image-Photoroom (9).webp',
   heroBadgeFrame: '/images/home/optimized/image-Photoroom (11).webp',
   microStrip: '/images/home/optimized/ChatGPT Image 2026년 6월 14일 오후 02_02_36.webp',
+  microStripEn: '/images/home/micro-strip-en.webp',
   primaryTestButton: '/images/home/optimized/image-Photoroom (33).webp',
+  primaryTestButtonEn: '/images/home/primary-test-button-en.webp',
   primaryTestButtonWithTassel: '/images/home/optimized/image-Photoroom (59).webp',
+  primaryTestButtonWithTasselEn: '/images/home/primary-test-button-tassel-en.webp',
   secondaryCourseButton: '/images/home/optimized/2f21d5b4-ddad-43e7-a288-1cd2824b0202.webp',
+  secondaryCourseButtonEn: '/images/home/secondary-course-button-en.webp',
   secondaryCourseButtonPlain: '/images/home/optimized/image-Photoroom (60).webp',
+  secondaryCourseButtonPlainEn: '/images/home/secondary-course-button-plain-en.webp',
   typeBadge: '/images/home/optimized/image-Photoroom (34).webp',
   typeCourseButton: '/images/home/optimized/image-Photoroom (35).webp',
+  typeCourseButtonEn: '/images/home/type-course-button-en.webp',
   journeyBadge: '/images/home/optimized/image-Photoroom (46).webp',
   previewPill: '/images/home/optimized/image-Photoroom (7).webp',
   zoomControl: '/images/home/optimized/10cc0692-3d55-44c9-bfe5-3c9270fd2acf.webp',
@@ -100,13 +108,21 @@ const HOME_ASSETS = {
   heroHeatmapPreview: '/images/home/optimized/image-Photoroom (8).webp',
   heroGraphPreview: '/images/home/optimized/image-Photoroom (24).webp',
   targetTeaserType: '/images/home/target-teaser-type.png',
+  targetTeaserTypeEn: '/images/home/target-teaser-type-en.png',
   targetTeaserCourse: '/images/home/target-teaser-course.png',
+  targetTeaserCourseEn: '/images/home/target-teaser-course-en.png',
   targetTeaserHeatmap: '/images/home/target-teaser-heatmap.png',
+  targetTeaserHeatmapEn: '/images/home/target-teaser-heatmap-en.png',
   targetTeaserGraph: '/images/home/target-teaser-graph.png',
+  targetTeaserGraphEn: '/images/home/target-teaser-graph-en.png',
   coreFeatureHeatmap: '/images/home/core-feature-heatmap.webp',
+  coreFeatureHeatmapEn: '/images/home/core-feature-heatmap-en.webp',
   coreFeatureCourse: '/images/home/core-feature-course.webp',
+  coreFeatureCourseEn: '/images/home/core-feature-course-en.webp',
   coreFeatureGraph: '/images/home/core-feature-graph.webp',
+  coreFeatureGraphEn: '/images/home/core-feature-graph-en.webp',
   coreFeatureDiary: '/images/home/core-feature-diary.webp',
+  coreFeatureDiaryEn: '/images/home/core-feature-diary-en.webp',
   paperFrameWide: '/images/home/optimized/image-Photoroom (32).webp',
   paperFrameDark: '/images/home/optimized/image-Photoroom (28).webp',
   paperFrameLight: '/images/home/optimized/image-Photoroom (29).webp',
@@ -189,6 +205,53 @@ const keywordOptionIcons: Record<string, string> = {
   자연: HOME_ASSETS.iconNature,
 }
 
+const heroCopies: Record<
+  AppLanguage,
+  {
+    badge: string
+    titleLead: string
+    titleAccent: string
+    description: string
+    primaryCta: string
+    secondaryCta: string
+    microPreviewLabel: string
+    microStrip: Array<[string, string]>
+  }
+> = {
+  ko: {
+    badge: 'AI 문화 여행 플랫폼',
+    titleLead: 'AI가 설계하는',
+    titleAccent: '영주의 선비길',
+    description:
+      '3D 인터랙티브 코스와 AI 추천으로 영주의 선비 문화와 관광을 스마트하게 탐험하세요.',
+    primaryCta: '선비 테스트 시작하기',
+    secondaryCta: '추천 코스 둘러보기',
+    microPreviewLabel: '핵심 미리보기',
+    microStrip: [
+      ['유형별 선비 콘텐츠', HOME_ASSETS.iconPerson],
+      ['3D 코스 프리뷰', HOME_ASSETS.iconTarget],
+      ['AI 해설', HOME_ASSETS.iconBook],
+      ['여행 기록 저장', HOME_ASSETS.iconBook],
+    ],
+  },
+  en: {
+    badge: 'AI Culture Travel Platform',
+    titleLead: 'AI-designed',
+    titleAccent: 'Seonbi Trails of Yeongju',
+    description:
+      'Explore Yeongju culture with interactive 3D routes and AI-powered recommendations.',
+    primaryCta: 'Start Seonbi Test',
+    secondaryCta: 'Browse Courses',
+    microPreviewLabel: 'Core previews',
+    microStrip: [
+      ['Seonbi type content', HOME_ASSETS.iconPerson],
+      ['3D course preview', HOME_ASSETS.iconTarget],
+      ['AI narration', HOME_ASSETS.iconBook],
+      ['Travel records', HOME_ASSETS.iconBook],
+    ],
+  },
+}
+
 const seonbiProfiles: Record<SeonbiTypeKey, SeonbiProfile> = {
   toegye: {
     key: 'toegye',
@@ -248,6 +311,7 @@ const heroFeatureCards: FeatureTeaser[] = [
     variant: 'seonbi-type',
     label: 'Seonbi type artwork placeholder',
     imageSrc: HOME_ASSETS.targetTeaserType,
+    englishImageSrc: HOME_ASSETS.targetTeaserTypeEn,
   },
   {
     title: '3D 코스 프리뷰',
@@ -256,6 +320,7 @@ const heroFeatureCards: FeatureTeaser[] = [
     variant: 'course3d',
     label: '3D course preview image placeholder',
     imageSrc: HOME_ASSETS.targetTeaserCourse,
+    englishImageSrc: HOME_ASSETS.targetTeaserCourseEn,
   },
   {
     title: '관광 히트맵',
@@ -264,6 +329,7 @@ const heroFeatureCards: FeatureTeaser[] = [
     variant: 'heatmap',
     label: 'Heatmap preview placeholder',
     imageSrc: HOME_ASSETS.targetTeaserHeatmap,
+    englishImageSrc: HOME_ASSETS.targetTeaserHeatmapEn,
   },
   {
     title: 'AI 근거 그래프',
@@ -272,6 +338,7 @@ const heroFeatureCards: FeatureTeaser[] = [
     variant: 'graph',
     label: 'Knowledge graph preview placeholder',
     imageSrc: HOME_ASSETS.targetTeaserGraph,
+    englishImageSrc: HOME_ASSETS.targetTeaserGraphEn,
   },
 ]
 
@@ -284,6 +351,7 @@ const coreFeatures: FeatureDetail[] = [
     variant: 'heatmap',
     label: 'Heatmap preview placeholder',
     imageSrc: HOME_ASSETS.coreFeatureHeatmap,
+    englishImageSrc: HOME_ASSETS.coreFeatureHeatmapEn,
     icon: HOME_ASSETS.iconTarget,
   },
   {
@@ -294,6 +362,7 @@ const coreFeatures: FeatureDetail[] = [
     variant: 'course3d',
     label: '3D route visual placeholder',
     imageSrc: HOME_ASSETS.coreFeatureCourse,
+    englishImageSrc: HOME_ASSETS.coreFeatureCourseEn,
     icon: HOME_ASSETS.iconCulture,
   },
   {
@@ -304,6 +373,7 @@ const coreFeatures: FeatureDetail[] = [
     variant: 'graph',
     label: 'Knowledge graph preview placeholder',
     imageSrc: HOME_ASSETS.coreFeatureGraph,
+    englishImageSrc: HOME_ASSETS.coreFeatureGraphEn,
     icon: HOME_ASSETS.iconChart,
   },
   {
@@ -314,6 +384,7 @@ const coreFeatures: FeatureDetail[] = [
     variant: 'diary',
     label: 'Diary preview placeholder',
     imageSrc: HOME_ASSETS.coreFeatureDiary,
+    englishImageSrc: HOME_ASSETS.coreFeatureDiaryEn,
     icon: HOME_ASSETS.panelBook,
   },
 ]
@@ -416,12 +487,14 @@ const graphPreviewNodes = [
 
 export function HomeLandingPage() {
   const [activeSectionId, setActiveSectionId] = useState(snapSections[0].id)
+  const { language: heroLanguage, setLanguage: setHeroLanguage } = useLanguage()
   const [selectedCompanion, setSelectedCompanion] = useState('혼자')
   const [selectedKeywords, setSelectedKeywords] = useState<string[]>([
     '조용함',
     '역사문화',
     '자연',
   ])
+  const heroCopy = heroCopies[heroLanguage]
 
   const recommendedType = useMemo(
     () => getRecommendedType(selectedCompanion, selectedKeywords),
@@ -607,54 +680,67 @@ export function HomeLandingPage() {
           >
             <div className="home-hero-copy">
               <RevealItem>
+                <LanguageToggle activeLanguage={heroLanguage} onChange={setHeroLanguage} />
+              </RevealItem>
+              <RevealItem>
                 <Badge imageSrc={HOME_ASSETS.heroBadgeFrame} eager>
-                  AI 문화 여행 플랫폼
+                  {heroCopy.badge}
                 </Badge>
               </RevealItem>
               <RevealItem>
                 <h1>
-                  AI가 설계하는
-                  <span>영주의 선비길</span>
+                  {heroCopy.titleLead}
+                  <span>{heroCopy.titleAccent}</span>
                 </h1>
               </RevealItem>
               <RevealItem>
-                <p>
-                  3D 인터랙티브 코스와 AI 추천으로 영주의 선비 문화와 관광을
-                  스마트하게 탐험하세요.
-                </p>
+                <p>{heroCopy.description}</p>
               </RevealItem>
               <RevealItem>
                 <div className="home-action-row">
                   <OrnamentalButton
-                    imageSrc={HOME_ASSETS.primaryTestButton}
+                    imageSrc={
+                      heroLanguage === 'en'
+                        ? HOME_ASSETS.primaryTestButtonEn
+                        : HOME_ASSETS.primaryTestButton
+                    }
                     to="/test"
                     variant="primary"
                     eager
                   >
-                    선비 테스트 시작하기
+                    {heroCopy.primaryCta}
                   </OrnamentalButton>
                   <OrnamentalButton
-                    imageSrc={HOME_ASSETS.secondaryCourseButton}
+                    imageSrc={
+                      heroLanguage === 'en'
+                        ? HOME_ASSETS.secondaryCourseButtonEn
+                        : HOME_ASSETS.secondaryCourseButton
+                    }
                     to="/course"
                     variant="secondary"
                     eager
                   >
-                    추천 코스 둘러보기
+                    {heroCopy.secondaryCta}
                   </OrnamentalButton>
                 </div>
               </RevealItem>
               <motion.ul
-                className="home-micro-strip"
-                aria-label="핵심 미리보기"
+                className={[
+                  'home-micro-strip',
+                  heroLanguage === 'en' ? 'home-micro-strip--asset-only' : '',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+                aria-label={heroCopy.microPreviewLabel}
                 variants={heroChipListVariants}
               >
-                <HomeImage src={HOME_ASSETS.microStrip} alt="" aria-hidden="true" eager />
-                {[
-                  ['유형별 선비 콘텐츠', HOME_ASSETS.iconPerson],
-                  ['3D 코스 프리뷰', HOME_ASSETS.iconTarget],
-                  ['AI 해설', HOME_ASSETS.iconBook],
-                  ['여행 기록 저장', HOME_ASSETS.iconBook],
-                ].map(([label, icon]) => (
+                <HomeImage
+                  src={heroLanguage === 'en' ? HOME_ASSETS.microStripEn : HOME_ASSETS.microStrip}
+                  alt=""
+                  aria-hidden="true"
+                  eager
+                />
+                {heroCopy.microStrip.map(([label, icon]) => (
                   <motion.li key={label} variants={heroChipVariants}>
                     <HomeImage src={icon} alt="" aria-hidden="true" eager />
                     <span>{label}</span>
@@ -779,14 +865,22 @@ export function HomeLandingPage() {
             <RevealItem className="home-section-inner home-centered-actions">
               <div className="home-type-footer-actions">
                 <OrnamentalButton
-                  imageSrc={HOME_ASSETS.primaryTestButton}
+                  imageSrc={
+                    heroLanguage === 'en'
+                      ? HOME_ASSETS.primaryTestButtonEn
+                      : HOME_ASSETS.primaryTestButton
+                  }
                   to="/test"
                   variant="primary"
                 >
                   선비 테스트 시작하기
                 </OrnamentalButton>
                 <OrnamentalButton
-                  imageSrc={HOME_ASSETS.typeCourseButton}
+                  imageSrc={
+                    heroLanguage === 'en'
+                      ? HOME_ASSETS.typeCourseButtonEn
+                      : HOME_ASSETS.typeCourseButton
+                  }
                   to="/course"
                   variant="secondary"
                 >
@@ -835,8 +929,12 @@ export function HomeLandingPage() {
                     </div>
                     <p>{feature.description}</p>
                     <CoreFeaturePreview
-                      imageSrc={feature.imageSrc}
-                      label={feature.label}
+                      imageSrc={
+                        heroLanguage === 'en'
+                          ? feature.englishImageSrc ?? feature.imageSrc
+                          : feature.imageSrc
+                      }
+                      label={heroLanguage === 'en' ? feature.title : feature.label}
                       variant={feature.variant}
                     />
                     <Link className="home-card-link" to={feature.to}>
@@ -926,7 +1024,11 @@ export function HomeLandingPage() {
                   </dl>
                   <SoftGlowCta>
                     <OrnamentalButton
-                      imageSrc={HOME_ASSETS.primaryTestButtonWithTassel}
+                      imageSrc={
+                        heroLanguage === 'en'
+                          ? HOME_ASSETS.primaryTestButtonWithTasselEn
+                          : HOME_ASSETS.primaryTestButtonWithTassel
+                      }
                       to="/test"
                       variant="primary"
                       full
@@ -935,7 +1037,11 @@ export function HomeLandingPage() {
                     </OrnamentalButton>
                   </SoftGlowCta>
                   <OrnamentalButton
-                    imageSrc={HOME_ASSETS.secondaryCourseButtonPlain}
+                    imageSrc={
+                      heroLanguage === 'en'
+                        ? HOME_ASSETS.secondaryCourseButtonPlainEn
+                        : HOME_ASSETS.secondaryCourseButtonPlain
+                    }
                     to="/course"
                     variant="light"
                     full
@@ -957,6 +1063,33 @@ export function HomeLandingPage() {
         </section>
       </div>
     </AppLayout>
+  )
+}
+
+function LanguageToggle({
+  activeLanguage,
+  onChange,
+}: {
+  activeLanguage: AppLanguage
+  onChange: (language: AppLanguage) => void
+}) {
+  return (
+    <div className="home-language-toggle" aria-label="히어로 언어 선택">
+      {[
+        ['ko', '한국어'],
+        ['en', 'English'],
+      ].map(([language, label]) => (
+        <button
+          type="button"
+          className={activeLanguage === language ? 'is-active' : ''}
+          aria-pressed={activeLanguage === language}
+          onClick={() => onChange(language as AppLanguage)}
+          key={language}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
   )
 }
 
@@ -1256,6 +1389,9 @@ function HeroProductShowcase() {
 }
 
 function FeatureTeaserCard({ card, index }: { card: FeatureTeaser; index: number }) {
+  const { language } = useLanguage()
+  const imageSrc = language === 'en' ? card.englishImageSrc ?? card.imageSrc : card.imageSrc
+
   return (
     <Link
       className="home-teaser-card"
@@ -1268,9 +1404,9 @@ function FeatureTeaserCard({ card, index }: { card: FeatureTeaser; index: number
       </div>
       <VisualPlaceholder
         variant={card.variant}
-        label={card.label}
-        imageSrc={card.imageSrc}
-        empty={card.emptyVisual}
+        label={imageSrc ? card.label : undefined}
+        imageSrc={imageSrc}
+        empty={imageSrc ? card.emptyVisual : false}
         compact
       />
       <span className="home-round-arrow" aria-hidden="true">

@@ -3,8 +3,13 @@ interface KakaoLatLng {
   getLng(): number
 }
 
+export interface KakaoLatLngBounds {
+  extend(position: KakaoLatLng): void
+}
+
 export interface KakaoMap {
   setCenter(position: KakaoLatLng): void
+  setBounds(bounds: KakaoLatLngBounds): void
 }
 
 interface KakaoMarkerOptions {
@@ -28,6 +33,7 @@ interface KakaoMapsApi {
   }
   load(callback: () => void): void
   LatLng: new (lat: number, lng: number) => KakaoLatLng
+  LatLngBounds: new () => KakaoLatLngBounds
   Map: new (
     container: HTMLElement,
     options: { center: KakaoLatLng; level: number },

@@ -7,9 +7,10 @@ import {
   signOut,
   type AuthUser,
 } from '../../features/auth/authApi'
+import { useLanguage } from '../../features/i18n/LanguageContext'
 import { BrandLogo } from '../brand/BrandLogo'
 
-const navItems = [
+const koreanNavItems = [
   { to: '/', label: '홈' },
   { to: '/tour-3d', label: '추천 코스' },
   { to: '/heatmap', label: '관광 히트맵' },
@@ -18,9 +19,20 @@ const navItems = [
   { to: '/judge', label: '선비의 한마디' },
 ]
 
+const englishNavItems = [
+  { to: '/', label: 'Home' },
+  { to: '/tour-3d', label: 'Courses' },
+  { to: '/heatmap', label: 'Heatmap' },
+  { to: '/knowledge-graph', label: 'AI Graph' },
+  { to: '/test', label: 'Test' },
+  { to: '/judge', label: 'Reflection' },
+]
+
 export function TopNavBar() {
   const navigate = useNavigate()
+  const { language } = useLanguage()
   const [authUser, setAuthUser] = useState<AuthUser | null>(() => getStoredAuthUser())
+  const navItems = language === 'en' ? englishNavItems : koreanNavItems
 
   useEffect(() => {
     const unsubscribe = onAuthStateChange(setAuthUser)

@@ -9,6 +9,7 @@ import {
   saveKnowledgeGraph,
   type SavedKnowledgeGraph,
 } from '../utils/knowledgeGraphStorage'
+import { useLanguage } from '../features/i18n/LanguageContext'
 import './KnowledgeGraphPage.css'
 
 type KnowledgeNodeKind =
@@ -1047,6 +1048,8 @@ const linkKindLabels: KnowledgeLinkKind[] = [
 ]
 
 const defaultScenario = '부모님과 조용한 역사 여행을 가고 싶어요. 자차로 이동하고 화장실과 주차장이 편했으면 좋겠습니다.'
+const defaultScenarioEn =
+  'I want a quiet history trip with my parents. We will drive, and convenient restrooms and parking would be helpful.'
 const finalGraphStageIndex = graphStages.length - 1
 const evidenceAssetPath = (filename: string) => `/images/new/${filename}`
 
@@ -1077,16 +1080,19 @@ const featuredNodeIds = [
 ]
 
 export function KnowledgeGraphPage() {
+  const { language } = useLanguage()
+  const localizedDefaultScenario = language === 'en' ? defaultScenarioEn : defaultScenario
   const graphHostRef = useRef<HTMLDivElement>(null)
   const graphRef = useRef<KnowledgeGraphMethods | undefined>(undefined)
   const hoveredNodeIdRef = useRef<string | null>(null)
+  const previousDefaultScenarioRef = useRef(localizedDefaultScenario)
   const { width, height } = useElementSize(graphHostRef)
   const [activeStageIndex, setActiveStageIndex] = useState(finalGraphStageIndex)
   const [isPlaying, setIsPlaying] = useState(false)
   const [selectedNodeId, setSelectedNodeId] = useState('course-main')
   const [isTraceMode, setIsTraceMode] = useState(false)
-  const [scenarioInput, setScenarioInput] = useState(defaultScenario)
-  const [appliedScenario, setAppliedScenario] = useState(defaultScenario)
+  const [scenarioInput, setScenarioInput] = useState(localizedDefaultScenario)
+  const [appliedScenario, setAppliedScenario] = useState(localizedDefaultScenario)
   const [searchQuery, setSearchQuery] = useState('')
   const [nodeKindFilter, setNodeKindFilter] = useState<KnowledgeNodeKind | 'all'>('all')
   const [expandedNodes, setExpandedNodes] = useState<KnowledgeNode[]>([])
@@ -1097,6 +1103,22 @@ export function KnowledgeGraphPage() {
   )
   const [loadedGraph, setLoadedGraph] = useState<SavedSeonbiGraph | null>(null)
   const [graphMode, setGraphMode] = useState<GraphMode>('3d')
+
+  useEffect(() => {
+    const previousDefaultScenario = previousDefaultScenarioRef.current
+    previousDefaultScenarioRef.current = localizedDefaultScenario
+
+    setScenarioInput((currentScenarioInput) =>
+      currentScenarioInput === previousDefaultScenario
+        ? localizedDefaultScenario
+        : currentScenarioInput,
+    )
+    setAppliedScenario((currentAppliedScenario) =>
+      currentAppliedScenario === previousDefaultScenario
+        ? localizedDefaultScenario
+        : currentAppliedScenario,
+    )
+  }, [localizedDefaultScenario])
 
   useEffect(() => {
     if (!isPlaying) return
@@ -2152,10 +2174,52 @@ function createPersonalizationProfile(rawInput: string): PersonalizationProfile 
     '할머니',
     '할아버지',
     '시니어',
+    'parent',
+    'parents',
+    'mother',
+    'father',
+    'senior',
+    'grandmother',
+    'grandfather',
   ])
-  const hasChildren = hasAnyKeyword(normalizedInput, ['아이', '초등', '유아', '어린이', '가족'])
-  const hasQuiet = hasAnyKeyword(normalizedInput, ['조용', '한적', '사색', '힐링', '쉬고', '휴식'])
-  const hasHistory = hasAnyKeyword(normalizedInput, ['역사', '문화', '유산', '선비', '서원', '전통'])
+  const hasChildren = hasAnyKeyword(normalizedInput, [
+    '아이',
+    '초등',
+    '유아',
+    '어린이',
+    '가족',
+    'child',
+    'children',
+    'family',
+  ])
+  const hasQuiet = hasAnyKeyword(normalizedInput, [
+    '조용',
+    '한적',
+    '사색',
+    '힐링',
+    '쉬고',
+    '휴식',
+    'quiet',
+    'calm',
+    'reflect',
+    'reflection',
+    'healing',
+    'rest',
+  ])
+  const hasHistory = hasAnyKeyword(normalizedInput, [
+    '역사',
+    '문화',
+    '유산',
+    '선비',
+    '서원',
+    '전통',
+    'history',
+    'culture',
+    'heritage',
+    'seonbi',
+    'seowon',
+    'traditional',
+  ])
   const hasCar = hasAnyKeyword(normalizedInput, [
     '자차',
     '자동차',
@@ -2166,14 +2230,89 @@ function createPersonalizationProfile(rawInput: string): PersonalizationProfile 
     '주차',
     '차로 이동',
     '차 타고',
+    'car',
+    'drive',
+    'driving',
+    'parking',
   ])
-  const hasTransit = hasAnyKeyword(normalizedInput, ['기차', '버스', '대중교통', '뚜벅', '영주역'])
-  const hasLodging = hasAnyKeyword(normalizedInput, ['숙박', '1박', '일박', '호텔', '펜션', '밤'])
-  const hasNature = hasAnyKeyword(normalizedInput, ['자연', '산', '소백산', '풍경', '걷', '트레킹'])
-  const hasIndoor = hasAnyKeyword(normalizedInput, ['실내', '비', '우천', '더위', '추위', '전시'])
-  const hasFood = hasAnyKeyword(normalizedInput, ['맛집', '식사', '시장', '인삼', '먹거리'])
-  const hasFestival = hasAnyKeyword(normalizedInput, ['축제', '행사', '공연'])
-  const hasPhoto = hasAnyKeyword(normalizedInput, ['사진', '감성', '풍경', '인생샷'])
+  const hasTransit = hasAnyKeyword(normalizedInput, [
+    '기차',
+    '버스',
+    '대중교통',
+    '뚜벅',
+    '영주역',
+    'train',
+    'bus',
+    'public transit',
+    'station',
+  ])
+  const hasLodging = hasAnyKeyword(normalizedInput, [
+    '숙박',
+    '1박',
+    '일박',
+    '호텔',
+    '펜션',
+    '밤',
+    'lodging',
+    'hotel',
+    'stay',
+    'overnight',
+  ])
+  const hasNature = hasAnyKeyword(normalizedInput, [
+    '자연',
+    '산',
+    '소백산',
+    '풍경',
+    '걷',
+    '트레킹',
+    'nature',
+    'mountain',
+    'scenery',
+    'walk',
+    'walking',
+    'trekking',
+  ])
+  const hasIndoor = hasAnyKeyword(normalizedInput, [
+    '실내',
+    '비',
+    '우천',
+    '더위',
+    '추위',
+    '전시',
+    'indoor',
+    'rain',
+    'heat',
+    'cold',
+    'exhibition',
+  ])
+  const hasFood = hasAnyKeyword(normalizedInput, [
+    '맛집',
+    '식사',
+    '시장',
+    '인삼',
+    '먹거리',
+    'food',
+    'restaurant',
+    'market',
+    'ginseng',
+  ])
+  const hasFestival = hasAnyKeyword(normalizedInput, [
+    '축제',
+    '행사',
+    '공연',
+    'festival',
+    'event',
+    'performance',
+  ])
+  const hasPhoto = hasAnyKeyword(normalizedInput, [
+    '사진',
+    '감성',
+    '풍경',
+    '인생샷',
+    'photo',
+    'picture',
+    'scenery',
+  ])
 
   if (hasParents) {
     addSignal(detectedSignals, '부모님 동반')

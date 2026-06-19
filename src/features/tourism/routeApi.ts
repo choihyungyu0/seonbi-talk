@@ -3,7 +3,7 @@ export interface RouteCoordinate {
   lng: number
 }
 
-export type RoutePathSource = 'directions-api' | 'straight-line'
+export type RoutePathSource = 'directions-api' | 'curated-route' | 'straight-line'
 
 interface RouteApiResponse {
   ok: boolean
