@@ -333,15 +333,18 @@ const expandedFallbackHeatmapPoints = dedupeHeatmapPoints([
 export function TourismHeatmapPage() {
   const [searchParams] = useSearchParams()
   const requestedMode = getHeatmapMode(searchParams.get('mode'))
+  const isCompactHeatmapViewport = useCompactHeatmapViewport()
   const [selectedMode, setSelectedMode] = useState<HeatmapMode | null>(null)
   const activeMode = selectedMode ?? requestedMode
   const [radiusMeters, setRadiusMeters] = useState(defaultRadiusMeters)
   const [selectedPlaceId, setSelectedPlaceId] = useState(majorPlaceMarkers[1].id)
   const [routeProgress, setRouteProgress] = useState(0.2)
+  const [isLayerControllerOpen, setIsLayerControllerOpen] = useState(false)
   const [dataState, setDataState] = useState<HeatmapDataState>({
     status: 'loading',
     points: expandedFallbackHeatmapPoints,
   })
+  const isLayerControllerExpanded = !isCompactHeatmapViewport || isLayerControllerOpen
 
   useEffect(() => {
     let ignore = false
@@ -408,20 +411,44 @@ export function TourismHeatmapPage() {
     const dataLayers = []
 
     if (activeMode === 'demand') {
-      dataLayers.push(
-        new HeatmapLayer<HeatmapPoint>({
-          id: 'yeongju-demand-heatmap-layer',
-          data: activePoints,
-          getPosition: (point) => point.coordinates,
-          getWeight: (point) => point.weights.demand,
-          colorRange: demandColorRange,
-          radiusPixels: 62,
-          intensity: 1.15,
-          threshold: 0.04,
-          aggregation: 'SUM',
-          pickable: false,
-        }),
-      )
+      if (isCompactHeatmapViewport) {
+        dataLayers.push(
+          new ScatterplotLayer<HeatmapPoint>({
+            id: 'yeongju-demand-mobile-bubble-layer',
+            data: activePoints,
+            getPosition: (point) => point.coordinates,
+            getRadius: (point) => 120 + point.weights.demand * 85,
+            radiusUnits: 'meters',
+            radiusMinPixels: 7,
+            radiusMaxPixels: 34,
+            getFillColor: (point) => getDemandBubbleColor(point.weights.demand),
+            getLineColor: [255, 248, 223, 190],
+            getLineWidth: 2,
+            lineWidthMinPixels: 1,
+            lineWidthMaxPixels: 3,
+            stroked: true,
+            filled: true,
+            opacity: 0.72,
+            pickable: true,
+            autoHighlight: true,
+          }),
+        )
+      } else {
+        dataLayers.push(
+          new HeatmapLayer<HeatmapPoint>({
+            id: 'yeongju-demand-heatmap-layer',
+            data: activePoints,
+            getPosition: (point) => point.coordinates,
+            getWeight: (point) => point.weights.demand,
+            colorRange: demandColorRange,
+            radiusPixels: 62,
+            intensity: 1.15,
+            threshold: 0.04,
+            aggregation: 'SUM',
+            pickable: false,
+          }),
+        )
+      }
     }
 
     if (activeMode === 'facility') {
@@ -554,7 +581,14 @@ export function TourismHeatmapPage() {
         },
       }),
     ]
-  }, [activeMode, activePoints, radiusMeters, routeProgress, selectedPlaceId])
+  }, [
+    activeMode,
+    activePoints,
+    isCompactHeatmapViewport,
+    radiusMeters,
+    routeProgress,
+    selectedPlaceId,
+  ])
 
   const metricCards = [
     {
@@ -640,63 +674,86 @@ export function TourismHeatmapPage() {
                 영주시 관광 집중도
               </h2>
               <div className="heatmap-map-shell">
-                <div className="heatmap-map-controller" aria-label="관광 데이터 레이어 컨트롤러">
-                  <strong>관광 데이터 레이어</strong>
-                  <div className="heatmap-controller-section">
-                    <small>레이어</small>
-                    <div className="heatmap-controller-mode-grid">
-                      {Object.entries(heatmapModes).map(([mode, config]) => {
-                        const isActive = activeMode === mode
-                        return (
+                <div
+                  className={[
+                    'heatmap-map-controller',
+                    isLayerControllerExpanded ? 'is-open' : 'is-collapsed',
+                  ].join(' ')}
+                  aria-label="관광 데이터 레이어 컨트롤러"
+                >
+                  <div className="heatmap-controller-header">
+                    <strong>관광 데이터 레이어</strong>
+                    <button
+                      type="button"
+                      className="heatmap-controller-toggle"
+                      aria-controls="heatmap-controller-body"
+                      aria-expanded={isLayerControllerExpanded}
+                      onClick={() => setIsLayerControllerOpen((isOpen) => !isOpen)}
+                    >
+                      {isLayerControllerExpanded ? '닫기' : '열기'}
+                    </button>
+                  </div>
+                  <div
+                    id="heatmap-controller-body"
+                    className="heatmap-controller-body"
+                    hidden={isCompactHeatmapViewport && !isLayerControllerExpanded}
+                  >
+                    <div className="heatmap-controller-section">
+                      <small>레이어</small>
+                      <div className="heatmap-controller-mode-grid">
+                        {Object.entries(heatmapModes).map(([mode, config]) => {
+                          const isActive = activeMode === mode
+                          return (
+                            <button
+                              key={`controller-${mode}`}
+                              type="button"
+                              className={isActive ? 'active' : ''}
+                              aria-pressed={isActive}
+                              onClick={() => setSelectedMode(mode as HeatmapMode)}
+                            >
+                              {config.tabLabel}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                    <div className="heatmap-controller-section">
+                      <small>분석 반경 설정</small>
+                      <div className="heatmap-radius-chips">
+                        {radiusOptions.map((radius) => (
                           <button
-                            key={`controller-${mode}`}
+                            key={radius}
                             type="button"
-                            className={isActive ? 'active' : ''}
-                            aria-pressed={isActive}
-                            onClick={() => setSelectedMode(mode as HeatmapMode)}
+                            className={radiusMeters === radius ? 'active' : ''}
+                            onClick={() => setRadiusMeters(radius)}
                           >
-                            {config.tabLabel}
+                            {radius === 1000 ? '1km' : `${radius}m`}
                           </button>
-                        )
-                      })}
+                        ))}
+                      </div>
                     </div>
+                    <dl className="heatmap-controller-stats" aria-label="현재 표시 데이터">
+                      <div>
+                        <dt>현재 반경</dt>
+                        <dd>{radiusMeters === 1000 ? '1km' : `${radiusMeters}m`}</dd>
+                      </div>
+                      <div>
+                        <dt>관광지</dt>
+                        <dd>{displaySummary.tourismPlaces.toLocaleString()}곳</dd>
+                      </div>
+                      <div>
+                        <dt>편의시설</dt>
+                        <dd>{displaySummary.facilities.toLocaleString()}개</dd>
+                      </div>
+                      <div>
+                        <dt>추천 권역</dt>
+                        <dd>{displaySummary.recommendedZones.toLocaleString()}개</dd>
+                      </div>
+                    </dl>
+                    <small className="heatmap-controller-location-count">
+                      {activePoints.length.toLocaleString()}개 좌표 렌더링
+                    </small>
                   </div>
-                  <div className="heatmap-controller-section">
-                    <small>분석 반경 설정</small>
-                    <div className="heatmap-radius-chips">
-                      {radiusOptions.map((radius) => (
-                        <button
-                          key={radius}
-                          type="button"
-                          className={radiusMeters === radius ? 'active' : ''}
-                          onClick={() => setRadiusMeters(radius)}
-                        >
-                          {radius === 1000 ? '1km' : `${radius}m`}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  <dl className="heatmap-controller-stats" aria-label="현재 표시 데이터">
-                    <div>
-                      <dt>현재 반경</dt>
-                      <dd>{radiusMeters === 1000 ? '1km' : `${radiusMeters}m`}</dd>
-                    </div>
-                    <div>
-                      <dt>관광지</dt>
-                      <dd>{displaySummary.tourismPlaces.toLocaleString()}곳</dd>
-                    </div>
-                    <div>
-                      <dt>편의시설</dt>
-                      <dd>{displaySummary.facilities.toLocaleString()}개</dd>
-                    </div>
-                    <div>
-                      <dt>추천 권역</dt>
-                      <dd>{displaySummary.recommendedZones.toLocaleString()}개</dd>
-                    </div>
-                  </dl>
-                  <small className="heatmap-controller-location-count">
-                    {activePoints.length.toLocaleString()}개 좌표 렌더링
-                  </small>
                 </div>
 
                 {dataState.status === 'loading' && (
@@ -835,6 +892,29 @@ export function TourismHeatmapPage() {
       </section>
     </AppLayout>
   )
+}
+
+function useCompactHeatmapViewport() {
+  const [isCompact, setIsCompact] = useState(getCompactHeatmapViewport)
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    const mediaQuery = window.matchMedia('(max-width: 1180px)')
+    const updateCompactState = () => setIsCompact(mediaQuery.matches)
+    updateCompactState()
+    mediaQuery.addEventListener('change', updateCompactState)
+
+    return () => mediaQuery.removeEventListener('change', updateCompactState)
+  }, [])
+
+  return isCompact
+}
+
+function getCompactHeatmapViewport() {
+  if (typeof window === 'undefined') return false
+
+  return window.matchMedia('(max-width: 1180px)').matches
 }
 
 function createHeatmapDataState(
@@ -1351,6 +1431,13 @@ function createDisplaySummary(points: HeatmapPoint[]) {
     facilities,
     recommendedZones: majorPlaceMarkers.length,
   }
+}
+
+function getDemandBubbleColor(weight: number): Color {
+  if (weight >= 8) return [249, 115, 22, 220]
+  if (weight >= 6) return [250, 204, 21, 205]
+  if (weight >= 4) return [45, 212, 191, 175]
+  return [30, 58, 95, 150]
 }
 
 function getMarkerFillColor(

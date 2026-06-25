@@ -15288,3 +15288,62 @@ blockquote,
 .seonbi-result-subtitle {
   font-family: var(--font-accent);
 }
+
+.heatmap-controller-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.heatmap-controller-body {
+  display: grid;
+  gap: 10px;
+}
+
+.heatmap-controller-body[hidden] {
+  display: none;
+}
+
+.heatmap-controller-toggle {
+  display: none;
+  min-height: 30px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 248, 223, 0.72);
+  border-radius: 999px;
+  padding: 0 11px;
+  color: #073228;
+  background:
+    linear-gradient(180deg, #f8e8b7 0%, #ddb85f 58%, #c79a49 100%);
+  box-shadow:
+    0 6px 12px rgba(1, 22, 18, 0.2),
+    inset 0 1px 0 rgba(255, 253, 238, 0.78);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 950;
+  line-height: 1;
+  cursor: pointer;
+}
+
+@media (max-width: 1180px) {
+  .heatmap-controller-toggle {
+    display: inline-flex;
+  }
+
+  .heatmap-map-controller.is-collapsed {
+    width: auto;
+    max-width: calc(100% - 24px);
+    padding: 10px 12px;
+    overflow: visible;
+  }
+
+  .heatmap-map-controller.is-open .heatmap-controller-body {
+    gap: 7px;
+  }
+
+  .heatmap-map-controller.is-collapsed .heatmap-controller-header {
+    gap: 12px;
+  }
+}

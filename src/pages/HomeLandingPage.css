@@ -6642,3 +6642,48 @@ html.home-document-hidden .home-result-panel {
 .home-app-shell .top-nav .brand-logo-image--mark {
   opacity: 0;
 }
+
+@media (max-width: 640px) {
+  .home-micro-strip:not(.home-micro-strip--asset-only) {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    width: min(100%, 420px);
+    margin-right: auto;
+    margin-left: auto;
+    padding: 10px;
+    background: rgba(255, 250, 240, 0.86);
+  }
+
+  .home-micro-strip:not(.home-micro-strip--asset-only) > img {
+    display: none;
+  }
+
+  .home-micro-strip:not(.home-micro-strip--asset-only) li {
+    width: auto;
+    min-height: 42px;
+    justify-content: flex-start;
+    border: 1px solid rgba(215, 190, 138, 0.72);
+    border-radius: 8px;
+    padding: 8px 9px;
+    background: rgba(255, 253, 247, 0.82);
+    font-size: 0.76rem;
+    line-height: 1.2;
+  }
+
+  .home-micro-strip:not(.home-micro-strip--asset-only) li + li {
+    border-left: 1px solid rgba(215, 190, 138, 0.72);
+  }
+
+  .home-micro-strip:not(.home-micro-strip--asset-only) li span {
+    min-width: 0;
+    white-space: normal;
+    word-break: keep-all;
+  }
+
+  .home-micro-strip:not(.home-micro-strip--asset-only) li img {
+    width: 24px;
+    height: 24px;
+    flex: 0 0 24px;
+  }
+}
