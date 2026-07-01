@@ -262,15 +262,26 @@ async function requestAuth<T = unknown>(
     throw new Error('Supabase Auth 환경변수가 설정되지 않았습니다.')
   }
 
-  const response = await fetch(`${url}/auth/v1/${path}`, {
-    method: options.method,
-    headers: {
-      apikey: anonKey,
-      Authorization: `Bearer ${options.accessToken ?? anonKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: options.body ? JSON.stringify(options.body) : undefined,
-  })
+  let response: Response
+  try {
+    response = await fetch(`${url}/auth/v1/${path}`, {
+      method: options.method,
+      headers: {
+        apikey: anonKey,
+        Authorization: `Bearer ${options.accessToken ?? anonKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: options.body ? JSON.stringify(options.body) : undefined,
+    })
+  } catch {
+    // 여기서 fetch가 throw하면 요청이 서버에 닿지도 못한 경우다
+    // (네트워크 차단, CORS, Supabase 프로젝트 일시중지/삭제, 잘못된 URL 등).
+    // 브라우저 기본 메시지 'Failed to fetch'가 그대로 노출되지 않도록 한국어로 바꾼다.
+    if (options.allowFailure) return {} as T
+    throw new Error(
+      '인증 서버에 연결하지 못했습니다. 네트워크 상태를 확인하거나 잠시 후 다시 시도해주세요.',
+    )
+  }
 
   if (!response.ok) {
     if (options.allowFailure) return {} as T
