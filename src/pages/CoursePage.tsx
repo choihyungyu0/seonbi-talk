@@ -36,6 +36,7 @@ import {
   loadYeongjuEnrichmentData,
   type YeongjuEnrichmentData,
 } from '../features/tourism/yeongjuEnrichment'
+import { fetchLiveWeather, type LiveWeather } from '../features/tourism/weatherApi'
 import type { CourseMindTags } from '../features/tourism/recommendation'
 import type {
   TourismApiResponse,
@@ -126,6 +127,7 @@ export function CoursePage() {
     contents: [],
   })
   const [enrichmentData, setEnrichmentData] = useState<YeongjuEnrichmentData | null>(null)
+  const [liveWeather, setLiveWeather] = useState<LiveWeather | null>(null)
 
   useEffect(() => {
     let ignore = false
@@ -228,7 +230,13 @@ export function CoursePage() {
       if (!ignore) setEnrichmentData(data)
     }
 
+    async function loadLiveWeather() {
+      const weather = await fetchLiveWeather()
+      if (!ignore) setLiveWeather(weather)
+    }
+
     void loadEnrichment()
+    void loadLiveWeather()
 
     return () => {
       ignore = true
@@ -526,7 +534,7 @@ export function CoursePage() {
           )}
         </section>
 
-        <CourseTravelContextPanel data={enrichmentData} />
+        <CourseTravelContextPanel data={enrichmentData} liveWeather={liveWeather} />
 
         {favoriteMessage && (
           <p className="disabled-notice course-favorite-notice" role="status">
@@ -664,7 +672,13 @@ function getTourismResponse(filterId: TourismFilterId) {
   return getYeongjuTourismContents()
 }
 
-function CourseTravelContextPanel({ data }: { data: YeongjuEnrichmentData | null }) {
+function CourseTravelContextPanel({
+  data,
+  liveWeather,
+}: {
+  data: YeongjuEnrichmentData | null
+  liveWeather: LiveWeather | null
+}) {
   if (!data) {
     return (
       <section className="surface-card course-context-panel" aria-label="여행 판단 근거">
@@ -680,7 +694,7 @@ function CourseTravelContextPanel({ data }: { data: YeongjuEnrichmentData | null
     )
   }
 
-  const weather = data.weatherSummary
+  const weather = liveWeather?.weatherSummary ?? data.weatherSummary
   const accessibility = data.accessibilitySummary
   const transit = data.transitAccess
   const appliedRows = data.sourceInventory.reduce(
@@ -730,7 +744,7 @@ function CourseTravelContextPanel({ data }: { data: YeongjuEnrichmentData | null
           <StatusBadge tone="brown">판단 근거</StatusBadge>
           <h2 id="course-context-title">오늘 여행 판단 근거</h2>
         </div>
-        <span>{formatShortDate(data.generatedAt)}</span>
+        <span>{formatShortDate(liveWeather?.observedAt ?? new Date().toISOString())}</span>
       </div>
       <div className="course-context-grid">
         {contextCards.map((card) => (
@@ -764,6 +778,7 @@ function formatShortDate(value: string) {
   if (Number.isNaN(date.getTime())) return '최근 갱신'
 
   return new Intl.DateTimeFormat('ko-KR', {
+    timeZone: 'Asia/Seoul',
     month: 'short',
     day: 'numeric',
     hour: '2-digit',
