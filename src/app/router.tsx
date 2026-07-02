@@ -50,6 +50,11 @@ const MissionReflectionPage = lazy(() =>
     default: module.MissionReflectionPage,
   })),
 )
+const MissionRewardPage = lazy(() =>
+  import('../pages/MissionRewardPage').then((module) => ({
+    default: module.MissionRewardPage,
+  })),
+)
 const MyEarnedBadgesPage = lazy(() =>
   import('../pages/MyEarnedBadgesPage').then((module) => ({
     default: module.MyEarnedBadgesPage,
@@ -130,6 +135,7 @@ export function AppRouter() {
         />
         <Route path="/tour-3d" element={<GoogleTour3DRoute />} />
         <Route path="/mission-complete" element={withPageLoader(<MissionCompletePage />)} />
+        <Route path="/mission-reward" element={withPageLoader(<MissionRewardPage />)} />
         <Route
           path="/mission-complete/:placeId"
           element={withPageLoader(<MissionReflectionPage />)}
